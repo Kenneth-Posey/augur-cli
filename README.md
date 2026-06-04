@@ -14,7 +14,7 @@ The goal is feature parity with other major CLI platforms, plus quality-of-life 
 
 Disclaimer, this was developed on Ubuntu 24, and while Windows and MacOS versions are on my to-do list, I want to be more feature complete before I go cross-platform. This uses the fantastic [Ratatui](https://ratatui.rs/) terminal-UI library, so the next intermediate step is docker containerization for better cross platform support, before true cross-platform installers. For now it still works great running from source. 
 
-##Features
+### Features
 
 * Included modular agents, skills, instruction files and prompts
 * Agentic workflow loops when using Openrouter or Github Copilot CLI SDK
