@@ -1,0 +1,56 @@
+# Workflow: Publish Site
+#
+# Publishes the contents of public-html/ to GitHub Pages.
+# Manual trigger only, pulls from the static-site-gen branch.
+
+name: publish site
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: augur-cli
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: static-site-gen
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build graph data
+        run: |
+          cargo run -p augur-graph-builder -- \
+            --output public-html/graph-data.json
+
+      - name: Build API docs
+        run: |
+          cargo doc --no-deps --workspace \
+            --exclude augur-graph-builder
+          cp -r target/doc public-html/api
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: augur-cli/public-html
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,165 @@
+# Workflow: Build & Publish
+#
+# Builds the augur-cli binary and packages the .github/ runtime assets,
+# then publishes them as a numbered GitHub Release so that online-installer.sh
+# can download them.
+#
+# Asset naming convention (matches online-installer.sh expectations):
+#   augur-cli-latest-{target}.tar.gz  — prebuilt binary per platform
+#   dot-github-latest.tar.gz          — .github/ runtime assets
+#
+# Each run produces a release tagged v{version}-build.{run_number}.
+# The most recent build is always the "latest" release, so the default
+# installer path (no --beta) will fetch it via /releases/latest.
+
+name: build and publish
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+# ---------------------------------------------------------------------------
+# Environment
+# ---------------------------------------------------------------------------
+env:
+  CARGO_TERM_COLOR: always
+  WORKSPACE_DIR: augur-cli
+  BINARY_PACKAGE: augur-app
+  BINARY_NAME: augur-cli
+
+permissions:
+  contents: write
+
+jobs:
+  # ── Build ───────────────────────────────────────────────────────────────
+  # Builds the binary for each target platform and packages it into a
+  # versioned tarball.  Run on the native OS for each target.
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo registry and build artifacts
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ env.WORKSPACE_DIR }}
+
+      - name: Build binary (${{ matrix.target }})
+        working-directory: ${{ env.WORKSPACE_DIR }}
+        run: cargo build --release -p ${{ env.BINARY_PACKAGE }} --bin ${{ env.BINARY_NAME }}
+
+      - name: Package binary tarball
+        run: |
+          mkdir -p dist
+          cp "${{ env.WORKSPACE_DIR }}/target/release/${{ env.BINARY_NAME }}" dist/
+          cd dist
+          tar czf "../${{ env.BINARY_NAME }}-latest-${{ matrix.target }}.tar.gz" \
+            "${{ env.BINARY_NAME }}"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target }}
+          path: ${{ env.BINARY_NAME }}-latest-${{ matrix.target }}.tar.gz
+          if-no-files-found: error
+
+  # ── Package .github/ ────────────────────────────────────────────────────
+  # Archives the runtime agents, instructions, prompts, and skills into a
+  # tarball that online-installer.sh extracts into ~/.augur-cli/.github/.
+  # The archive contains a top-level .github/ directory (excluding local/).
+  package-dot-github:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Package .github runtime assets
+        working-directory: ${{ env.WORKSPACE_DIR }}
+        run: |
+          tar czf ../dot-github-latest.tar.gz \
+            --exclude='.github/local/' \
+            .github/
+
+      - name: Upload dot-github artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dot-github
+          path: dot-github-latest.tar.gz
+          if-no-files-found: error
+
+  # ── Release ─────────────────────────────────────────────────────────────
+  # Gathers all artifacts from the build and package-dot-github jobs, then
+  # creates a numbered GitHub Release with make_latest=true so that
+  # online-installer.sh (without --beta) resolves it as the latest release.
+  release:
+    needs: [build, package-dot-github]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Determine release tag
+        id: version
+        run: |
+          # Read the crate version from Cargo.toml
+          VERSION="$(
+            sed -n 's/^version = "\(.*\)"/\1/p' \
+              "${{ env.WORKSPACE_DIR }}/crates/${{ env.BINARY_PACKAGE }}/Cargo.toml" \
+            | head -1
+          )"
+          TAG="v${VERSION}-build.${{ github.run_number }}"
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Prepare files for upload
+        run: |
+          # Flatten the multi-artifact download into a single staging directory.
+          # Each artifact download creates a subdirectory named after the artifact.
+          mkdir -p release-assets
+          find binary-* dot-github -name '*.tar.gz' -exec cp {} release-assets/ \;
+          ls -lh release-assets/
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "Build ${{ github.run_number }} (v${{ steps.version.outputs.version }})" \
+            --notes "Automated CI build from commit ${{ github.sha }}" \
+            --latest \
+            release-assets/*.tar.gz
+
+      - name: Summarize release
+        run: |
+          echo "## Release created" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Field | Value |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "|---|---|" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Tag | \`${{ steps.version.outputs.tag }}\` |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Commit | ${{ github.sha }} |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Assets | |" >> "${GITHUB_STEP_SUMMARY}"
+          for f in release-assets/*.tar.gz; do
+            SIZE="$(du -h "$f" | cut -f1)"
+            echo "| — | \`$(basename "$f")\` (${SIZE}) |" >> "${GITHUB_STEP_SUMMARY}"
+          done
