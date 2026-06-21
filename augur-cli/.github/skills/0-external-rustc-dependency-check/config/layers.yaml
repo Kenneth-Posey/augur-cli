@@ -1,0 +1,20 @@
+# Default package-layer policy for rustc-dependency-check.
+#
+# This file is intentionally minimal by default. Repository-specific package
+# assignments can be added as needed to enforce dependency direction.
+
+layers:
+  - id: 0
+    name: "foundation"
+    color: "#d5f5d5"
+  - id: 1
+    name: "application"
+    color: "#f5e0c0"
+  - id: 2
+    name: "wiring"
+    color: "#e05050"
+
+packages: []
+
+forbidden_edges: []
+

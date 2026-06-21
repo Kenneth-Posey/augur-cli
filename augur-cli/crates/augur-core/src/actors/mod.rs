@@ -1,0 +1,41 @@
+//! Actor subsystem registry for the runtime.
+
+pub mod active_model;
+pub mod agent;
+pub mod ask;
+pub mod cache;
+pub mod catalog_manager;
+pub mod command;
+pub mod deterministic_orchestrator;
+pub mod file_read;
+pub mod file_scanner;
+pub mod guided_plan;
+pub mod history_adapter;
+pub mod llm_feed_consumer;
+pub mod logger;
+pub mod lsp;
+pub mod orchestrator;
+pub mod session;
+pub mod supervisor;
+pub mod token_tracker;
+pub mod tool;
+pub mod user_message_consumer;
+
+pub use active_model::handle::ActiveModelHandle;
+pub use agent::handle::AgentHandle;
+pub use ask::handle::AskHandle;
+pub use cache::handle::CacheHandle;
+pub use catalog_manager::CatalogManagerHandle;
+pub use command::handle::CommandHandle;
+pub use deterministic_orchestrator::handle::DeterministicOrchestratorHandle;
+pub use file_read::handle::FileReadHandle;
+pub use file_scanner::FileScannerHandle;
+pub use guided_plan::GuidedPlanHandle;
+pub use history_adapter::HistoryAdapterHandle;
+pub use llm_feed_consumer::LlmFeedConsumerHandle;
+pub use logger::LoggerHandle;
+pub use session::handle::SessionHandle;
+pub use supervisor::SupervisorHandle;
+pub use token_tracker::TokenTrackerHandle;
+pub use tool::handle::ToolHandle;
+pub use user_message_consumer::UserMessageConsumerHandle;

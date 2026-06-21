@@ -1,0 +1,88 @@
+---
+source: tests/r3_2_snapshot_testing.tests.rs
+assertion_line: 73
+expression: json_str
+---
+{
+  "metadata": {
+    "id": "report-dead-code",
+    "analysis_id": "analysis-001",
+    "graph_id": "graph-001",
+    "generated_at": 1714746300000
+  },
+  "config": {
+    "format": "Json",
+    "sort_by": "LinesSaved",
+    "filter": {
+      "min_confidence": null,
+      "min_lines_saved": null,
+      "opportunity_types": null,
+      "exclude_layers": null
+    },
+    "output_options": {
+      "include_statistics": true,
+      "include_recommendations": true,
+      "max_opportunities": null
+    }
+  },
+  "opportunities": [
+    {
+      "opportunity_type": {
+        "DeadCode": {
+          "target": "func_a"
+        }
+      },
+      "affected_nodes": [
+        "func_a"
+      ],
+      "rationale": "Never called, safe to remove",
+      "layer": "Domain",
+      "metadata": {
+        "confidence": 0.95,
+        "estimated_lines_saved": 15
+      }
+    },
+    {
+      "opportunity_type": {
+        "DeadCode": {
+          "target": "func_b"
+        }
+      },
+      "affected_nodes": [
+        "func_b"
+      ],
+      "rationale": "Never called, safe to remove",
+      "layer": "Logic",
+      "metadata": {
+        "confidence": 0.75,
+        "estimated_lines_saved": 8
+      }
+    },
+    {
+      "opportunity_type": {
+        "DeadCode": {
+          "target": "func_c"
+        }
+      },
+      "affected_nodes": [
+        "func_c"
+      ],
+      "rationale": "Never called, safe to remove",
+      "layer": "Domain",
+      "metadata": {
+        "confidence": 0.85,
+        "estimated_lines_saved": 20
+      }
+    }
+  ],
+  "statistics": {
+    "total_opportunities": 0,
+    "total_lines_saved": 0,
+    "average_confidence": 0.0,
+    "confidence_range": {
+      "max_confidence": 0.0,
+      "min_confidence": 0.0
+    }
+  },
+  "recommendations": []
+}

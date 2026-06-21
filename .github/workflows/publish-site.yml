@@ -30,7 +30,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: static-site-gen
+          ref: main
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable

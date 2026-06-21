@@ -1,0 +1,9 @@
+provider: ollama
+models:
+  - id: llama3.2
+    display_name: llama3.2
+    cost_input_per_mtok: 0.0
+    cost_output_per_mtok: 0.0
+    supports_tools: false
+    compaction_target: 0
+    auto_compact_threshold: 0

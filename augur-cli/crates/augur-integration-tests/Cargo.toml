@@ -1,0 +1,57 @@
+[package]
+name = "augur-integration-tests"
+version = "4.0.0"
+edition = "2024"
+publish = false
+autotests = false
+
+[dependencies]
+augur-core = { path = "../augur-core" }
+augur-domain = { path = "../augur-domain" }
+augur-provider-openrouter = { path = "../augur-provider-openrouter" }
+augur-provider-copilot-sdk = { path = "../augur-provider-copilot-sdk" }
+augur-provider-shared = { path = "../augur-provider-shared" }
+augur-tui = { path = "../augur-tui" }
+augur-app = { path = "../augur-app" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3"
+mockito = "1"
+serde_yaml = "0.9"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json"] }
+ratatui = "0.30"
+tracing-subscriber = { version = "0.3", features = ["fmt"] }
+
+[[test]]
+name = "workspace_smoke_tests"
+path = "tests/workspace_smoke.tests.rs"
+
+[[test]]
+name = "crate_abstraction_behavior_tests"
+path = "tests/crate_abstraction_behavior.tests.rs"
+
+[[test]]
+name = "r3_2_snapshot_testing_tests"
+path = "tests/r3_2_snapshot_testing.tests.rs"
+
+[[test]]
+name = "executor_permissions_tests"
+path = "tests/integration/executor_permissions.tests.rs"
+
+[[test]]
+name = "llm_openrouter_tests"
+path = "tests/integration/llm_openrouter.tests.rs"
+
+[[test]]
+name = "supervisor_tui_tests"
+path = "tests/integration/supervisor_tui.tests.rs"
+
+[[test]]
+name = "integration_full_turn_tests"
+path = "tests/integration_full_turn.tests.rs"

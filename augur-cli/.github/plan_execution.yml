@@ -1,0 +1,1040 @@
+metadata:
+  schema_version: "1.0"
+  contract_id: "rust-instructions-plan-execution"
+  purpose: "Script-facing execution contract for the Design -> Plan -> Implement -> Review pipeline."
+  source_of_truth: ".github/plan_execution.yml"
+  ownership_boundary:
+    - "This file defines execution order, stage structure, checkpoint sequencing, and next-step routing."
+    - "Non-orchestrator worker agents describe only their own consumption and production contract."
+    - "A queue runner must not read orchestrator prompts, orchestrator agents, or other routing files to determine order."
+  stage_order:
+    - design
+    - plan
+    - implement
+    - review
+
+agent_registry:
+  # Stage 1: Design
+  design-requirements-builder: ".github/agents/1-design-01-requirements-builder.agent.md"
+  design-requirements-reviewer: ".github/agents/1-design-02-requirements-reviewer.agent.md"
+  design-features-builder: ".github/agents/1-design-03-features-builder.agent.md"
+  design-features-reviewer: ".github/agents/1-design-04-features-reviewer.agent.md"
+  design-behavior-builder: ".github/agents/1-design-05-behavior-builder.agent.md"
+  design-behavior-reviewer: ".github/agents/1-design-06-behavior-reviewer.agent.md"
+  # Stage 2: Plan
+  plan-domain-designer: ".github/agents/2-plan-01-domain-designer.agent.md"
+  plan-domain-reviewer: ".github/agents/2-plan-02-domain-reviewer.agent.md"
+  plan-dependency-designer: ".github/agents/2-plan-03-dependency-designer.agent.md"
+  plan-dependency-plan-evaluator: ".github/agents/2-plan-04-dependency-plan-evaluator.agent.md"
+  plan-function-sig-planner: ".github/agents/2-plan-05-function-sig-planner.agent.md"
+  plan-function-sig-reviewer: ".github/agents/2-plan-06-function-sig-reviewer.agent.md"
+  plan-behavior-planner: ".github/agents/2-plan-07-behavior-planner.agent.md"
+  plan-behavior-plan-reviewer: ".github/agents/2-plan-08-behavior-plan-reviewer.agent.md"
+  plan-test-planner: ".github/agents/2-plan-09-test-planner.agent.md"
+  plan-test-reviewer: ".github/agents/2-plan-10-test-reviewer.agent.md"
+  plan-builder: ".github/agents/2-plan-11-builder.agent.md"
+  plan-evaluator: ".github/agents/2-plan-12-evaluator.agent.md"
+  plan-gap-analyst: ".github/agents/2-plan-13-gap-analyst.agent.md"
+  # Stage 3: Implement
+  implement-domain-builder: ".github/agents/3-implement-01-domain-builder.agent.md"
+  implement-domain-reviewer: ".github/agents/3-implement-02-domain-reviewer.agent.md"
+  implement-function-sig-builder: ".github/agents/3-implement-03-function-sig-builder.agent.md"
+  implement-function-sig-reviewer: ".github/agents/3-implement-04-function-sig-reviewer.agent.md"
+  implement-test-author: ".github/agents/3-implement-05-test-author.agent.md"
+  implement-test-tdd-reviewer: ".github/agents/3-implement-06-test-tdd-reviewer.agent.md"
+  implement-behavior-builder: ".github/agents/3-implement-07-behavior-builder.agent.md"
+  implement-behavior-implementation-reviewer: ".github/agents/3-implement-08-behavior-implementation-reviewer.agent.md"
+  # Stage 4: Review
+  review-architecture-checker: ".github/agents/4-review-01-architecture-checker.agent.md"
+  review-behavior-checker: ".github/agents/4-review-02-behavior-checker.agent.md"
+  review-completeness-checker: ".github/agents/4-review-03-completeness-checker.agent.md"
+  review-consistency-checker: ".github/agents/4-review-04-consistency-checker.agent.md"
+  review-function-sig-checker: ".github/agents/4-review-05-function-sig-checker.agent.md"
+  review-performance-checker: ".github/agents/4-review-06-performance-checker.agent.md"
+  review-security-checker: ".github/agents/4-review-07-security-checker.agent.md"
+  review-type-checker: ".github/agents/4-review-08-type-checker.agent.md"
+  review-activation-checker: ".github/agents/4-review-10-activation-checker.agent.md"
+  review-consolidation-checker: ".github/agents/4-review-11-consolidation-checker.agent.md"
+  review-consolidator: ".github/agents/4-review-09-consolidator.agent.md"
+  external-code-stub-detector: ".github/agents/0-external-code-stub-detector.agent.md"
+  # Pipeline support
+  global-writer-changelog: ".github/agents/0-global-writer-changelog.agent.md"
+  global-git-operator: ".github/agents/0-global-git-operator.agent.md"
+  utility-quick-patch-design: ".github/agents/0-utility-quick-patch-design.agent.md"
+  utility-quick-patch-plan: ".github/agents/0-utility-quick-patch-plan.agent.md"
+  utility-quick-patch-code: ".github/agents/0-utility-quick-patch-code.agent.md"
+  utility-quick-patch-tests: ".github/agents/0-utility-quick-patch-tests.agent.md"
+
+runner_contract:
+  execution_model: "queue"
+  default_concurrency: 1
+  queue_start_step: "design-requirements"
+  default_model: "claude-sonnet-4.6"
+  default_thinking_depth: "high"
+  dispatch_rules:
+    - "Dispatch only the worker_agent named on the current queue item."
+    - "If a step defines gate_agent, dispatch the gate_agent only after the worker_agent returns pass."
+    - "Advance only through the current step's on_pass.next_step transition."
+    - "Apply the current step's on_fail behavior immediately when the normalized result is fail."
+    - "Except for the explicit parallel review checker group, run one queue item at a time."
+    - "On fail, if the step declares a quick_patch_agent and attempt_count < failure_retry_cap, invoke the quick_patch_agent with failure context then re-fire the failed step. Increment attempt_count."
+    - "On fail, if attempt_count >= failure_retry_cap, halt the pipeline and report to the user."
+  failure_retry_cap: 2
+  worker_scope_rules:
+    - "Worker agents are not responsible for downstream routing."
+    - "Worker agents must not choose the next stage or next step."
+    - "The runner owns all execution sequencing."
+  resume_rules:
+    - "Resume only from a previously declared step id or the next step after a passed checkpoint step."
+    - "Do not infer hidden state from conversation history or orchestrator files."
+
+signal_normalization:
+  advancing_signal: "pass"
+  fail_closed: true
+  normalization_rule: "Any agent result other than the exact signal `pass` is treated as `fail` by the runner."
+  fail_examples:
+    - "fail"
+    - "decision-required"
+    - "timeout"
+    - "error"
+    - "no-output"
+    - "refused"
+    - "missing-signal"
+    - "approved-with-findings"
+    - "needs-revision"
+    - "escalate"
+    - "approved"
+    - ""
+
+placeholders:
+  feature_slug:
+    format: "lowercase-hyphenated-feature-identifier"
+    example: "add-jwt-auth"
+  plan_root: "plans/<feature-slug>"
+  design_dir: "plans/<feature-slug>/design"
+  plan_dir: "plans/<feature-slug>/plan"
+  review_dir: "plans/<feature-slug>/review"
+  changelog_path_pattern: "changelogs/MM-DD-YYYY-HHMM-<feature-slug>-<stage>-checkpoint.md"
+  implementation_path_contracts:
+    - ".github/local/directories.md"
+    - ".github/local/language-companions.md"
+
+preflight:
+  checks:
+    - id: "working-tree-clean"
+      required: true
+      when: "before-first-stage-and-before-each-resume"
+      pass_condition: "Repository has no uncommitted or untracked changes that would contaminate a checkpoint."
+      on_fail: "halt"
+    - id: "feature-slug-resolved"
+      required: true
+      when: "before-first-stage"
+      pass_condition: "<feature-slug> is known before queue initialization."
+      on_fail: "halt"
+    - id: "plan-root-writable"
+      required: true
+      when: "before-first-stage"
+      pass_condition: "`plans/<feature-slug>/` exists or can be created."
+      on_fail: "halt"
+    - id: "referenced-agents-available"
+      required: true
+      when: "before-stage-dispatch"
+      pass_condition: "Every worker_agent and gate_agent named in this contract is resolvable."
+      on_fail: "halt"
+    - id: "local-path-contracts-readable"
+      required: true
+      when: "before-implement-stage-and-review-stage"
+      pass_condition: "`.github/local/directories.md` and `.github/local/language-companions.md` are readable."
+      on_fail: "halt"
+    - id: "stage-entry-inputs-present"
+      required: true
+      when: "before-each-stage"
+      pass_condition: "All expected inputs for the first step of the target stage are present."
+      on_fail: "halt"
+
+step_model:
+  step_types:
+    worker_with_gate:
+      required_fields:
+        - "step_id"
+        - "model"
+        - "thinking_depth"
+        - "worker_agent"
+        - "gate_agent"
+        - "expected_inputs"
+        - "created_artifacts"
+        - "pass_criteria"
+        - "fail_criteria"
+        - "on_pass.next_step"
+        - "on_fail.action"
+    single_pass:
+      required_fields:
+        - "step_id"
+        - "model"
+        - "thinking_depth"
+        - "worker_agent"
+        - "expected_inputs"
+        - "created_artifacts"
+        - "pass_criteria"
+        - "fail_criteria"
+        - "on_pass.next_step"
+        - "on_fail.action"
+    parallel_group:
+      required_fields:
+        - "step_id"
+        - "model"
+        - "thinking_depth"
+        - "members"
+        - "group_completion_rule"
+        - "on_pass.next_step"
+        - "on_fail.action"
+  execution_notes:
+    - "A worker_with_gate step passes only when the worker_agent returns pass and the gate_agent returns pass."
+    - "A single_pass step passes only when the worker_agent returns pass."
+    - "A parallel_group step completes only after every member reports pass or fail."
+    - "Lowered parallel_group members remain executable steps and may explicitly use `worker_with_gate` or `single_pass` semantics."
+    - "`group_member` is structural lowering metadata, not a canonical YAML execution semantic for review members."
+    - "Every declared step, including parallel_group members, must set `model` and `thinking_depth`."
+    - "Use `runner-default` in `model` or `thinking_depth` when a step should inherit `runner_contract.default_model` or `runner_contract.default_thinking_depth`."
+    - "For the review checker group, any member fail is recorded, but the runner still proceeds to consolidation after all members finish."
+    - "When a step's on_fail declares quick_patch_agent, the runner invokes that agent with the failure context, then re-fires the failed step. This repeats up to failure_retry_cap times. If still failing, halt."
+
+stages:
+  - stage_id: "design"
+    order: 1
+    start_step: "design-requirements"
+    stage_inputs:
+      - "Raw feature request, issue, or design brief"
+      - "<feature-slug>"
+    steps:
+      - step_id: "design-requirements"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "design-requirements-builder"
+        gate_agent: "design-requirements-reviewer"
+        expected_inputs:
+          - "Raw feature request, issue, or design brief"
+          - "<feature-slug>"
+          - "Writable `plans/<feature-slug>/design/` directory"
+        created_artifacts:
+          - "plans/<feature-slug>/design/requirements.md"
+        pass_criteria:
+          - "`design-requirements-builder` returns pass."
+          - "`plans/<feature-slug>/design/requirements.md` exists."
+          - "`design-requirements-reviewer` returns pass."
+        fail_criteria:
+          - "Builder returns any non-pass signal."
+          - "Required artifact is missing after builder completion."
+          - "Reviewer returns any non-pass signal."
+        on_pass:
+          next_step: "design-features"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-design"
+      - step_id: "design-features"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "design-features-builder"
+        gate_agent: "design-features-reviewer"
+        expected_inputs:
+          - "plans/<feature-slug>/design/requirements.md"
+        created_artifacts:
+          - "plans/<feature-slug>/design/features.md"
+        pass_criteria:
+          - "`design-features-builder` returns pass."
+          - "`plans/<feature-slug>/design/features.md` exists."
+          - "`design-features-reviewer` returns pass."
+        fail_criteria:
+          - "Builder returns any non-pass signal."
+          - "Required artifact is missing after builder completion."
+          - "Reviewer returns any non-pass signal."
+        on_pass:
+          next_step: "design-behaviors"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-design"
+      - step_id: "design-behaviors"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "design-behavior-builder"
+        gate_agent: "design-behavior-reviewer"
+        expected_inputs:
+          - "plans/<feature-slug>/design/requirements.md"
+          - "plans/<feature-slug>/design/features.md"
+        created_artifacts:
+          - "plans/<feature-slug>/design/behaviors.md"
+        pass_criteria:
+          - "`design-behavior-builder` returns pass."
+          - "`plans/<feature-slug>/design/behaviors.md` exists."
+          - "`design-behavior-reviewer` returns pass."
+        fail_criteria:
+          - "Builder returns any non-pass signal."
+          - "Required artifact is missing after builder completion."
+          - "Reviewer returns any non-pass signal."
+        on_pass:
+          next_step: "design-checkpoint-changelog"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-design"
+      - step_id: "design-checkpoint-changelog"
+        step_type: "single_pass"
+        model: "claude-haiku-4.5"
+        thinking_depth: "low"
+        worker_agent: "global-writer-changelog"
+        expected_inputs:
+          - "Passed Design stage artifacts"
+          - "plans/<feature-slug>/design/requirements.md"
+          - "plans/<feature-slug>/design/features.md"
+          - "plans/<feature-slug>/design/behaviors.md"
+          - "changelog_path_pattern"
+        created_artifacts:
+          - "changelogs/MM-DD-YYYY-HHMM-<feature-slug>-design-checkpoint.md"
+        pass_criteria:
+          - "`global-writer-changelog` returns pass."
+          - "A changelog file matching the declared pattern exists for the design checkpoint."
+        fail_criteria:
+          - "Agent returns any non-pass signal."
+          - "Checkpoint changelog file is missing."
+        on_pass:
+          next_step: "design-checkpoint-commit"
+        on_fail:
+          action: "halt"
+      - step_id: "design-checkpoint-commit"
+        step_type: "single_pass"
+        model: "claude-haiku-4.5"
+        thinking_depth: "low"
+        worker_agent: "global-git-operator"
+        expected_inputs:
+          - "Design stage artifacts"
+          - "Design checkpoint changelog file"
+          - "Commit summary `checkpoint: design stage complete`"
+        created_artifacts:
+          - "Checkpoint commit for the passed Design stage"
+        pass_criteria:
+          - "`global-git-operator` returns pass."
+          - "Checkpoint commit for Design stage is created after the changelog step."
+        fail_criteria:
+          - "Agent returns any non-pass signal."
+          - "Commit was attempted before the changelog step passed."
+        on_pass:
+          next_step: "plan-domain"
+        on_fail:
+          action: "halt"
+
+  - stage_id: "plan"
+    order: 2
+    start_step: "plan-domain"
+    stage_inputs:
+      - "plans/<feature-slug>/design/requirements.md"
+      - "plans/<feature-slug>/design/features.md"
+      - "plans/<feature-slug>/design/behaviors.md"
+    steps:
+      - step_id: "plan-domain"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "plan-domain-designer"
+        gate_agent: "plan-domain-reviewer"
+        expected_inputs:
+          - "plans/<feature-slug>/design/features.md"
+          - "plans/<feature-slug>/design/behaviors.md"
+        created_artifacts:
+          - "plans/<feature-slug>/plan/domain-spec.md"
+        pass_criteria:
+          - "`domain-planner` returns pass."
+          - "`plans/<feature-slug>/plan/domain-spec.md` exists."
+          - "`plan-domain-reviewer` returns pass."
+        fail_criteria:
+          - "Planner returns any non-pass signal."
+          - "Required artifact is missing after planner completion."
+          - "Reviewer returns any non-pass signal."
+        on_pass:
+          next_step: "plan-dependency"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-plan"
+      - step_id: "plan-dependency"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "plan-dependency-designer"
+        gate_agent: "plan-dependency-plan-evaluator"
+        expected_inputs:
+          - "plans/<feature-slug>/plan/domain-spec.md"
+          - "plans/<feature-slug>/design/behaviors.md"
+        created_artifacts:
+          - "plans/<feature-slug>/plan/dependency-graph.md"
+        pass_criteria:
+          - "`dependency-designer` returns pass."
+          - "`plans/<feature-slug>/plan/dependency-graph.md` exists."
+          - "`dependency-plan-evaluator` returns pass."
+        fail_criteria:
+          - "Designer returns any non-pass signal."
+          - "Required artifact is missing after designer completion."
+          - "Evaluator returns any non-pass signal."
+        on_pass:
+          next_step: "plan-function-signatures"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-plan"
+      - step_id: "plan-function-signatures"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "plan-function-sig-planner"
+        gate_agent: "plan-function-sig-reviewer"
+        expected_inputs:
+          - "plans/<feature-slug>/plan/domain-spec.md"
+          - "plans/<feature-slug>/plan/dependency-graph.md"
+          - "plans/<feature-slug>/design/behaviors.md"
+        created_artifacts:
+          - "plans/<feature-slug>/plan/function-sig-plan.md"
+        pass_criteria:
+          - "`function-sig-planner` returns pass."
+          - "`plans/<feature-slug>/plan/function-sig-plan.md` exists."
+          - "`plan-function-sig-reviewer` returns pass."
+        fail_criteria:
+          - "Planner returns any non-pass signal."
+          - "Required artifact is missing after planner completion."
+          - "Reviewer returns any non-pass signal."
+        on_pass:
+          next_step: "plan-behavior"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-plan"
+      - step_id: "plan-behavior"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "plan-behavior-planner"
+        gate_agent: "plan-behavior-plan-reviewer"
+        expected_inputs:
+          - "plans/<feature-slug>/plan/domain-spec.md"
+          - "plans/<feature-slug>/plan/dependency-graph.md"
+          - "plans/<feature-slug>/plan/function-sig-plan.md"
+          - "plans/<feature-slug>/design/behaviors.md"
+        created_artifacts:
+          - "plans/<feature-slug>/plan/behavior-plan.md"
+        pass_criteria:
+          - "`behavior-planner` returns pass."
+          - "`plans/<feature-slug>/plan/behavior-plan.md` exists."
+          - "`behavior-plan-reviewer` returns pass."
+        fail_criteria:
+          - "Planner returns any non-pass signal."
+          - "Required artifact is missing after planner completion."
+          - "Reviewer returns any non-pass signal."
+        on_pass:
+          next_step: "plan-tests"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-plan"
+      - step_id: "plan-tests"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "plan-test-planner"
+        gate_agent: "plan-test-reviewer"
+        expected_inputs:
+          - "plans/<feature-slug>/plan/behavior-plan.md"
+          - "plans/<feature-slug>/plan/function-sig-plan.md"
+          - "plans/<feature-slug>/design/behaviors.md"
+        created_artifacts:
+          - "plans/<feature-slug>/plan/test-strategy-plan.md"
+        pass_criteria:
+          - "`test-planner` returns pass."
+          - "`plans/<feature-slug>/plan/test-strategy-plan.md` exists."
+          - "`test-reviewer` returns pass."
+        fail_criteria:
+          - "Planner returns any non-pass signal."
+          - "Required artifact is missing after planner completion."
+          - "Reviewer returns any non-pass signal."
+        on_pass:
+          next_step: "plan-build"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-plan"
+      - step_id: "plan-build"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "plan-builder"
+        gate_agent: "plan-evaluator"
+        expected_inputs:
+          - "plans/<feature-slug>/plan/domain-spec.md"
+          - "plans/<feature-slug>/plan/dependency-graph.md"
+          - "plans/<feature-slug>/plan/function-sig-plan.md"
+          - "plans/<feature-slug>/plan/behavior-plan.md"
+          - "plans/<feature-slug>/plan/test-strategy-plan.md"
+        created_artifacts:
+          - "plans/<feature-slug>/plan/implementation-plan.md"
+        pass_criteria:
+          - "`plan-builder` returns pass."
+          - "`plans/<feature-slug>/plan/implementation-plan.md` exists."
+          - "`plan-evaluator` returns pass."
+        fail_criteria:
+          - "Builder returns any non-pass signal."
+          - "Required artifact is missing after builder completion."
+          - "Evaluator returns any non-pass signal."
+        on_pass:
+          next_step: "plan-gap-analysis"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-plan"
+      - step_id: "plan-gap-analysis"
+        step_type: "single_pass"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "plan-gap-analyst"
+        expected_inputs:
+          - "plans/<feature-slug>/plan/domain-spec.md"
+          - "plans/<feature-slug>/plan/dependency-graph.md"
+          - "plans/<feature-slug>/plan/function-sig-plan.md"
+          - "plans/<feature-slug>/plan/behavior-plan.md"
+          - "plans/<feature-slug>/plan/test-strategy-plan.md"
+          - "plans/<feature-slug>/plan/implementation-plan.md"
+          - "plans/<feature-slug>/design/behaviors.md"
+        created_artifacts:
+          - "plans/<feature-slug>/plan/gap-report.md"
+        pass_criteria:
+          - "`plan-gap-analyst` returns pass."
+          - "`plans/<feature-slug>/plan/gap-report.md` exists."
+        fail_criteria:
+          - "Agent returns any non-pass signal."
+          - "Gap report artifact is missing."
+        on_pass:
+          next_step: "plan-checkpoint-changelog"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-plan"
+      - step_id: "plan-checkpoint-changelog"
+        step_type: "single_pass"
+        model: "claude-haiku-4.5"
+        thinking_depth: "low"
+        worker_agent: "global-writer-changelog"
+        expected_inputs:
+          - "Passed Plan stage artifacts"
+          - "plans/<feature-slug>/plan/domain-spec.md"
+          - "plans/<feature-slug>/plan/dependency-graph.md"
+          - "plans/<feature-slug>/plan/function-sig-plan.md"
+          - "plans/<feature-slug>/plan/behavior-plan.md"
+          - "plans/<feature-slug>/plan/test-strategy-plan.md"
+          - "plans/<feature-slug>/plan/implementation-plan.md"
+          - "plans/<feature-slug>/plan/gap-report.md"
+          - "changelog_path_pattern"
+        created_artifacts:
+          - "changelogs/MM-DD-YYYY-HHMM-<feature-slug>-plan-checkpoint.md"
+        pass_criteria:
+          - "`global-writer-changelog` returns pass."
+          - "A changelog file matching the declared pattern exists for the plan checkpoint."
+        fail_criteria:
+          - "Agent returns any non-pass signal."
+          - "Checkpoint changelog file is missing."
+        on_pass:
+          next_step: "plan-checkpoint-commit"
+        on_fail:
+          action: "halt"
+      - step_id: "plan-checkpoint-commit"
+        step_type: "single_pass"
+        model: "claude-haiku-4.5"
+        thinking_depth: "low"
+        worker_agent: "global-git-operator"
+        expected_inputs:
+          - "Plan stage artifacts"
+          - "Plan checkpoint changelog file"
+          - "Commit summary `checkpoint: plan stage complete`"
+        created_artifacts:
+          - "Checkpoint commit for the passed Plan stage"
+        pass_criteria:
+          - "`global-git-operator` returns pass."
+          - "Checkpoint commit for Plan stage is created after the changelog step."
+        fail_criteria:
+          - "Agent returns any non-pass signal."
+          - "Commit was attempted before the changelog step passed."
+        on_pass:
+          next_step: "implement-domain"
+        on_fail:
+          action: "halt"
+
+  - stage_id: "implement"
+    order: 3
+    start_step: "implement-domain"
+    stage_inputs:
+      - "plans/<feature-slug>/plan/domain-spec.md"
+      - "plans/<feature-slug>/plan/dependency-graph.md"
+      - "plans/<feature-slug>/plan/function-sig-plan.md"
+      - "plans/<feature-slug>/plan/behavior-plan.md"
+      - "plans/<feature-slug>/plan/test-strategy-plan.md"
+      - "plans/<feature-slug>/design/behaviors.md"
+      - ".github/local/directories.md"
+      - ".github/local/language-companions.md"
+    steps:
+      - step_id: "implement-domain"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "implement-domain-builder"
+        gate_agent: "implement-domain-reviewer"
+        expected_inputs:
+          - "plans/<feature-slug>/plan/domain-spec.md"
+          - ".github/local/directories.md"
+          - ".github/local/language-companions.md"
+        created_artifacts:
+          - "Project-defined production domain files under the paths declared by `.github/local/directories.md` and `.github/local/language-companions.md`"
+        pass_criteria:
+          - "`domain-builder` returns pass."
+          - "Domain implementation artifacts are written in the project-defined implementation paths."
+          - "`implement-domain-reviewer` returns pass."
+        fail_criteria:
+          - "Builder returns any non-pass signal."
+          - "No domain implementation artifact is produced."
+          - "Reviewer returns any non-pass signal."
+        on_pass:
+          next_step: "implement-function-signatures"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-code"
+      - step_id: "implement-function-signatures"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "implement-function-sig-builder"
+        gate_agent: "implement-function-sig-reviewer"
+        expected_inputs:
+          - "plans/<feature-slug>/plan/function-sig-plan.md"
+          - "Approved outputs from `implement-domain`"
+          - ".github/local/directories.md"
+          - ".github/local/language-companions.md"
+        created_artifacts:
+          - "Project-defined production signature and compile-target files under the paths declared by `.github/local/directories.md` and `.github/local/language-companions.md`"
+        pass_criteria:
+          - "`function-sig-builder` returns pass."
+          - "Function signature implementation artifacts are written in the project-defined implementation paths."
+          - "`implement-function-sig-reviewer` returns pass."
+        fail_criteria:
+          - "Builder returns any non-pass signal."
+          - "No function signature implementation artifact is produced."
+          - "Reviewer returns any non-pass signal."
+        on_pass:
+          next_step: "implement-tests-red"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-code"
+      - step_id: "implement-tests-red"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "implement-test-author"
+        gate_agent: "implement-test-tdd-reviewer"
+        expected_inputs:
+          - "plans/<feature-slug>/plan/test-strategy-plan.md"
+          - "plans/<feature-slug>/plan/behavior-plan.md"
+          - "plans/<feature-slug>/design/behaviors.md"
+          - "Approved outputs from `implement-function-signatures`"
+          - ".github/local/directories.md"
+          - ".github/local/language-companions.md"
+        created_artifacts:
+          - "Project-defined test files under the test paths declared by `.github/local/directories.md` and `.github/local/language-companions.md`"
+        pass_criteria:
+          - "`test-author` returns pass."
+          - "Test artifacts are written in the project-defined test paths."
+          - "`test-tdd-reviewer` returns pass."
+          - "The created tests are intentionally in Red state."
+        fail_criteria:
+          - "Author returns any non-pass signal."
+          - "No test artifact is produced."
+          - "Reviewer returns any non-pass signal."
+          - "Tests are not in Red state."
+        on_pass:
+          next_step: "implement-behavior-green"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-tests"
+      - step_id: "implement-behavior-green"
+        step_type: "worker_with_gate"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        worker_agent: "implement-behavior-builder"
+        gate_agent: "implement-behavior-implementation-reviewer"
+        expected_inputs:
+          - "plans/<feature-slug>/plan/behavior-plan.md"
+          - "plans/<feature-slug>/design/behaviors.md"
+          - "Approved outputs from `implement-domain`"
+          - "Approved outputs from `implement-function-signatures`"
+          - "Approved outputs from `implement-tests-red`"
+          - ".github/local/directories.md"
+          - ".github/local/language-companions.md"
+        created_artifacts:
+          - "Project-defined production behavior files under the implementation paths declared by `.github/local/directories.md` and `.github/local/language-companions.md`"
+          - "Updated project-defined test artifacts now passing in Green state"
+        pass_criteria:
+          - "`behavior-builder` returns pass."
+          - "`behavior-implementation-reviewer` returns pass."
+          - "All temporary production stubs are removed according to `.github/local/language-companions.md`."
+          - "Required Green, test, and check commands from `.github/local/language-companions.md` pass."
+        fail_criteria:
+          - "Builder returns any non-pass signal."
+          - "Reviewer returns any non-pass signal."
+          - "Any production stub marker remains."
+          - "Any required Green, test, or check command fails."
+        on_pass:
+          next_step: "implement-checkpoint-changelog"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-code"
+      - step_id: "implement-checkpoint-changelog"
+        step_type: "single_pass"
+        model: "claude-haiku-4.5"
+        thinking_depth: "low"
+        worker_agent: "global-writer-changelog"
+        expected_inputs:
+          - "Passed Implement stage artifacts"
+          - "Project-defined implementation and test artifacts created during Implement stage"
+          - "changelog_path_pattern"
+        created_artifacts:
+          - "changelogs/MM-DD-YYYY-HHMM-<feature-slug>-implement-checkpoint.md"
+        pass_criteria:
+          - "`global-writer-changelog` returns pass."
+          - "A changelog file matching the declared pattern exists for the implement checkpoint."
+        fail_criteria:
+          - "Agent returns any non-pass signal."
+          - "Checkpoint changelog file is missing."
+        on_pass:
+          next_step: "implement-checkpoint-commit"
+        on_fail:
+          action: "halt"
+      - step_id: "implement-checkpoint-commit"
+        step_type: "single_pass"
+        model: "claude-haiku-4.5"
+        thinking_depth: "low"
+        worker_agent: "global-git-operator"
+        expected_inputs:
+          - "Implement stage artifacts"
+          - "Implement checkpoint changelog file"
+          - "Commit summary `checkpoint: implement stage complete`"
+        created_artifacts:
+          - "Checkpoint commit for the passed Implement stage"
+        pass_criteria:
+          - "`global-git-operator` returns pass."
+          - "Checkpoint commit for Implement stage is created after the changelog step."
+        fail_criteria:
+          - "Agent returns any non-pass signal."
+          - "Commit was attempted before the changelog step passed."
+        on_pass:
+          next_step: "review-checkers"
+        on_fail:
+          action: "halt"
+
+  - stage_id: "review"
+    order: 4
+    start_step: "review-checkers"
+    stage_inputs:
+      - "Project-defined implementation artifacts from Implement stage"
+      - "plans/<feature-slug>/design/requirements.md"
+      - "plans/<feature-slug>/design/features.md"
+      - "plans/<feature-slug>/design/behaviors.md"
+      - "plans/<feature-slug>/plan/domain-spec.md"
+      - "plans/<feature-slug>/plan/dependency-graph.md"
+      - "plans/<feature-slug>/plan/function-sig-plan.md"
+      - "plans/<feature-slug>/plan/behavior-plan.md"
+      - "plans/<feature-slug>/plan/test-strategy-plan.md"
+      - "plans/<feature-slug>/plan/implementation-plan.md"
+      - ".github/local/directories.md"
+      - ".github/local/language-companions.md"
+    steps:
+      - step_id: "review-checkers"
+        step_type: "parallel_group"
+        model: "runner-default"
+        thinking_depth: "runner-default"
+        group_completion_rule: "Enqueue all members, wait until every member reports pass or fail, then continue to consolidation."
+        members:
+          - step_id: "review-architecture-check"
+            step_type: "single_pass"
+            model: "claude-haiku-4.5"
+            thinking_depth: "low"
+            worker_agent: "review-architecture-checker"
+            expected_inputs:
+              - "Project-defined implementation artifacts"
+              - "plans/<feature-slug>/plan/dependency-graph.md"
+              - ".github/local/directories.md"
+            created_artifacts:
+              - "plans/<feature-slug>/review/architecture-report.md"
+            pass_criteria:
+              - "`architecture-checker` returns pass."
+            fail_criteria:
+              - "Agent returns any non-pass signal."
+            on_pass: {}
+            on_fail:
+              action: "record-fail-and-continue-group"
+          - step_id: "review-behavior-check"
+            step_type: "single_pass"
+            model: "runner-default"
+            thinking_depth: "runner-default"
+            worker_agent: "review-behavior-checker"
+            expected_inputs:
+              - "Project-defined implementation artifacts"
+              - "Project-defined test artifacts"
+              - "plans/<feature-slug>/design/behaviors.md"
+              - "plans/<feature-slug>/plan/behavior-plan.md"
+              - ".github/local/language-companions.md"
+            created_artifacts:
+              - "plans/<feature-slug>/review/behavior-report.md"
+            pass_criteria:
+              - "`behavior-checker` returns pass."
+            fail_criteria:
+              - "Agent returns any non-pass signal."
+            on_pass: {}
+            on_fail:
+              action: "record-fail-and-continue-group"
+          - step_id: "review-completeness-check"
+            step_type: "single_pass"
+            model: "runner-default"
+            thinking_depth: "high"
+            worker_agent: "review-completeness-checker"
+            expected_inputs:
+              - "Project-defined implementation artifacts"
+              - "plans/<feature-slug>/plan/implementation-plan.md"
+              - "plans/<feature-slug>/design/behaviors.md"
+            created_artifacts:
+              - "plans/<feature-slug>/review/completeness-report.md"
+            pass_criteria:
+              - "`completeness-checker` returns pass."
+            fail_criteria:
+              - "Agent returns any non-pass signal."
+            on_pass: {}
+            on_fail:
+              action: "record-fail-and-continue-group"
+          - step_id: "review-activation-check"
+            step_type: "single_pass"
+            model: "runner-default"
+            thinking_depth: "low"
+            worker_agent: "review-activation-checker"
+            expected_inputs:
+              - "Project-defined implementation artifacts"
+              - "plans/<feature-slug>/design/behaviors.md"
+              - "plans/<feature-slug>/plan/behavior-plan.md"
+              - "plans/<feature-slug>/plan/implementation-plan.md"
+              - ".github/local/language-companions.md"
+            created_artifacts:
+              - "plans/<feature-slug>/review/activation-report.md"
+            pass_criteria:
+              - "`activation-checker` returns pass."
+            fail_criteria:
+              - "Agent returns any non-pass signal."
+            on_pass: {}
+            on_fail:
+              action: "record-fail-and-continue-group"
+          - step_id: "review-consistency-check"
+            step_type: "single_pass"
+            model: "claude-haiku-4.5"
+            thinking_depth: "low"
+            worker_agent: "review-consistency-checker"
+            expected_inputs:
+              - "Project-defined implementation artifacts"
+              - "plans/<feature-slug>/design/requirements.md"
+              - "plans/<feature-slug>/design/features.md"
+              - "plans/<feature-slug>/plan/implementation-plan.md"
+            created_artifacts:
+              - "plans/<feature-slug>/review/consistency-report.md"
+            pass_criteria:
+              - "`consistency-checker` returns pass."
+            fail_criteria:
+              - "Agent returns any non-pass signal."
+            on_pass: {}
+            on_fail:
+              action: "record-fail-and-continue-group"
+          - step_id: "review-function-sig-check"
+            step_type: "single_pass"
+            model: "claude-haiku-4.5"
+            thinking_depth: "low"
+            worker_agent: "review-function-sig-checker"
+            expected_inputs:
+              - "Project-defined implementation artifacts"
+              - "plans/<feature-slug>/plan/function-sig-plan.md"
+            created_artifacts:
+              - "plans/<feature-slug>/review/function-sig-report.md"
+            pass_criteria:
+              - "`function-sig-checker` returns pass."
+            fail_criteria:
+              - "Agent returns any non-pass signal."
+            on_pass: {}
+            on_fail:
+              action: "record-fail-and-continue-group"
+          - step_id: "review-performance-check"
+            step_type: "single_pass"
+            model: "claude-haiku-4.5"
+            thinking_depth: "low"
+            worker_agent: "review-performance-checker"
+            expected_inputs:
+              - "Project-defined implementation artifacts"
+              - "plans/<feature-slug>/plan/behavior-plan.md"
+              - ".github/local/language-companions.md"
+            created_artifacts:
+              - "plans/<feature-slug>/review/performance-report.md"
+            pass_criteria:
+              - "`performance-checker` returns pass."
+            fail_criteria:
+              - "Agent returns any non-pass signal."
+            on_pass: {}
+            on_fail:
+              action: "record-fail-and-continue-group"
+          - step_id: "review-security-check"
+            step_type: "single_pass"
+            model: "runner-default"
+            thinking_depth: "runner-default"
+            worker_agent: "review-security-checker"
+            expected_inputs:
+              - "Project-defined implementation artifacts"
+              - "plans/<feature-slug>/design/behaviors.md"
+              - ".github/local/language-companions.md"
+            created_artifacts:
+              - "plans/<feature-slug>/review/security-report.md"
+            pass_criteria:
+              - "`security-checker` returns pass."
+            fail_criteria:
+              - "Agent returns any non-pass signal."
+            on_pass: {}
+            on_fail:
+              action: "record-fail-and-continue-group"
+          - step_id: "review-type-check"
+            step_type: "single_pass"
+            model: "runner-default"
+            thinking_depth: "runner-default"
+            worker_agent: "review-type-checker"
+            expected_inputs:
+              - "Project-defined implementation artifacts"
+              - "plans/<feature-slug>/plan/domain-spec.md"
+              - "plans/<feature-slug>/plan/function-sig-plan.md"
+              - ".github/local/language-companions.md"
+            created_artifacts:
+              - "plans/<feature-slug>/review/type-report.md"
+            pass_criteria:
+              - "`type-checker` returns pass."
+            fail_criteria:
+              - "Agent returns any non-pass signal."
+            on_pass: {}
+            on_fail:
+              action: "record-fail-and-continue-group"
+          - step_id: "review-code-stub-detector-check"
+            step_type: "single_pass"
+            model: "claude-haiku-4.5"
+            thinking_depth: "low"
+            worker_agent: "external-code-stub-detector"
+            expected_inputs:
+              - "Project-defined implementation artifacts"
+              - ".github/local/language-companions.md"
+            created_artifacts:
+              - "plans/<feature-slug>/review/code-stub-detector-report.md"
+            pass_criteria:
+              - "`code-stub-detector` returns pass."
+            fail_criteria:
+              - "Agent returns any non-pass signal."
+            on_pass: {}
+            on_fail:
+              action: "record-fail-and-continue-group"
+        pass_criteria:
+          - "All review checker members finished."
+        fail_criteria:
+          - "A required checker member did not produce any terminal signal."
+        on_pass:
+          next_step: "review-consolidation"
+        on_fail:
+          action: "continue-to-next-step"
+          next_step: "review-consolidation"
+      - step_id: "review-consolidation"
+        step_type: "single_pass"
+        model: "claude-haiku-4.5"
+        thinking_depth: "low"
+        worker_agent: "review-consolidator"
+        expected_inputs:
+          - "Normalized pass/fail results from all review checker members"
+          - "plans/<feature-slug>/review/architecture-report.md"
+          - "plans/<feature-slug>/review/behavior-report.md"
+          - "plans/<feature-slug>/review/completeness-report.md"
+          - "plans/<feature-slug>/review/activation-report.md"
+          - "plans/<feature-slug>/review/consistency-report.md"
+          - "plans/<feature-slug>/review/function-sig-report.md"
+          - "plans/<feature-slug>/review/performance-report.md"
+          - "plans/<feature-slug>/review/security-report.md"
+          - "plans/<feature-slug>/review/type-report.md"
+          - "plans/<feature-slug>/review/code-stub-detector-report.md"
+        created_artifacts:
+          - "plans/<feature-slug>/review/consolidated-review.md"
+        pass_criteria:
+          - "`review-consolidator` returns pass."
+          - "`plans/<feature-slug>/review/consolidated-review.md` exists."
+        fail_criteria:
+          - "Agent returns any non-pass signal."
+          - "A required checker result or report artifact is missing."
+          - "Consolidated review report is missing."
+        on_pass:
+          next_step: "review-checkpoint-changelog"
+        on_needs_revision:
+          action: "remediate-and-retry"
+          quick_patch_agent: "utility-quick-patch-code"
+        on_fail:
+          action: "quick-patch-and-retry"
+          quick_patch_agent: "utility-quick-patch-code"
+      - step_id: "review-checkpoint-changelog"
+        step_type: "single_pass"
+        model: "claude-haiku-4.5"
+        thinking_depth: "low"
+        worker_agent: "global-writer-changelog"
+        expected_inputs:
+          - "Passed Review stage artifacts"
+          - "plans/<feature-slug>/review/architecture-report.md"
+          - "plans/<feature-slug>/review/behavior-report.md"
+          - "plans/<feature-slug>/review/completeness-report.md"
+          - "plans/<feature-slug>/review/activation-report.md"
+          - "plans/<feature-slug>/review/consistency-report.md"
+          - "plans/<feature-slug>/review/function-sig-report.md"
+          - "plans/<feature-slug>/review/performance-report.md"
+          - "plans/<feature-slug>/review/security-report.md"
+          - "plans/<feature-slug>/review/type-report.md"
+          - "plans/<feature-slug>/review/code-stub-detector-report.md"
+          - "plans/<feature-slug>/review/consolidated-review.md"
+          - "changelog_path_pattern"
+        created_artifacts:
+          - "changelogs/MM-DD-YYYY-HHMM-<feature-slug>-review-checkpoint.md"
+        pass_criteria:
+          - "`global-writer-changelog` returns pass."
+          - "A changelog file matching the declared pattern exists for the review checkpoint."
+        fail_criteria:
+          - "Agent returns any non-pass signal."
+          - "Checkpoint changelog file is missing."
+        on_pass:
+          next_step: "review-checkpoint-commit"
+        on_fail:
+          action: "halt"
+      - step_id: "review-checkpoint-commit"
+        step_type: "single_pass"
+        model: "claude-haiku-4.5"
+        thinking_depth: "low"
+        worker_agent: "global-git-operator"
+        expected_inputs:
+          - "Review stage artifacts"
+          - "Review checkpoint changelog file"
+          - "Commit summary `checkpoint: review stage complete - pipeline done`"
+        created_artifacts:
+          - "Checkpoint commit for the passed Review stage"
+        pass_criteria:
+          - "`global-git-operator` returns pass."
+          - "Checkpoint commit for Review stage is created after the changelog step."
+        fail_criteria:
+          - "Agent returns any non-pass signal."
+          - "Commit was attempted before the changelog step passed."
+        on_pass:
+          next_step: "RUN_COMPLETE"
+        on_fail:
+          action: "halt"
+
+final_completion:
+  terminal_step: "review-checkpoint-commit"
+  success_state: "completed"
+  required_conditions:
+    - "Every stage checkpoint commit passed in declared order: Design -> Plan -> Implement -> Review."
+    - "Every required stage artifact exists in its declared stable path or declared project-defined implementation path contract."
+    - "The final queue transition reached `RUN_COMPLETE`."
+    - "No step remains in pending or failed state."

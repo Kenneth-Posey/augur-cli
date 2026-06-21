@@ -1,0 +1,50 @@
+[package]
+name = "augur-domain"
+version = "3.0.0"
+edition = "2024"
+autotests = false
+
+[lib]
+doctest = false
+
+[dependencies]
+anyhow = "1"
+async-trait = "0.1"
+bon = "3.9.1"
+chrono = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tracing = { version = "0.1", features = ["release_max_level_info"] }
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+tempfile = "3"
+proptest = "1"
+
+[[test]]
+name = "config_tests"
+path = "tests/config/mod.tests.rs"
+
+[[test]]
+name = "domain_tests"
+path = "tests/domain/mod.tests.rs"
+
+[[test]]
+name = "persistence_tests"
+path = "tests/persistence/mod.tests.rs"
+
+[[test]]
+name = "tools_tests"
+path = "tests/tools/mod.tests.rs"
+
+[[test]]
+name = "plan_store_tests"
+path = "tests/plan_store/mod.tests.rs"
+
+[[test]]
+name = "domain_integration_tests"
+path = "tests/domain_tests.tests.rs"
+

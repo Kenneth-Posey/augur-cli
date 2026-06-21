@@ -1,0 +1,38 @@
+[package]
+name = "augur-graph-builder"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+cargo_metadata = "0.18"
+syn = { version = "2", features = ["full", "visit"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+walkdir = "2"
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+
+[[bin]]
+name = "augur-graph-builder"
+path = "src/main.rs"
+
+[lib]
+name = "augur_graph_builder"
+path = "src/lib.rs"
+
+[[test]]
+name = "doc_extractor_tests"
+path = "tests/doc_extractor.tests.rs"
+
+[[test]]
+name = "workspace_graph_tests"
+path = "tests/workspace_graph.tests.rs"
+
+[[test]]
+name = "module_walker_tests"
+path = "tests/module_walker.tests.rs"
+
+[[test]]
+name = "symbol_extractor_tests"
+path = "tests/symbol_extractor.tests.rs"

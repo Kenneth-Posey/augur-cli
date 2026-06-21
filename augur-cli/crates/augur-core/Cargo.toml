@@ -1,0 +1,504 @@
+[package]
+name = "augur-core"
+version = "4.0.0"
+edition = "2024"
+
+[lib]
+doctest = false
+
+[dependencies]
+augur-domain = { path = "../augur-domain" }
+tempfile = "3"
+tokio = { version = "1", features = ["full"] }
+ratatui = "0.30"
+crossterm = { version = "0.29", features = ["event-stream"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+tokio-stream = { version = "0.1", features = ["io-util"] }
+futures-util = "0.3"
+tracing = { version = "0.1", features = ["release_max_level_info"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+anyhow = "1"
+thiserror = "2"
+clap = { version = "4", features = ["derive"] }
+unicode-width = "0.2"
+uuid = { version = "1", features = ["v4"] }
+async-trait = "0.1"
+notify = "6"
+chrono = "0.4"
+arboard = "3.6.1"
+bon = "3.9.1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+cargo_metadata = "0.18"
+syn = { version = "2", features = ["full"] }
+quote = "1"
+shell-words = "1"
+libc = "0.2"
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockall = "0.13"
+mockito = "1"
+insta = { version = "1.31", features = ["json"] }
+proptest = "1"
+trybuild = "1"
+
+# BEGIN generated integration tests (source-mirrored)
+#
+# Slice A migration evidence:
+# - origin/main `tests/actors/agent/**` -> `crates/augur-core/tests/actors/agent/**` (migrated)
+# - origin/main `tests/actors/ask/**` -> `crates/augur-core/tests/actors/ask/**` (migrated)
+# - origin/main `tests/actors/file_read/**` -> `crates/augur-core/tests/actors/file_read/**` (migrated; `mod.tests.rs` retained)
+# - origin/main `tests/actors/logger/**` -> `crates/augur-core/tests/actors/logger/**` (migrated)
+# - origin/main `tests/actors/session/**` -> `crates/augur-core/tests/actors/session/**` (migrated)
+
+[[test]]
+name = "nkc_actors__active_model__active_model_actor_ops_tests"
+path = "tests/actors/active_model/active_model_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__active_model__active_model_ops_tests"
+path = "tests/actors/active_model/active_model_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__active_model__handle_tests"
+path = "tests/actors/active_model/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__agent__agent_actor_tests"
+path = "tests/actors/agent/agent_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__agent__agent_actor_ops_tests"
+path = "tests/actors/agent/agent_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__agent__agent_ops_tests"
+path = "tests/actors/agent/agent_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__agent__handle_tests"
+path = "tests/actors/agent/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__agent__history_tests"
+path = "tests/actors/agent/history.tests.rs"
+
+[[test]]
+name = "nkc_actors__agent__persistence_ops_tests"
+path = "tests/actors/agent/persistence_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__ask__ask_actor_tests"
+path = "tests/actors/ask/ask_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__ask__ask_actor_ops_tests"
+path = "tests/actors/ask/ask_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__ask__handle_tests"
+path = "tests/actors/ask/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__cache__cache_actor_tests"
+path = "tests/actors/cache/cache_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__cache__cache_actor_ops_tests"
+path = "tests/actors/cache/cache_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__cache__cache_ops_tests"
+path = "tests/actors/cache/cache_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__cache__deps_tests"
+path = "tests/actors/cache/deps.tests.rs"
+
+[[test]]
+name = "nkc_actors__cache__handle_tests"
+path = "tests/actors/cache/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__catalog_manager__catalog_manager_actor_tests"
+path = "tests/actors/catalog_manager/catalog_manager_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__catalog_manager__handle_tests"
+path = "tests/actors/catalog_manager/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__command__command_actor_ops_tests"
+path = "tests/actors/command/command_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__command__handle_tests"
+path = "tests/actors/command/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__deterministic_orchestrator__deterministic_orchestrator_actor__runtime_tests"
+path = "tests/actors/deterministic_orchestrator/deterministic_orchestrator_actor/runtime.tests.rs"
+
+[[test]]
+name = "nkc_actors__file_read__file_read_actor_tests"
+path = "tests/actors/file_read/file_read_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__file_read__file_read_actor_ops_tests"
+path = "tests/actors/file_read/file_read_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__file_read__file_read_ops_tests"
+path = "tests/actors/file_read/file_read_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__file_read__handle_tests"
+path = "tests/actors/file_read/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__file_read__mod_tests"
+path = "tests/actors/file_read/mod.tests.rs"
+
+[[test]]
+name = "nkc_actors__file_scanner__file_scanner_actor_ops_tests"
+path = "tests/actors/file_scanner/file_scanner_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__file_scanner__handle_tests"
+path = "tests/actors/file_scanner/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__guided_plan__guided_plan_actor_tests"
+path = "tests/actors/guided_plan/guided_plan_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__guided_plan__loader_tests"
+path = "tests/actors/guided_plan/loader.tests.rs"
+
+[[test]]
+name = "nkc_actors__history_adapter__history_adapter_actor_tests"
+path = "tests/actors/history_adapter/history_adapter_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__history_adapter__history_adapter_actor_ops_tests"
+path = "tests/actors/history_adapter/history_adapter_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__history_adapter__history_adapter_ops_tests"
+path = "tests/actors/history_adapter/history_adapter_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__llm_feed_consumer__llm_feed_consumer_actor_tests"
+path = "tests/actors/llm_feed_consumer/llm_feed_consumer_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__llm_feed_consumer__llm_feed_consumer_actor_ops_tests"
+path = "tests/actors/llm_feed_consumer/llm_feed_consumer_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__llm_feed_consumer__llm_feed_consumer_ops_tests"
+path = "tests/actors/llm_feed_consumer/llm_feed_consumer_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__logger__logger_actor_tests"
+path = "tests/actors/logger/logger_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__logger__handle_tests"
+path = "tests/actors/logger/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__logger__logger_actor_ops_tests"
+path = "tests/actors/logger/logger_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__logger__logger_ops_tests"
+path = "tests/actors/logger/logger_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__session__session_actor_tests"
+path = "tests/actors/session/session_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__session__session_actor_ops_tests"
+path = "tests/actors/session/session_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__supervisor__phase_gate_tests"
+path = "tests/actors/supervisor/phase_gate.tests.rs"
+
+[[test]]
+name = "nkc_actors__token_tracker__handle_tests"
+path = "tests/actors/token_tracker/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__token_tracker__token_tracker_actor_tests"
+path = "tests/actors/token_tracker/token_tracker_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__token_tracker__token_tracker_actor_ops_tests"
+path = "tests/actors/token_tracker/token_tracker_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__token_tracker__token_tracker_ops_tests"
+path = "tests/actors/token_tracker/token_tracker_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__tool__tool_actor_tests"
+path = "tests/actors/tool/tool_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__tool__tool_actor_ops_tests"
+path = "tests/actors/tool/tool_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__tool__tool_ops_tests"
+path = "tests/actors/tool/tool_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__user_message_consumer__user_message_consumer_actor_ops_tests"
+path = "tests/actors/user_message_consumer/user_message_consumer_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_compile_fail__hybrid_intent_action_routing_tests"
+path = "tests/compile_fail/hybrid_intent_action_routing.tests.rs"
+
+[[test]]
+name = "nkc_config__endpoint_catalog_discovery_tests"
+path = "tests/config/endpoint_catalog_discovery.tests.rs"
+
+[[test]]
+name = "nkc_config__loader_tests"
+path = "tests/config/loader.tests.rs"
+
+[[test]]
+name = "nkc_config__program_settings_tests"
+path = "tests/config/program_settings.tests.rs"
+
+[[test]]
+name = "nkc_config__types_tests"
+path = "tests/config/types.tests.rs"
+
+[[test]]
+name = "nkc_config__user_settings_tests"
+path = "tests/config/user_settings.tests.rs"
+
+[[test]]
+name = "nkc_domain__agent_spec_parser_tests"
+path = "tests/domain/agent_spec_parser.tests.rs"
+
+[[test]]
+name = "nkc_domain__background_events_priority_tests"
+path = "tests/domain/background_events_priority.tests.rs"
+
+[[test]]
+name = "nkc_domain__background_events_tests"
+path = "tests/domain/background_events.tests.rs"
+
+[[test]]
+name = "nkc_domain__channels_tests"
+path = "tests/domain/channels.tests.rs"
+
+[[test]]
+name = "nkc_domain__context_management_algorithm_integration_tests"
+path = "tests/domain/context_management_algorithm_integration.tests.rs"
+
+[[test]]
+name = "nkc_domain__context_management_tests"
+path = "tests/domain/context_management.tests.rs"
+
+[[test]]
+name = "nkc_domain__dag_validation_tests"
+path = "tests/domain/dag_validation.tests.rs"
+
+[[test]]
+name = "nkc_domain__effort_level_tests"
+path = "tests/domain/effort_level.tests.rs"
+
+[[test]]
+name = "nkc_domain__feeds_tests"
+path = "tests/domain/feeds.tests.rs"
+
+[[test]]
+name = "nkc_domain__newtypes_tests"
+path = "tests/domain/newtypes.tests.rs"
+
+[[test]]
+name = "nkc_domain__events__contracts_tests"
+path = "tests/domain/events/contracts.tests.rs"
+
+[[test]]
+name = "nkc_domain__events__inventory_routing_tests"
+path = "tests/domain/events/inventory_routing.tests.rs"
+
+[[test]]
+name = "nkc_domain__events__inventory_tests"
+path = "tests/domain/events/inventory.tests.rs"
+
+[[test]]
+name = "nkc_domain__events__protocols_tests"
+path = "tests/domain/events/protocols.tests.rs"
+
+[[test]]
+name = "nkc_domain__plan_state_tests"
+path = "tests/domain/plan_state.tests.rs"
+
+[[test]]
+name = "nkc_domain__plan_tree_tests"
+path = "tests/domain/plan_tree.tests.rs"
+
+[[test]]
+name = "nkc_domain__scheduler_tests"
+path = "tests/domain/scheduler.tests.rs"
+
+[[test]]
+name = "nkc_domain__string_newtypes_tests"
+path = "tests/domain/string_newtypes.tests.rs"
+
+[[test]]
+name = "nkc_domain__stream_state_tests"
+path = "tests/domain/stream_state.tests.rs"
+
+[[test]]
+name = "nkc_domain__support__rustdoc_tests"
+path = "tests/domain/support/rustdoc.tests.rs"
+
+[[test]]
+name = "nkc_domain__thinking_mode_tests"
+path = "tests/domain/thinking_mode.tests.rs"
+
+[[test]]
+name = "nkc_domain__tool_types_tests"
+path = "tests/domain/tool_types.tests.rs"
+
+[[test]]
+name = "nkc_domain__types_tests"
+path = "tests/domain/types.tests.rs"
+
+[[test]]
+name = "nkc_macros_tests"
+path = "tests/macros.tests.rs"
+
+[[test]]
+name = "nkc_persistence__handle_tests"
+path = "tests/persistence/handle.tests.rs"
+
+[[test]]
+name = "nkc_persistence__plan_persistence_tests"
+path = "tests/persistence/plan_persistence.tests.rs"
+
+[[test]]
+name = "nkc_persistence__store_tests"
+path = "tests/persistence/store.tests.rs"
+
+[[test]]
+name = "nkc_persistence__types_tests"
+path = "tests/persistence/types.tests.rs"
+
+[[test]]
+name = "nkc_plan_store__mod_tests"
+path = "tests/plan_store/mod.tests.rs"
+
+[[test]]
+name = "nkc_token_history_tests"
+path = "tests/token_history.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__file_append_tests"
+path = "tests/tools/builtin/file_append.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__file_slice_tests"
+path = "tests/tools/builtin/file_slice.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__file_insert_tests"
+path = "tests/tools/builtin/file_insert.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__file_replace_tests"
+path = "tests/tools/builtin/file_replace.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__file_remove_tests"
+path = "tests/tools/builtin/file_remove.tests.rs"
+[[test]]
+name = "nkc_tools__builtin__file_line_count_tests"
+path = "tests/tools/builtin/file_line_count.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__file_read_tests"
+path = "tests/tools/builtin/file_read.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__file_read_range_tests"
+path = "tests/tools/builtin/file_read_range.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__file_create_tests"
+path = "tests/tools/builtin/file_create.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__list_directory_tests"
+path = "tests/tools/builtin/list_directory.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__query_user_tests"
+path = "tests/tools/builtin/query_user.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__refresh_cache_file_tests"
+path = "tests/tools/builtin/refresh_cache_file.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__request_rework_tests"
+path = "tests/tools/builtin/request_rework.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__scoped_shell_exec_tests"
+path = "tests/tools/builtin/scoped_shell_exec.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__set_working_file_tests"
+path = "tests/tools/builtin/set_working_file.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__shell_exec_tests"
+path = "tests/tools/builtin/shell_exec.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__size_check_tests"
+path = "tests/tools/builtin/size_check.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__spawn_agent_tests"
+path = "tests/tools/builtin/spawn_agent.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__sql_query_tests"
+path = "tests/tools/builtin/sql_query.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__task_await_tests"
+path = "tests/tools/builtin/task_await.tests.rs"
+
+[[test]]
+name = "nkc_tools__builtin__task_status_tests"
+path = "tests/tools/builtin/task_status.tests.rs"
+
+[[test]]
+name = "nkc_tools__handler_tests"
+path = "tests/tools/handler.tests.rs"
+
+[[test]]
+name = "nkc_tools__definition_tests"
+path = "tests/tools/definition.tests.rs"
+
+[[test]]
+name = "nkc_tools__registry_tests"
+path = "tests/tools/registry.tests.rs"
+
+# END generated integration tests (source-mirrored)

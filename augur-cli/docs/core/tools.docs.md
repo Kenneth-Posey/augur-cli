@@ -1,0 +1,11 @@
+# Tools Module
+
+The `tools` module provides the tool abstraction layer: definitions, handlers, a registry, and over 20 built-in tool implementations that the agent actor dispatches during turn execution. It imports tool-definition types from `augur_domain::tools::definition` and re-exports them for convenient access by other `augur-core` modules.
+
+## Submodules
+
+**`builtin`** contains all bundled tool implementations, one file per tool. These span file operations (`file_create`, `file_read`, `file_read_range`, `file_append`, `file_insert`, `file_replace`, `file_slice`, `file_remove`), shell execution (`shell_exec`, `scoped_shell_exec`), code intelligence (`lsp_query`), directory navigation (`list_directory`), file analysis (`size_check`, `file_line_count`), user interaction (`query_user`, `request_rework`), agent dispatch (`spawn_agent`, `task_await`, `task_status`), session management (`approve_phase`, `set_working_file`, `refresh_cache_file`), and data query (`sql_query`). **`handler`** defines the dispatch handler that routes an incoming tool call to its registered implementation. **`execution`** provides shared normalization helpers that tool implementations use for common tasks. **`registry`** implements tool registration, lookup, and lifecycle management for all tools in the process; the composition root registers built-ins (including `size_check`) here at startup. **`ports`** contains lower-tier provider contracts used internally by tool implementations.
+
+## Architectural Role
+
+The tool system is the agent actor's primary interface to the outside world. Every time the agent decides to call a tool--to read a file, run a shell command, ask the user a question, or dispatch a background agent--the call flows through the registry to the appropriate handler. This design keeps tool implementation isolated from agent logic: adding a new tool means writing a handler in `builtin/` and registering it, without modifying the agent's turn loop. The module-level comment notes that there is no direct `.tests.rs` mirror because behavior is validated through child-module and integration tests.

@@ -1,0 +1,85 @@
+/* ===================================================================
+ * base.css — Reset, base layout, header, breadcrumb
+ * =================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== Header ===== */
+#header {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    background: #16213e;
+    border-bottom: 1px solid #0f3460;
+    flex-shrink: 0;
+    min-height: 52px;
+}
+#header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #e94560;
+    margin-right: 24px;
+    white-space: nowrap;
+}
+#back-btn {
+    background: #0f3460;
+    border: 1px solid #1a4a8a;
+    color: #e0e0e0;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 16px;
+    transition: background 0.15s;
+}
+#back-btn:hover { background: #1a4a8a; }
+#back-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* ===== Breadcrumb ===== */
+#breadcrumb {
+    display: flex;
+    align-items: center;
+    padding: 8px 20px;
+    background: #16213e;
+    border-bottom: 1px solid #0f3460;
+    font-size: 13px;
+    flex-shrink: 0;
+    min-height: 36px;
+    gap: 4px;
+}
+.crumb-segment {
+    color: #8899aa;
+    cursor: pointer;
+    transition: color 0.15s;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+.crumb-segment:hover { color: #e94560; background: rgba(233,69,96,0.08); }
+.crumb-segment.active { color: #e0e0e0; cursor: default; }
+.crumb-segment.active:hover { background: transparent; color: #e0e0e0; }
+.crumb-sep { color: #555; margin: 0 2px; user-select: none; }
+
+/* ===== Main Layout: Canvas + Sidebar ===== */
+#main {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+#cy-container {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+#cy {
+    width: 100%;
+    height: 100%;
+}

@@ -1,0 +1,31 @@
+provider: copilot
+
+# ── Executor configuration ────────────────────────────────────────────────────
+# Settings for the optional GitHub Copilot CLI executor.
+# The executor feature must be enabled at compile time with
+# --features copilot-executor for any executor setting to take effect.
+executor:
+  # Path to the gh CLI binary. Null uses PATH lookup.
+  cli_path: ~
+  # Model passed to the executor session (e.g. "gpt-4o"). Null uses session default.
+  model: ~
+  # GitHub auth token. Null falls back to GITHUB_TOKEN environment variable.
+  auth_token: ~
+  # Use ambient GitHub CLI credentials (gh auth login) instead of auth_token.
+  use_logged_in_user: ~
+
+# ── Copilot Chat configuration ───────────────────────────────────────────────
+# Settings for the GitHub Copilot chat actor.
+# GitHub Copilot is the default chat backend when enabled: true. Requires a
+# running and authenticated gh CLI. Run `gh auth login` to authenticate.
+copilot_chat:
+  # Set to true to use GitHub Copilot as the primary LLM backend.
+  enabled: true
+  # Path to the gh CLI binary. Null uses COPILOT_CLI_PATH env or PATH lookup.
+  cli_path: ~
+  # Model to request from Copilot (e.g. "gpt-4o", "claude-sonnet-4-5"). Null uses SDK default.
+  model: ~
+  # GitHub personal access token. Null uses the gh CLI's existing login session.
+  auth_token: ~
+  # true or null: use the currently logged-in gh user. false: no auto-login.
+  use_logged_in_user: ~

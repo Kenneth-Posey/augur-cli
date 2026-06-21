@@ -1,0 +1,5 @@
+# Union merge driver for Cargo.toml files to avoid version-bump conflicts.
+# When both sides bump the version field, git takes both edits (they're
+# identical in content so no conflict). Different dependency additions
+# on each side are also merged automatically.
+crates/*/Cargo.toml merge=union

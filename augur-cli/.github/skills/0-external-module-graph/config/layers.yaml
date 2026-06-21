@@ -1,0 +1,105 @@
+# Layer policy authority for module-graph architecture reviews.
+#
+# This checked-in YAML file is the default and authoritative layer policy for
+# `tools/0-external-module-graph/`.
+#
+# Constant Relationship Map
+# - `layers[].id`, `layers[].name`, and `layers[].color` feed
+#   `LayerConfig::layers` and are consumed by the text, DOT, and JSON formatters.
+# - `modules[].name` and `modules[].layer` feed `LayerConfig::modules` and are
+#   consumed by `find_violations` and `find_violations_with_config`.
+# - `forbidden_edges[].from`, `forbidden_edges[].to`, and
+#   `forbidden_edges[].reason` feed `LayerConfig::forbidden_edges` and are
+#   consumed by `find_violations_with_config`.
+#
+# `forbidden_edges` records explicit edge prohibitions that supplement the
+# layer-ordering rule.  An entry fires regardless of whether either module
+# has a known layer assignment.
+
+layers:
+  - id: 0
+    name: "foundation"
+    color: "#d5f5d5"
+  - id: 1
+    name: "config/utilities"
+    color: "#e0f0d0"
+  - id: 2
+    name: "features"
+    color: "#e8eecc"
+  - id: 3
+    name: "ingest"
+    color: "#f0eacc"
+  - id: 4
+    name: "signals/regime"
+    color: "#f5e0c0"
+  - id: 5
+    name: "evolution/gates/ranking"
+    color: "#f5d0b0"
+  - id: 6
+    name: "state"
+    color: "#f5c0a0"
+  - id: 7
+    name: "execution"
+    color: "#f5b090"
+  - id: 8
+    name: "actors"
+    color: "#f09080"
+  - id: 9
+    name: "orchestrator"
+    color: "#ec7070"
+  - id: 10
+    name: "shell/wiring"
+    color: "#e05050"
+
+modules:
+  # L0 - pure foundation: no intra-crate deps permitted
+  - name: "domain"
+    layer: 0
+  - name: "macros"
+    layer: 0
+  # L1 - configuration and cross-cutting utilities
+  - name: "config"
+    layer: 1
+  - name: "ops"
+    layer: 1
+  # L2 - technical feature computation
+  - name: "features"
+    layer: 2
+  # L3 - external data adapters and normalization
+  - name: "ingest"
+    layer: 3
+  # L4 - signal computation and regime classification
+  - name: "signals"
+    layer: 4
+  - name: "regime"
+    layer: 4
+  # L5 - evolution, decision support, gates, ranking
+  - name: "evolution"
+    layer: 5
+  - name: "gates"
+    layer: 5
+  - name: "ranking"
+    layer: 5
+  - name: "decision"
+    layer: 5
+  # L6 - shared non-actor state engines
+  - name: "state"
+    layer: 6
+  # L7 - order execution adapters
+  - name: "execution"
+    layer: 7
+  # L8 - async actor coordination
+  - name: "actors"
+    layer: 8
+  # L9 - hot-path orchestration pipeline
+  - name: "orchestrator"
+    layer: 9
+  # L10 - application shell, wiring, entry points
+  - name: "wiring"
+    layer: 10
+  - name: "tui"
+    layer: 10
+  - name: "cli"
+    layer: 10
+
+forbidden_edges: []

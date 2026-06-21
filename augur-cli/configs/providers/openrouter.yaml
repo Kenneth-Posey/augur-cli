@@ -1,0 +1,67 @@
+provider: openrouter
+openrouter:
+  background_instruction_files:
+    - .github/copilot-instructions.md
+    - .github/AGENTS.md
+    - .github/routing.md
+    - .github/local/identity.md
+    - .github/local/directories.md
+    - .github/local/rules.md
+    - .github/local/language-companions.md
+    - .github/instructions/critical-rules.instructions.md
+    - .github/instructions/rust.instructions.md
+  instruction_files:
+    - .github/copilot-instructions.md
+    - .github/AGENTS.md
+    - .github/routing.md
+    - .github/local/identity.md
+    - .github/local/directories.md
+    - .github/local/rules.md
+    - .github/local/language-companions.md
+    - .github/instructions/critical-rules.instructions.md
+    - .github/instructions/rust.instructions.md
+  cache:
+    enabled: true
+models:
+  - id: deepseek/deepseek-v3.2
+    display_name: 'DeepSeek: DeepSeek V3.2'
+    cost_input_per_mtok: 0.23
+    cost_output_per_mtok: 0.36
+    supports_tools: true
+    auto_compact_threshold: 100000
+    compaction_target: 40000
+    max_context_length: 131000
+    max_tool_iterations: 250
+    tool_compaction_ratio: 0.9
+  - id: deepseek/deepseek-v3.2-exp
+    display_name: 'DeepSeek: DeepSeek V3.2 Exp'
+    cost_input_per_mtok: 0.27
+    cost_output_per_mtok: 0.41
+    supports_tools: true
+    auto_compact_threshold: 100000
+    compaction_target: 40000
+    max_context_length: 164000
+    max_tool_iterations: 250
+    tool_compaction_ratio: 0.9
+  - id: deepseek/deepseek-v4-flash
+    display_name: 'DeepSeek: DeepSeek V4 Flash'
+    cost_input_per_mtok: 0.10
+    cost_output_per_mtok: 0.20
+    supports_tools: true
+    auto_compact_threshold: 300000
+    compaction_target: 100000
+    max_context_length: 1000000
+    max_tool_iterations: 250
+    tool_compaction_ratio: 0.9
+  - id: deepseek/deepseek-v4-pro
+    display_name: 'DeepSeek: DeepSeek V4 Pro'
+    cost_input_per_mtok: 0.44
+    cost_output_per_mtok: 0.88
+    supports_tools: true
+    auto_compact_threshold: 300000
+    compaction_target: 100000
+    max_context_length: 1000000
+    max_tool_iterations: 250
+    tool_compaction_ratio: 0.9
+
+

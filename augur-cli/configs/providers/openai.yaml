@@ -1,0 +1,9 @@
+provider: openai
+models:
+  - id: gpt-4o
+    display_name: gpt-4o
+    cost_input_per_mtok: 0.0
+    cost_output_per_mtok: 0.0
+    supports_tools: true
+    compaction_target: 0
+    auto_compact_threshold: 0

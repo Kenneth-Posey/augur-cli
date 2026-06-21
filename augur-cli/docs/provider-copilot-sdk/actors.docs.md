@@ -1,0 +1,13 @@
+# actors Module
+
+The `actors` module owns two long-lived actor implementations that bridge the augur system to the GitHub Copilot SDK: the **Copilot chat actor** (`actors::copilot`) and the **Executor actor** (`actors::executor`). Both actors manage a `copilot_sdk::Client` and session lifecycle, translate SDK events into domain-level output types, and communicate with the rest of the application through typed command channels and broadcast output channels.
+
+## Copilot Chat Actor
+
+The chat actor is the central session manager for the primary TUI conversation. It builds an SDK client on startup, authenticates, queries available models, and waits for a signal from the TUI picker to create or resume a session. Once active, it enters a command loop that handles user messages, compaction requests, model switches, and session replacement. SDK events are mapped through an event classifier and event mapper into `AgentOutput` events that the TUI renders as a conversation feed. A `FeedRouter` component routes events to the correct output channel---main conversation or background-agent panel---based on sub-agent state tracking and tool-call parent relationships.
+
+The module also supports **background agent dispatch**: short-lived, ephemeral SDK sessions that run as parallel tasks. Each background agent builds its own client and session, sends a prompt, and streams events into a TUI agent feed panel. A `DeltaAccumulator` buffers streaming text tokens for threshold-based flushing, and tool execution events (start, progress, complete) are mapped into typed `AgentFeedOutput` variants. Background agents are self-contained: they start with a `TaskStarted` entry, stream progress, and close with `TaskCompleted` or `TaskFailed`.
+
+## Executor Actor
+
+The executor actor wraps a Copilot CLI session in an execution-oriented interface for plan execution tasks. It accepts commands to send prompts, execute shell commands via `session.shell_exec()`, switch between interactive/plan/autopilot modes, and compact session context. A custom `update_plan_step` tool is registered on the SDK session so the Copilot model can report progress on plan tree nodes during execution. SDK events are translated through a multi-phase mapping pipeline that separates assistant message events, tool lifecycle events, and session control events into the domain's `SessionEvent` enum for the agent supervisor to consume.

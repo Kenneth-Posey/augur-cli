@@ -1,0 +1,41 @@
+[package]
+name = "augur-tui"
+version = "3.0.0"
+edition = "2024"
+autotests = false
+
+[dependencies]
+augur-core = { path = "../augur-core" }
+augur-domain = { path = "../augur-domain" }
+tokio = { version = "1", features = ["full"] }
+ratatui = "0.30"
+crossterm = { version = "0.29", features = ["event-stream"] }
+tokio-stream = { version = "0.1", features = ["io-util"] }
+futures-util = "0.3"
+unicode-width = "0.2"
+arboard = "3.6.1"
+tracing = { version = "0.1", features = ["release_max_level_info"] }
+async-trait = "0.1"
+anyhow = "1"
+bon = "3.9.1"
+chrono = "0.4"
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+augur-core = { path = "../augur-core" }
+augur-domain = { path = "../augur-domain" }
+tempfile = "3"
+
+[[test]]
+name = "actors_tests"
+path = "tests/actors/mod.tests.rs"
+
+[[test]]
+name = "domain_tests"
+path = "tests/domain/mod.tests.rs"
+
+[[test]]
+name = "tui_tests"
+path = "tests/tui/mod.tests.rs"
+

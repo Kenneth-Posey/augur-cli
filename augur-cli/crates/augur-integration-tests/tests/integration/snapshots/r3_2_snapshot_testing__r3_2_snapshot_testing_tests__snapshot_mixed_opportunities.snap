@@ -1,0 +1,97 @@
+---
+source: tests/r3_2_snapshot_testing.tests.rs
+assertion_line: 231
+expression: json_str
+---
+{
+  "metadata": {
+    "id": "report-mixed",
+    "analysis_id": "analysis-004",
+    "graph_id": "graph-004",
+    "generated_at": 1714746300000
+  },
+  "config": {
+    "format": "Json",
+    "sort_by": "LinesSaved",
+    "filter": {
+      "min_confidence": null,
+      "min_lines_saved": null,
+      "opportunity_types": null,
+      "exclude_layers": null
+    },
+    "output_options": {
+      "include_statistics": true,
+      "include_recommendations": true,
+      "max_opportunities": null
+    }
+  },
+  "opportunities": [
+    {
+      "opportunity_type": {
+        "DeadCode": {
+          "target": "unused_helper"
+        }
+      },
+      "affected_nodes": [
+        "unused_helper"
+      ],
+      "rationale": "Dead code",
+      "layer": "Domain",
+      "metadata": {
+        "confidence": 0.91,
+        "estimated_lines_saved": 10
+      }
+    },
+    {
+      "opportunity_type": {
+        "ExactSignatureDuplicate": {
+          "canonical": "validate",
+          "duplicates": [
+            "validate_alt"
+          ]
+        }
+      },
+      "affected_nodes": [
+        "validate",
+        "validate_alt"
+      ],
+      "rationale": "Duplicates",
+      "layer": "Logic",
+      "metadata": {
+        "confidence": 0.85,
+        "estimated_lines_saved": 18
+      }
+    },
+    {
+      "opportunity_type": {
+        "ChainCollapse": {
+          "parent": "step1",
+          "intermediate": "step2",
+          "child": "step3",
+          "merged_name": "unified_flow"
+        }
+      },
+      "affected_nodes": [
+        "step1",
+        "step2",
+        "step3"
+      ],
+      "rationale": "Collapse",
+      "layer": "Domain",
+      "metadata": {
+        "confidence": 0.79,
+        "estimated_lines_saved": 22
+      }
+    }
+  ],
+  "statistics": {
+    "total_opportunities": 0,
+    "total_lines_saved": 0,
+    "average_confidence": 0.0,
+    "confidence_range": {
+      "max_confidence": 0.0,
+      "min_confidence": 0.0
+    }
+  },
+  "recommendations": []
+}

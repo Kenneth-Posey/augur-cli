@@ -1,0 +1,15 @@
+# Actors Module
+
+The `actors` module is the largest subsystem in `augur-core`, housing 21 actor implementations that together form a cooperative message-passing runtime. Each actor owns a single responsibility--agent turn dispatch, LLM communication, tool execution, session management, file I/O, caching, command dispatch, file scanning, guided plan execution, supervision, orchestration, history formatting, token tracking, and more--and communicates with peers via typed handles. The composition root in `augur-app` instantiates these actors, injects their dependencies, and starts them to form a running system.
+
+## Key Actors and Their Roles
+
+The dispatch and state-management group includes the **agent** actor (the central turn loop that carries out instruction-following and tool-calling), the **session** actor (session lifecycle and state persistence), the **tool** actor (tool-call dispatch and inline executor), the **LLM feed consumer** (consumes streaming LLM output and feeds it to subscribers), the **user message consumer** (ingests user messages and routes them into the agent loop), the **ask** actor (structured user-query prompts and replies), and the **active model** actor (tracks which model is currently active for the session). The **catalog manager** actor maintains the provider endpoint catalog, fetching model lists from Anthropic, OpenAI, and Ollama endpoints.
+
+The filesystem and external-access group covers the **file read** actor (sandboxed file I/O for reading source files), the **file scanner** actor (directory scanning and file discovery), the **command** actor (shell command dispatch with output capture), the **cache** actor (multi-tier caching for file snapshots and LLM responses), and the **LSP** actor (rust-analyzer queries for code navigation).
+
+The observability and plan-orchestration group provides the **logger** actor (structured runtime logging), the **token tracker** actor (token usage tracking across chat and review flows), the **history adapter** actor (converts conversation history into LLM-compatible message formats), the **deterministic orchestrator** actor (phased workflow execution with worker-gate steps, backtracking, and failure routing), the **supervisor** actor (plan-tree checkpointing, phase gating, and meta-planning), and the **guided plan** actor (structured plan-step execution and hook dispatch).
+
+## Architectural Role
+
+The actor runtime is the application's backbone: it owns all long-lived concurrent state and defines the boundaries between subsystems. Actors communicate through typed `Handle` structs that wrap `tokio::mpsc` channels, keeping each actor's internal state fully encapsulated behind its mailbox. This design makes the system testable at the actor level (each actor can be driven by sending messages through its handle) and at the integration level (fakes from `crate::helpers` substitute for real actors in unit tests). The `mod.rs` at this level re-exports all actor handles for convenient use by the composition root and by test code.
