@@ -1,6 +1,7 @@
 //! Built-in scoped_shell_exec tool: runs a shell command in the repo root,
 //! stripping secret environment variables before spawning the child process.
 
+use crate::tools::builtin::child_process;
 use crate::tools::handler::{ToolCallResult, ToolHandler};
 use augur_domain::domain::newtypes::IsPredicate;
 use augur_domain::domain::string_newtypes::{OutputText, ShellCommand, StringNewtype, ToolName};
@@ -92,7 +93,7 @@ fn json_value_kind(value: &serde_json::Value) -> &'static str {
 }
 
 fn build_child_command(repo_root: &RepoRoot, argv: &[String]) -> tokio::process::Command {
-    let mut child_cmd = tokio::process::Command::new(&argv[0]);
+    let mut child_cmd = child_process::piped_command(&argv[0]);
     child_cmd
         .args(&argv[1..])
         .current_dir(repo_root.as_ref())

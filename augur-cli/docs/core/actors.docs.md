@@ -1,6 +1,6 @@
 # Actors Module
 
-The `actors` module is the largest subsystem in `augur-core`, housing 21 actor implementations that together form a cooperative message-passing runtime. Each actor owns a single responsibility--agent turn dispatch, LLM communication, tool execution, session management, file I/O, caching, command dispatch, file scanning, guided plan execution, supervision, orchestration, history formatting, token tracking, and more--and communicates with peers via typed handles. The composition root in `augur-app` instantiates these actors, injects their dependencies, and starts them to form a running system.
+The `actors` module is the largest subsystem in `augur-core`, housing 20 actor implementations that together form a cooperative message-passing runtime. Each actor owns a single responsibility--agent turn dispatch, LLM communication, tool execution, session management, file I/O, caching, command dispatch, file scanning, guided plan execution, supervision, orchestration, history formatting, token tracking, and more--and communicates with peers via typed handles. The composition root in `augur-app` instantiates these actors, injects their dependencies, and starts them to form a running system.
 
 ## Key Actors and Their Roles
 

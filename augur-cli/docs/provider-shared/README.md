@@ -1,6 +1,8 @@
 # augur-provider-shared
 
-Provides shared utilities consumed by multiple provider crates: Anthropic body construction, generic retry logic with backoff, SSE stream parsing for server-sent events, request context types, and shared wire-protocol helpers for Ollama and OpenAI provider implementations.## Documents
+Provides shared utilities consumed by multiple provider crates: Anthropic body construction, generic retry logic with backoff, SSE stream parsing for server-sent events, request context types, and shared wire-protocol helpers for Ollama and OpenAI provider implementations.
+
+## Documents
 
 - [Crate Overview](crate-overview.docs.md) -- Architecture, major subsystems, and design decisions for the augur-provider-shared crate.
 - [anthropic](anthropic.docs.md) -- Anthropic Messages API body construction, SSE event processing, and retry loop.

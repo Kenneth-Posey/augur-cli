@@ -1,6 +1,8 @@
 # augur-domain
 
-This crate defines shared domain types, traits, and contracts consumed by all other crates. It contains no runtime actors. It provides semantic newtypes, event protocols, plan tree and state types, tool definitions and execution contracts, context management data structures, background event types, scheduling, DAG validation, effort levels, stream state, thinking mode, and channel constants.## Documents
+This crate defines shared domain types, traits, and contracts consumed by all other crates. It contains no runtime actors. It provides semantic newtypes, event protocols, plan tree and state types, tool definitions and execution contracts, context management data structures, background event types, scheduling, DAG validation, effort levels, stream state, thinking mode, and channel constants.
+
+## Documents
 
 - [Crate Overview](crate-overview.docs.md) -- Architecture, major subsystems, and design decisions for the augur-domain crate.
 - [Actors](actors.docs.md) -- Actor-handle contracts, conversation history, and inline tool executor.

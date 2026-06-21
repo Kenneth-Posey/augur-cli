@@ -1,6 +1,6 @@
 # Config
 
-The `config` module defines the full application configuration schema, provider catalog types, and YAML-backed loaders that govern how the application is initialized at startup. It contains two submodules: `types` (the configuration data model) and `provider_catalog` (the per-provider model metadata system).
+The `config` module defines the full application configuration schema, provider catalog types, and YAML-backed loaders that govern how the application is initialized at startup. It contains three submodules: `types` (the configuration data model), `provider_catalog` (the per-provider model metadata system), and `install_path` (install-path resolution and configuration).
 
 ## Key Components
 

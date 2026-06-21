@@ -5,7 +5,7 @@ The largest crate containing the majority of runtime actor implementations. It p
 ## Documents
 
 - [Crate Overview](crate-overview.docs.md) -- Architecture, major subsystems, and design decisions for the augur-core crate.
-- [Actors](actors.docs.md) -- The actor runtime: 21 concurrent service actors for dispatch, filesystem access, observability, and plan orchestration.
+- [Actors](actors.docs.md) -- The actor runtime: 20 concurrent service actors for dispatch, filesystem access, observability, and plan orchestration.
 - [Config](config.docs.md) -- Configuration loading, saving, and runtime access to program and user settings.
 - [Domain](domain.docs.md) -- Core-owned domain contracts for the deterministic orchestrator: workflow documents, step execution modes, and failure routing.
 - [Helpers](helpers.docs.md) -- Fake actor implementations for deterministic testing of agent, LLM, tool, and other actor interactions.

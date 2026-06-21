@@ -7,11 +7,10 @@ For crate-level responsibilities, see [`README.md`](README.md).
 
 ```
 Cargo.toml                  Workspace manifest, member crate list
-crates/                     All member crates
+crates/                     All member crates (including augur-integration-tests/)
 docs/                       Module-level documentation subdirectories
 changelogs/                 Changelog entries per change
 plans/                      Feature planning artifacts
-tests/                      Integration and cross-crate test suites
 state/                      Runtime state artifacts and schemas
 ```
 
@@ -34,12 +33,10 @@ The largest crate. Source is organized by actor domain:
   (agent, LLM, tool execution, session, file scanning, caching, logging,
   guided planning, supervision, orchestration, etc.)
 - `src/config/` -- Configuration schema, loading, program settings
-- `src/consolidator/` -- Reporting and consolidation logic
 - `src/domain/` -- (when present) Crate-local domain helpers
 - `src/persistence/` -- Persistence handles and store implementations
 - `src/plan_store/` -- Plan storage logic
 - `src/tools/` -- Tool definitions, ports, handlers, registry
-- `src/tui/` -- (when present) Crate-local TUI wiring
 - `src/token_history.rs` -- Token history loading
 
 ### augur-domain
@@ -75,11 +72,11 @@ Each provider crate (`augur-provider-*`) has a consistent internal structure:
 
 ## Test Layout
 
-- `tests/` at workspace root holds cross-crate integration tests.
+- `crates/augur-integration-tests/tests/` holds cross-crate integration tests.
 - Per-crate test modules are co-located in `src/` as `#[cfg(test)] mod tests`
   blocks or in `tests/` subdirectories mirroring the source structure.
-- Integration-level harness files (e.g., `tests/integration_full_turn.rs`) live
-  at workspace root alongside the per-crate test trees.
+- Integration-level harness files (e.g., `crates/augur-integration-tests/tests/integration_full_turn.tests.rs`) live
+  in the integration test crate alongside the per-crate test trees.
 
 ## Documentation Layout
 

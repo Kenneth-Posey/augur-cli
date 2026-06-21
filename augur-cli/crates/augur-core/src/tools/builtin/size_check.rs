@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use std::ffi::OsString;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 const TOOL_NAME: &str = "size_check";
 const TOKEN_THRESHOLD_PROCEED: u64 = 10_000;
@@ -462,7 +461,7 @@ fn execute_read_only_command(
     for arg in &args {
         sanitize_command_arg(arg)?;
     }
-    let output = Command::new(command)
+    let output = crate::tools::builtin::child_process::piped_command_sync(command)
         .args(&args)
         .output()
         .map_err(|error| SizeCheckError::ExecutionFailed(error.to_string()))?;

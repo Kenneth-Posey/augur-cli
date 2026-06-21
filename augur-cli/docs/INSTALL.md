@@ -43,7 +43,14 @@ Default program settings are loaded from `crates/augur-core/src/config/program_s
 From the workspace root, launch the terminal UI:
 
 ```sh
-bash launch.sh
+# Two launch scripts are provided:
+#
+#   bash launch-dev.sh       # uses repo-local configs/ (for development)
+#   bash launch-release.sh   # uses ~/.augur-cli/ config (for production)
+#
+# The release variant loads your API keys from
+# ~/.augur-cli/config/application.secrets.yaml.
+bash launch-release.sh
 ```
 
 The TUI starts with the default configuration. Pass additional flags or override settings by editing `user-settings.yaml` before launching.

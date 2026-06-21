@@ -89,7 +89,7 @@ pub fn default_provider_catalog_dir() -> PathBuf {
     }
     // Fall back to installed config directory
     if let Ok(home) = std::env::var("HOME") {
-        let install_path = PathBuf::from(home).join(".augur-cli/configs/providers");
+        let install_path = PathBuf::from(home).join(".augur-cli/config/providers");
         if install_path.exists() {
             return install_path;
         }

@@ -1,10 +1,14 @@
 //! Built-in shell_exec tool: runs a shell command and returns combined output.
 
+use crate::tools::builtin::child_process;
 use crate::tools::handler::{ToolCallResult, ToolHandler};
 use augur_domain::domain::string_newtypes::{OutputText, ShellCommand, StringNewtype, ToolName};
 use augur_domain::tools::definition::ToolDefinition;
+use std::time::Duration;
+use tokio::time::timeout;
 
 const TOOL_NAME: &str = "shell_exec";
+const DEFAULT_TIMEOUT_SECS: u64 = 30;
 
 fn parse_command(command: &str) -> Result<Vec<String>, String> {
     let parts = shell_words::split(command).map_err(|_| "invalid command syntax".to_string())?;
@@ -71,12 +75,14 @@ fn combine_process_output(out: &std::process::Output) -> String {
     }
 }
 
-async fn run_command(argv: &[String]) -> ToolCallResult {
-    let mut child = tokio::process::Command::new(&argv[0]);
+async fn run_command(argv: &[String], timeout_secs: u64) -> ToolCallResult {
+    let mut child = child_process::piped_command(&argv[0]);
     child.args(&argv[1..]);
-    match child.output().await {
-        Err(error) => shell_exec_result(error.to_string(), true),
-        Ok(out) => shell_exec_result(combine_process_output(&out), !out.status.success()),
+    let execution = timeout(Duration::from_secs(timeout_secs), child.output()).await;
+    match execution {
+        Err(_elapsed) => shell_exec_result(format!("command timed out after {timeout_secs}s"), true),
+        Ok(Err(error)) => shell_exec_result(error.to_string(), true),
+        Ok(Ok(out)) => shell_exec_result(combine_process_output(&out), !out.status.success()),
     }
 }
 
@@ -92,6 +98,10 @@ impl ToolHandler for ShellExecTool {
                     "command": {
                         "type": "string",
                         "description": "Shell command to run"
+                    },
+                    "timeout_secs": {
+                        "type": "integer",
+                        "description": "Optional timeout in seconds (default 30)"
                     }
                 },
                 "required": ["command"]
@@ -105,11 +115,14 @@ impl ToolHandler for ShellExecTool {
             Ok(command) => command,
             Err(result) => return result,
         };
+        let timeout_secs = args["timeout_secs"]
+            .as_u64()
+            .unwrap_or(DEFAULT_TIMEOUT_SECS);
         tracing::Span::current().record("command", tracing::field::display(command.as_str()));
         let argv = match parse_command(command.as_str()) {
             Ok(argv) => argv,
             Err(message) => return shell_exec_result(message, true),
         };
-        run_command(&argv).await
+        run_command(&argv, timeout_secs).await
     }
 }

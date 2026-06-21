@@ -1,7 +1,8 @@
 //! No direct `*.tests.rs` mirror by design: this module is a facade/re-export layer.
 //! Behavior is validated by mirrored tests of child modules and higher-level integration tests.
 /// Approves the active review or execution phase.
-pub mod approve_phase;
+/// Shared child-process setup with session isolation (TTY hang prevention).
+pub mod child_process;pub mod approve_phase;
 /// Appends text to the end of a target file.
 pub mod file_append;
 /// Writes text content to a file (create or overwrite).

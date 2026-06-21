@@ -6,10 +6,10 @@ use augur_domain::domain::string_newtypes::ShellCommand;
 use augur_domain::domain::FailureReason;
 use augur_domain::domain::StringNewtype;
 use std::process::ExitStatus;
-use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Child;
-use tokio::process::Command;
+
+use crate::tools::builtin::child_process;
 
 /// Reads lines from an async buffered reader into `captured` up to `max_lines` total.
 ///
@@ -79,11 +79,9 @@ fn parse_command_parts(command: &ShellCommand) -> Result<(&str, Vec<&str>), Fail
 }
 
 fn spawn_subprocess(program: &str, args: &[&str]) -> Result<Child, FailureReason> {
-    Command::new(program)
-        .args(args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
+    let mut cmd = child_process::piped_command(program);
+    cmd.args(args);
+    cmd.spawn()
         .map_err(|error| FailureReason::from(format!("failed to spawn process: {error}")))
 }
 

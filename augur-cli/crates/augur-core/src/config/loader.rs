@@ -262,20 +262,46 @@ fn extract_keys(source: &Value, keys: &[&str]) -> Value {
 }
 
 ///
-/// Returns `base` unchanged when the file does not exist. Returns an error
+///
+/// Fallback: if no secrets file exists alongside the config file, checks
+/// `~/.augur-cli/config/application.secrets.yaml` so that an installed user
+/// secrets file is picked up even when an explicit `--config` points to a
+/// repo-local config that has no sibling secrets file (e.g. in a fresh clone
+/// where `application.secrets.yaml` is gitignored)./// Returns `base` unchanged when the file does not exist. Returns an error
 /// when the file exists but cannot be read or parsed - a malformed secrets
 /// file should not be silently ignored.
 fn apply_secrets(base: Value, secrets_dir: &Path) -> anyhow::Result<Value> {
     let secrets_path = secrets_dir.join("application.secrets.yaml");
-    if !secrets_path.exists() {
-        return Ok(base);
+    if secrets_path.exists() {
+        let overlay = parse_secrets_overlay(&secrets_path)?;
+        return if overlay.is_null() {
+            Ok(base)
+        } else {
+            Ok(merge_yaml_values(base, overlay))
+        };
     }
-    let overlay = parse_secrets_overlay(&secrets_path)?;
-    if overlay.is_null() {
-        Ok(base)
-    } else {
-        Ok(merge_yaml_values(base, overlay))
+
+    // Fallback: if no secrets file lives alongside the config, try the
+    // installed ~/.augur-cli/config/application.secrets.yaml so that a
+    // --config pointing to a repo-local file in a fresh clone (where the
+    // secrets file is gitignored) still picks up the user's keys.
+    let home = std::env::var("HOME").ok();
+    if let Some(home_dir) = home {
+        let installed_secrets = PathBuf::from(home_dir)
+            .join(".augur-cli")
+            .join("config")
+            .join("application.secrets.yaml");
+        if installed_secrets.exists() {
+            let overlay = parse_secrets_overlay(&installed_secrets)?;
+            return if overlay.is_null() {
+                Ok(base)
+            } else {
+                Ok(merge_yaml_values(base, overlay))
+            };
+        }
     }
+
+    Ok(base)
 }
 
 fn parse_secrets_overlay(secrets_path: &Path) -> anyhow::Result<Value> {

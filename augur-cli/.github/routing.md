@@ -95,6 +95,13 @@ initial artifact creation or broad redesign.
  and active-path verification when a change replaces existing behavior.
 - This agent emits only pass/fail and does not own broader behavior review.
 
+## Stage 4 Checkers (architecture, behavior, type, function-sig, performance, security, consistency, completeness, consolidation)
+
+- Route here for specialized Stage 4 validation after implementation is complete.
+- These nine checkers are dispatched in parallel by `review-orchestrator` or the `0-global-orchestration-pipeline` Stage 4.
+- Each validates a specific dimension: architecture, behavior, type correctness, function signature contracts, performance, security, consistency, completeness, and consolidation.
+- Do not dispatch these agents directly in general routing surfaces; they are launched automatically through `review-orchestrator` or the pipeline skill.
+
 ## review-consolidator
 
 - Internal-only Stage 4 merge agent. Do not route to this agent directly from
@@ -104,13 +111,6 @@ initial artifact creation or broad redesign.
   collected.
 - Merge the eleven review-stage signals into the final pass/fail decision.
 
-## external-code-topology-extractor
-
-- Route here to regenerate or verify `.github/local/system-actor-graph.yml`
-  by running the deterministic topology-extractor tool against the wiring code.
-- Use when the topology file needs to be created from scratch, or when a batch
-  of wiring changes has occurred and the file needs to be brought up to date.
-- Scope is deterministic and read-only on source; writes only to `.github/local/`.
 
 ## external-code-src-deadcode-analysis
 
@@ -305,7 +305,7 @@ initial artifact creation or broad redesign.
   of wiring changes has occurred and the file needs to be brought up to date.
 - Does not modify src/ files. Writes only to `.github/local/`.
 
-## global-git-operator## global-git-operator
+## global-git-operator
 
 - Route every git workflow here: status, diff, log, show, branch queries,
   commits, pushes, and other git-only tasks.
