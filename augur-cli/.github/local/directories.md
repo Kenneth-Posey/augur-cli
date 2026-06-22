@@ -27,9 +27,7 @@ Core domain logic, actors, configuration, persistence, and tools.
     `user_message_consumer`
 - `crates/augur-core/src/config/` — configuration schema and loading
   - `program_settings.rs` — program-level config defaults and loaders
-  - `program_settings.yml` — editable program-level defaults
   - `user_settings.rs` — user settings persistence
-  - `user-settings.yaml` — user settings file
   - `loader.rs`, `provider_catalog.rs`, `endpoint_catalog_discovery.rs`, `write_section.rs`
 - `crates/augur-core/src/domain/` — shared domain types, semantic wrappers, and invariants
   - `deterministic_orchestrator.rs`, `deterministic_orchestrator_ops.rs`, `support/`, `tests/`
@@ -136,8 +134,6 @@ Each workspace crate with source code has a `tests/` directory:
 - `configs/application.secrets.yaml` — **actual secrets with SDK keys (not published)**; excluded from publish-to-public.sh output
 - `configs/application.secrets.template.yaml` — secrets template with placeholder values (published, required for `augur-cli` to build)
 - `configs/providers/` — provider-specific configuration
-- `crates/augur-core/src/config/program_settings.yml` — program-level excluded directory defaults
-- `crates/augur-core/src/config/user-settings.yaml` — user settings file
 - `state/token-history.json` — token history data
 - `state/orchestrator-state.db` — orchestration state database
 - `.github/plan_execution.yml` — pipeline execution contract (base template, shipped with bundle)

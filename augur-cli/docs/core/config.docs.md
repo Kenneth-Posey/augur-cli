@@ -1,6 +1,6 @@
 # Config Module
 
-The `config` module handles loading, saving, and runtime access to application settings. It owns two configuration domains: **program settings** (editable YAML defaults such as excluded directories, read-only path patterns, and tool-availability flags) and **user settings** (per-user preferences persisted as `user-settings.yaml`). Both are loaded from disk at startup, exposed through typed Rust structs, and saved back when modified.
+The `config` module handles loading, saving, and runtime access to application settings. It owns two configuration domains: **program settings** (editable YAML defaults such as excluded directories, read-only path patterns, and tool-availability flags) and **user settings** (per-user preferences persisted alongside the main config). Both are loaded from disk at startup, exposed through typed Rust structs, and saved back when modified.
 
 ## Submodule Organization
 
@@ -8,4 +8,4 @@ The `config` module handles loading, saving, and runtime access to application s
 
 ## Architectural Role
 
-The config module is the single source of truth for all mutable application settings. It sits at the boundary between static program defaults (compiled into the binary or bundled as `program_settings.yml`) and user- or environment-specific overrides. The agent and tool actors read configuration through this module to determine file access policies, provider selections, cache behavior, and other runtime parameters that can change between sessions or be updated by user commands.
+The config module is the single source of truth for all mutable application settings. It sits at the boundary between static program defaults (embedded in the binary or loaded from `~/.augur-cli/config/application.yaml`) and user- or environment-specific overrides. The agent and tool actors read configuration through this module to determine file access policies, provider selections, cache behavior, and other runtime parameters that can change between sessions or be updated by user commands.

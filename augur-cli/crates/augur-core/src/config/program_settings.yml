@@ -1,4 +1,0 @@
-excluded_directories:
-- .git
-- target
-- changelogs

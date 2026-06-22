@@ -61,7 +61,7 @@ fi
 # Archive the existing binary (if any) before overwriting it.
 EXISTING="${BIN_DIR}/augur-cli"
 if [[ -f "${EXISTING}" ]]; then
-    TIMESTAMP="$(date --utc +'%Y%m%dT%H%M%SZ')"
+    TIMESTAMP="$(date -u +'%Y%m%dT%H%M%SZ')"
     ARCHIVE_NAME="augur-cli-${TIMESTAMP}"
     mv "${EXISTING}" "${ARCHIVE_DIR}/${ARCHIVE_NAME}"
     echo "Archived: ${EXISTING} -> ${ARCHIVE_DIR}/${ARCHIVE_NAME}"
@@ -114,9 +114,15 @@ BASHRC="${HOME}/.bashrc"
 PATH_EXPORT="export PATH=\"${BIN_DIR}:\$PATH\""
 PATH_EXPORT_OLD="export PATH=\"\$PATH:${BIN_DIR}\""
 
+# Detect BSD vs GNU sed for in-place editing flags.
+if sed --version 2>/dev/null | grep -q GNU; then
+    SED_INPLACE=( -i )
+else
+    SED_INPLACE=( -i "" )
+fi
 # Remove any old append-style PATH entry for this binary.
 if grep -qF "${BIN_DIR}" "${BASHRC}" 2>/dev/null; then
-    sed -i "/$(printf '%s' "${PATH_EXPORT_OLD}" | sed 's/[\/&]/\\&/g')/d" "${BASHRC}" 2>/dev/null || true
+    sed "${SED_INPLACE[@]}" "/$(printf '%s' "${PATH_EXPORT_OLD}" | sed 's/[\/&]/\\&/g')/d" "${BASHRC}" 2>/dev/null || true
 fi
 
 if [[ ":${PATH}:" != *":${BIN_DIR}:"* ]] || ! grep -qF "PATH=\"${BIN_DIR}" "${BASHRC}" 2>/dev/null; then

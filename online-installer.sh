@@ -15,14 +15,15 @@
 #   ~/.augur-cli/sessions/                       - session JSON files
 #
 # Usage:
-#   bash <(curl -sL https://raw.githubusercontent.com/Kenneth-Posey/augur-cli/copilot-incoming/online-installer.sh)
+#   bash <(curl -sL https://raw.githubusercontent.com/Kenneth-Posey/augur-cli/main/online-installer.sh)
 #
 # Or download and run:
-#   curl -sLO https://raw.githubusercontent.com/Kenneth-Posey/augur-cli/copilot-incoming/online-installer.sh
+#   curl -sLO https://raw.githubusercontent.com/Kenneth-Posey/augur-cli/main/online-installer.sh
 #   chmod +x online-installer.sh
 #   ./online-installer.sh
 #
 # For source-based builds (requires Rust toolchain), use augur-cli/install.sh
+# or run locally with the launch-dev.sh script.
 
 set -euo pipefail
 
@@ -72,7 +73,6 @@ detect_arch() {
     arch="$(uname -m)"
     case "$arch" in
         x86_64|amd64)  echo "x86_64" ;;
-        aarch64|arm64) echo "aarch64" ;;
         *)             echo "unsupported-${arch}" ;;
     esac
 }
@@ -82,7 +82,7 @@ detect_os() {
     os="$(uname -s)"
     case "$os" in
         Linux)  echo "unknown-linux-gnu" ;;
-        Darwin) echo "apple-darwin" ;;
+        Darwin) echo "unsupported-Darwin" ;;
         *)      echo "unsupported-${os}" ;;
     esac
 }
@@ -129,9 +129,9 @@ check_deps() {
 
     # Script-level dependencies — tools this installer needs to run.
     local script_deps=(
-      "curl:curl (usually pre-installed on macOS/Linux)"
+      "curl:curl (usually pre-installed on Linux)"
       "tar:tar (usually pre-installed)"
-      "rsync:rsync (install via apt install rsync, brew install rsync)"
+      "rsync:rsync (install via apt install rsync)"
       "install:coreutils (install is part of coreutils)"
       "find:findutils (usually pre-installed)"
       "sed:sed (usually pre-installed)"
@@ -152,9 +152,7 @@ check_deps() {
     # (augur-provider-copilot-sdk) cannot authenticate.
     if ! command -v gh &>/dev/null; then
       missing+=("  • gh (GitHub CLI) — required for Copilot provider support")
-      missing+=("    Install: https://cli.github.com/ or")
-      missing+=("      macOS: brew install gh")
-      missing+=("      Linux: see https://github.com/cli/cli#installation")
+      missing+=("    Install: https://cli.github.com/")
     fi
 
     if [[ ${#missing[@]} -gt 0 ]]; then
@@ -210,8 +208,7 @@ install() {
 
     if [[ "$arch" == unsupported-* || "$os" == unsupported-* ]]; then
         echo "Error: Unsupported platform: $(uname -m) / $(uname -s)" >&2
-        echo "Supported targets: x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu," >&2
-        echo "                   x86_64-apple-darwin, aarch64-apple-darwin" >&2
+        echo "Supported targets: x86_64-unknown-linux-gnu" >&2
         exit 1
     fi
 

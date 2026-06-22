@@ -18,9 +18,9 @@
 ## Branching and Merging
 
 - **Always stay on the current branch** — do not switch branches unless user requests
-- **User manages merges** — do not merge into `copilot-incoming` or `main` without explicit user instruction
-- **Use copilot-incoming as the target** — all Copilot work merges to `copilot-incoming` first
+- **User manages merges** — do not merge into `main` without explicit user instruction
 - **Only `global-git-operator` may run git** — all git inspection and mutation goes through that agent
+- **Do not push without explicit user instruction** 
 
 ## Primary Context Delegation
 
