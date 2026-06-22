@@ -1,9 +1,9 @@
 use augur_core::token_history::{
-    ensure_initialized, load_or_create, token_history_path, ProjectSettings,
+    ProjectSettings, ensure_initialized, load_or_create, token_history_path,
 };
+use augur_domain::domain::TokenCount;
 use augur_domain::domain::newtypes::NumericNewtype;
 use augur_domain::domain::types::{LlmUsage, ProjectTokenTotals};
-use augur_domain::domain::TokenCount;
 use tempfile::TempDir;
 
 fn temp_dir() -> TempDir {

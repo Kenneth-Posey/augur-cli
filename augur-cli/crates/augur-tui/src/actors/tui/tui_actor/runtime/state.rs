@@ -104,11 +104,11 @@ mod tests {
         AgentConfig, AppConfig, CopilotConfig, EndpointConfig, EndpointCredentials,
         PersistenceConfig, Provider,
     };
+    use augur_domain::domain::TokenCount;
     use augur_domain::domain::newtypes::{NumericNewtype, Temperature};
     use augur_domain::domain::string_newtypes::{
         EndpointName, EndpointUrl, FilePath, ModelName, OutputText, StringNewtype,
     };
-    use augur_domain::domain::TokenCount;
     use std::ffi::OsString;
     use std::sync::{Mutex, OnceLock};
 

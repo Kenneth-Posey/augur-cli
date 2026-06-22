@@ -1,5 +1,5 @@
-use augur_domain::guided_plan::{CopilotAgentHookParams, HookOutcome, VerdictKind};
 use augur_domain::CopilotAgentHookArgs;
+use augur_domain::guided_plan::{CopilotAgentHookParams, HookOutcome, VerdictKind};
 
 #[tokio::test]
 async fn guided_plan_panel_hook_runner_is_deterministic_for_test_agent() {

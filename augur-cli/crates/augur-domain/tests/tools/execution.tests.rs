@@ -12,10 +12,12 @@ fn normalize_tool_execution_result_sets_error_flag_for_execution_failures() {
     );
     assert!(bool::from(result.is_error));
     assert_eq!(result.name.as_str(), "shell_exec");
-    assert!(result
-        .output
-        .as_str()
-        .contains("No such file or directory (os error 2)"));
+    assert!(
+        result
+            .output
+            .as_str()
+            .contains("No such file or directory (os error 2)")
+    );
 }
 
 #[test]

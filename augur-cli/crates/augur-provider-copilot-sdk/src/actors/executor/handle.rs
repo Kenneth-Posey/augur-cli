@@ -6,11 +6,11 @@
 
 use super::commands::{ExecutorCmd, ShellExecResult};
 use async_trait::async_trait;
+use augur_domain::PromptText;
 use augur_domain::channels::EXECUTOR_EVENT_BUFFER;
 use augur_domain::string_newtypes::{ProcessId, ShellCommand};
 use augur_domain::traits::{ExecutorDriver, ExecutorMode};
 use augur_domain::types::AgentOutput;
-use augur_domain::PromptText;
 use tokio::sync::{broadcast, mpsc, oneshot};
 
 /// Cloneable handle to a running `ExecutorActor`.

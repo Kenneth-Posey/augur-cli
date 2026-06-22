@@ -6,7 +6,7 @@ use augur_domain::domain::feeds::LlmFeedTag;
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype};
 use augur_domain::domain::types::StreamChunk;
 use tokio::sync::mpsc;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 /// Verifies that a Token chunk sent via the actor handle arrives on the user_chunk channel.
 #[tokio::test]

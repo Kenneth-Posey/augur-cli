@@ -1,8 +1,8 @@
 //! Public handle for reading state snapshots and sending commands to the TUI chat-menu actor.
 
 use super::tui_chat_menu_ops::{ChatMenuAction, ChatMenuCmd, ChatMenuState};
-use augur_domain::domain::string_newtypes::OutputText;
 use augur_domain::domain::StringNewtype;
+use augur_domain::domain::string_newtypes::OutputText;
 use tokio::sync::{mpsc, watch};
 
 /// Handle to a running `TuiChatMenuActor` task.

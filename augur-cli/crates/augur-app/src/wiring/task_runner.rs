@@ -139,7 +139,7 @@ pub async fn build_task_runner(args: TaskRunnerBuildArgs) -> TaskRunnerOutcome {
 // ============================================================================
 
 use augur_core::actors::orchestrator::ingestion::{
-    drive_scheduler_tick, submit_execution_plan, OrchestratorContext, OrchestratorError,
+    OrchestratorContext, OrchestratorError, drive_scheduler_tick, submit_execution_plan,
 };
 use augur_domain::domain::{
     ExecutionPlan, ExecutionPlanError, ExecutionStepId, ExecutionStepSpec, OrchestratorEvent,

@@ -1,6 +1,6 @@
+use augur_domain::StringNewtype;
 use augur_domain::task_types::{InstructionFilePath, RepoRoot};
 use augur_domain::types::Role;
-use augur_domain::StringNewtype;
 use augur_provider_openrouter::actors::openrouter_task::instruction_loader::load_instruction_prefix;
 use std::fs;
 

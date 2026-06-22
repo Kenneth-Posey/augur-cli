@@ -1,4 +1,4 @@
-use augur_core::actors::agent::agent_actor::{spawn, AgentRuntime, AgentServices, AgentSpawnArgs};
+use augur_core::actors::agent::agent_actor::{AgentRuntime, AgentServices, AgentSpawnArgs, spawn};
 use augur_core::actors::agent::agent_ops::{AgentOutput, DEFAULT_MAX_ITERATIONS};
 use augur_core::actors::logger::logger_actor::spawn as spawn_logger;
 use augur_core::helpers::fake_history_adapter::fake_history_adapter_handle;

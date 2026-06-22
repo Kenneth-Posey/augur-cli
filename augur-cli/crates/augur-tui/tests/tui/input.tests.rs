@@ -5,9 +5,9 @@ use augur_tui::domain::string_newtypes::{
     ChoiceText, EndpointName, ModelLabel, OutputText, PromptText, StringNewtype, ToolName,
 };
 use augur_tui::domain::tui_input::{
-    apply_agent_feed_output, apply_agent_output, apply_ask_output, apply_key, apply_query_key,
-    classify_key, classify_mouse, classify_query_key, KeyAction, MouseAction, QueryKeyAction,
-    MOUSE_SCROLL_LINES,
+    KeyAction, MOUSE_SCROLL_LINES, MouseAction, QueryKeyAction, apply_agent_feed_output,
+    apply_agent_output, apply_ask_output, apply_key, apply_query_key, classify_key, classify_mouse,
+    classify_query_key,
 };
 use augur_tui::domain::tui_state::{AppScreen, AppState, LineKind, QueryState};
 use crossterm::event::{
@@ -1642,12 +1642,14 @@ fn apply_agent_feed_output_task_started_captures_model_name() {
 
     let mut state = default_state();
     state.prompt.models.active_id = Some(ModelId::new("claude-haiku-4.5"));
-    assert!(state
-        .interaction
-        .panel
-        .agent_feed
-        .current_agent_model
-        .is_none());
+    assert!(
+        state
+            .interaction
+            .panel
+            .agent_feed
+            .current_agent_model
+            .is_none()
+    );
 
     apply_agent_feed_output(
         &mut state,
@@ -1687,12 +1689,14 @@ fn apply_agent_feed_output_task_started_no_model_leaves_none() {
 
     let mut state = default_state();
     assert!(state.prompt.models.active_id.is_none());
-    assert!(state
-        .interaction
-        .panel
-        .agent_feed
-        .current_agent_model
-        .is_none());
+    assert!(
+        state
+            .interaction
+            .panel
+            .agent_feed
+            .current_agent_model
+            .is_none()
+    );
 
     apply_agent_feed_output(
         &mut state,

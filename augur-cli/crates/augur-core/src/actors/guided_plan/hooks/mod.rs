@@ -4,6 +4,6 @@
 pub mod subprocess;
 
 pub use augur_domain::{
-    unavailable_copilot_hook_runner, CopilotAgentHookArgs, CopilotAgentHookFuture,
-    CopilotAgentHookRunner, MAX_HOOK_OUTPUT_LINES,
+    CopilotAgentHookArgs, CopilotAgentHookFuture, CopilotAgentHookRunner, MAX_HOOK_OUTPUT_LINES,
+    unavailable_copilot_hook_runner,
 };

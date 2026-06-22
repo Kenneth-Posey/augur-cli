@@ -1,11 +1,11 @@
 use super::{AgentOutputReceiver, ChatRuntime, ChatRuntimeInput, CoreRuntime};
 use augur_core::actors;
 use augur_domain::config::types::AppConfig;
+use augur_domain::domain::StringNewtype;
 use augur_domain::domain::string_newtypes::{EndpointName, ModelId};
 use augur_domain::domain::task_types::AgentSpecName;
 use augur_domain::domain::traits::{BackgroundTaskRunnerPort, ChatProvider};
 use augur_domain::domain::types::{AgentOutput, FeedEntry};
-use augur_domain::domain::StringNewtype;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -133,7 +133,7 @@ pub async fn spawn_chat_runtime(
 async fn build_chat_task_runner(
     core: &CoreRuntime,
 ) -> crate::wiring::task_runner::TaskRunnerOutcome {
-    use crate::wiring::task_runner::{build_task_runner, TaskRunnerBuildArgs};
+    use crate::wiring::task_runner::{TaskRunnerBuildArgs, build_task_runner};
     build_task_runner(
         TaskRunnerBuildArgs::builder()
             .orchestrator(core.context.control.openrouter_orchestrator_handle.clone())
@@ -212,6 +212,7 @@ mod tests {
         AgentConfig, AppConfig, CopilotConfig, EndpointConfig, EndpointCredentials,
         PersistenceConfig, ProgramSettings, Provider,
     };
+    use augur_domain::domain::StringNewtype;
     use augur_domain::domain::newtypes::{NumericNewtype, Temperature, TimestampSecs, TokenCount};
     use augur_domain::domain::string_newtypes::{
         AgentName, EndpointName, EndpointUrl, FilePath, ModelName, OutputText, PromptText,
@@ -219,7 +220,6 @@ mod tests {
     use augur_domain::domain::task_types::AgentSpecName;
     use augur_domain::domain::traits::BackgroundTaskRunnerPort;
     use augur_domain::domain::types::{AgentOutput, FeedEntry};
-    use augur_domain::domain::StringNewtype;
     use augur_domain::persistence::types::{MessageRecord, MessageType};
     use std::sync::{Arc, Mutex};
 

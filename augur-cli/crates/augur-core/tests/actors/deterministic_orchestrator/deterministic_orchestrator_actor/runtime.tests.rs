@@ -1,8 +1,8 @@
 //! Cargo-runnable integration coverage for the deterministic orchestrator runtime.
 
+use augur_core::actors::DeterministicOrchestratorHandle;
 use augur_core::actors::deterministic_orchestrator::deterministic_orchestrator_actor::spawn;
 use augur_core::actors::deterministic_orchestrator::handle::PipelineResumeMode;
-use augur_core::actors::DeterministicOrchestratorHandle;
 use augur_core::domain::deterministic_orchestrator::DeterministicOrchestratorEvent;
 use augur_domain::domain::WorkflowStepId;
 use std::fs;

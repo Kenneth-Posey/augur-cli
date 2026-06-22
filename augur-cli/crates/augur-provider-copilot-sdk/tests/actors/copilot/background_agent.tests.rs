@@ -1,5 +1,5 @@
 use augur_provider_copilot_sdk::actors::copilot::background_agent::{
-    run_background_agent, BackgroundAgentArgs, BackgroundAgentConfig,
+    BackgroundAgentArgs, BackgroundAgentConfig, run_background_agent,
 };
 
 #[test]

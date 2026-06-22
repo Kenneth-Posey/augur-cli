@@ -1,9 +1,9 @@
+use augur_domain::StringNewtype;
 use augur_domain::background_events::{BackgroundEventPriority, BackgroundPanelMode};
 use augur_domain::types::AgentFeedOutput;
-use augur_domain::StringNewtype;
 use augur_provider_copilot_sdk::actors::copilot::background_event_mapper::map_background_event;
-use copilot_sdk::events::{SessionResumeData, SessionStartData, UserMessageData};
 use copilot_sdk::SessionEventData;
+use copilot_sdk::events::{SessionResumeData, SessionStartData, UserMessageData};
 
 fn session_start_event() -> SessionEventData {
     SessionEventData::SessionStart(SessionStartData {

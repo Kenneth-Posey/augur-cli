@@ -1,6 +1,6 @@
 //! Private helper operations for the history-adapter actor.
 
-use super::history_adapter_ops::{to_history_entry, HistoryAdapterCmd};
+use super::history_adapter_ops::{HistoryAdapterCmd, to_history_entry};
 use augur_domain::domain::feeds::HistoryFeedMessage;
 use tokio::sync::mpsc;
 

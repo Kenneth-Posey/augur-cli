@@ -2,7 +2,7 @@ use augur_core::actors::file_read::file_read_actor::spawn;
 use augur_domain::domain::string_newtypes::{FilePath, StringNewtype};
 use std::io::Write;
 use std::path::PathBuf;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 fn make_temp_file(content: &str) -> (tempfile::NamedTempFile, PathBuf) {
     let mut f = tempfile::NamedTempFile::new().expect("temp file");
@@ -53,10 +53,12 @@ async fn line_count_after_shutdown_returns_actor_stopped_error() {
         .line_count(FilePath::new(dir.path().join("x.rs").to_string_lossy()))
         .await;
     assert!(result.is_error);
-    assert!(result
-        .output
-        .as_str()
-        .starts_with("file read actor stopped"));
+    assert!(
+        result
+            .output
+            .as_str()
+            .starts_with("file read actor stopped")
+    );
 }
 
 #[test]

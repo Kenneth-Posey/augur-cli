@@ -6,11 +6,11 @@ use augur_domain::config::provider_catalog::{
     default_provider_catalog_dir, load_provider_catalog, provider_catalog_path,
 };
 use augur_domain::config::types::{AppConfig, EndpointConfig};
+use augur_domain::domain::EffortLevel;
 use augur_domain::domain::endpoint_model_catalog::EndpointModelCatalog;
 use augur_domain::domain::newtypes::SupportsAuto;
 use augur_domain::domain::string_newtypes::{EndpointName, ModelId, ModelLabel, StringNewtype};
 use augur_domain::domain::types::ModelOption;
-use augur_domain::domain::EffortLevel;
 use std::path::Path;
 /// Build the startup `/model` list from endpoint catalogs.
 ///

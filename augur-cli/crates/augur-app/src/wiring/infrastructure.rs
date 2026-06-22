@@ -1,7 +1,7 @@
 use super::{
     CoreActorJoins, CoreControl, CoreHandles, CoreIoHandles, CoreRuntime, CoreRuntimeContext,
-    CoreServiceHandles, CoreStartup, CoreSupportJoins, QueryChannels, TaskJoin,
-    DEFAULT_CACHE_WATCH_DIR,
+    CoreServiceHandles, CoreStartup, CoreSupportJoins, DEFAULT_CACHE_WATCH_DIR, QueryChannels,
+    TaskJoin,
 };
 use augur_core::actors;
 use augur_core::actors::cache::handle::CacheHandle;
@@ -10,10 +10,10 @@ use augur_core::actors::command::command_actor::build as build_command;
 use augur_core::actors::file_read::FileReadHandle;
 use augur_core::actors::history_adapter::handle::HistoryAdapterHandle;
 use augur_core::actors::history_adapter::history_adapter_actor::{
-    spawn as spawn_history_adapter, HistoryAdapterConfig,
+    HistoryAdapterConfig, spawn as spawn_history_adapter,
 };
-use augur_core::actors::lsp::lsp_actor::{spawn as spawn_lsp_actor, LspActorConfig};
 use augur_core::actors::lsp::LspHandle;
+use augur_core::actors::lsp::lsp_actor::{LspActorConfig, spawn as spawn_lsp_actor};
 use augur_core::actors::tool::InlineToolExecutor;
 use augur_core::persistence::{handle::PersistenceHandle, store};
 use augur_core::tools::builtin::{
@@ -28,6 +28,7 @@ use augur_core::tools::registry::ToolRegistry;
 use augur_domain::config::install_path::{effective_repo_root, resolve_install_path};
 use augur_domain::config::provider_catalog::{default_provider_catalog_dir, load_provider_catalog};
 use augur_domain::config::types::{AppConfig, ProgramSettings};
+use augur_domain::domain::StringNewtype;
 use augur_domain::domain::channels::{
     AGENT_FEED_CAPACITY, AGENT_OUTPUT_CAPACITY, HISTORY_FEED_CAPACITY, QUERY_USER_CHANNEL_CAPACITY,
     SPAWN_AGENT_CHANNEL_CAPACITY,
@@ -38,7 +39,6 @@ use augur_domain::domain::task_types::{
     AgentSpecName, InstructionPrefix, RepoRoot, SpawnAgentRequest,
 };
 use augur_domain::domain::types::Message;
-use augur_domain::domain::StringNewtype;
 use augur_domain::tools::builtin::query_user::QueryUserRequest;
 use augur_provider_openrouter::actors::openrouter_orchestrator::openrouter_orchestrator_actor::{
     OpenRouterOrchestratorArgs, OrchestratorIoChannels, OrchestratorRuntimeHandles,
@@ -341,11 +341,7 @@ fn spawn_core_wiring(args: CoreSpawnWiringArgs<'_>) -> CoreSpawnWiring {
         actors::file_read::file_read_actor::spawn(dirs.clone());
     let cache_handle = spawn_cache_handle();
     let (lsp_join, lsp_handle) = spawn_lsp_actor(lsp_config());
-    let repo_root = RepoRoot::new(
-        effective_repo_root()
-            .to_string_lossy()
-            .to_string(),
-    );
+    let repo_root = RepoRoot::new(effective_repo_root().to_string_lossy().to_string());
     let openrouter = spawn_openrouter_runtime(
         OpenRouterRuntimeInput::builder()
             .config(config.clone())
@@ -391,10 +387,7 @@ fn spawn_core_wiring(args: CoreSpawnWiringArgs<'_>) -> CoreSpawnWiring {
 }
 
 fn build_core_runtime(args: BuildCoreRuntimeArgs<'_>, wiring: CoreSpawnWiring) -> CoreRuntime {
-    let BuildCoreRuntimeArgs {
-        config,
-        session_id,
-    } = args;
+    let BuildCoreRuntimeArgs { config, session_id } = args;
     let CoreSpawnWiring {
         channels,
         services,

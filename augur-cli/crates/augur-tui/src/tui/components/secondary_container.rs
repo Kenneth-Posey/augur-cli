@@ -20,18 +20,18 @@
 
 use crate::domain::tui_display_state::TuiDisplayState;
 use crate::domain::tui_render::{
-    compute_render_slice, line_display_rows, rendered_line_text, RenderSliceInput,
+    RenderSliceInput, compute_render_slice, line_display_rows, rendered_line_text,
 };
 use crate::domain::tui_state::{InputFocus, SecondaryView};
 use crate::tui::components::primary_feed::{
-    output_line_to_ratatui, render_scroll_indicator_for, split_output_area, BRAILLE_FRAMES,
+    BRAILLE_FRAMES, output_line_to_ratatui, render_scroll_indicator_for, split_output_area,
 };
 use augur_domain::domain::newtypes::{Count, NumericNewtype, ScrollOffset};
+use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Paragraph, Wrap};
-use ratatui::Frame;
 
 #[derive(Clone, Copy)]
 struct AskViewProps {

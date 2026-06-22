@@ -6,10 +6,12 @@ use std::any::Any;
 use std::sync::Arc;
 
 use crate::actors::copilot::agent_feed_ops::{
-    map_tool_complete_output, map_tool_progress_output, map_tool_start_output, ActiveToolCallMap,
-    ToolInfo,
+    ActiveToolCallMap, ToolInfo, map_tool_complete_output, map_tool_progress_output,
+    map_tool_start_output,
 };
 use crate::actors::copilot::background_event_mapper::{extract_llm_usage, map_background_event};
+use augur_domain::StringNewtype;
+use augur_domain::TokenTrackerHandle;
 use augur_domain::background_events::{
     BackgroundEventClassifier, BackgroundPanelMode, DeltaAccumulator,
 };
@@ -18,8 +20,6 @@ use augur_domain::string_newtypes::{
     AccumulatedText, AgentName, ContentDelta, ModelLabel, OutputText, PromptText, ToolCallId,
 };
 use augur_domain::types::{AgentFeedOutput, FeedEntry, FeedId};
-use augur_domain::StringNewtype;
-use augur_domain::TokenTrackerHandle;
 
 /// Static configuration for a background agent session.
 ///

@@ -99,7 +99,7 @@ async fn run_with_client(client: &copilot_sdk::Client, args: CopilotAgentHookArg
         Err(e) => {
             return HookOutcome::Failed(FailureReason::from(format!(
                 "failed to create session: {e}"
-            )))
+            )));
         }
     };
 

@@ -4,7 +4,7 @@ use augur_core::actors::tool::tool_ops::ToolCall;
 use augur_core::tools::builtin::file_read::FileReadTool;
 use augur_core::tools::registry::ToolRegistry;
 use augur_domain::domain::string_newtypes::{StringNewtype, ToolName};
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 /// Verifies that the tool actor spawns and shuts down cleanly.
 #[tokio::test]

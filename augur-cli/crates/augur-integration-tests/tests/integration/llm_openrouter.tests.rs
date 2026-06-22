@@ -4,8 +4,6 @@
 //! errors, YAML config parsing, and endpoint discovery for OpenRouter.
 
 use augur_core::config::endpoint_catalog_discovery::discover_endpoints;
-use augur_provider_shared::request_context::{GenerationParams, RequestContext, RequestPayload};
-use augur_provider_openrouter::actors::llm::providers::openrouter::stream_complete;
 use augur_domain::config::types::{
     AgentConfig, AppConfig, CopilotConfig, EndpointConfig, EndpointCredentials, PersistenceConfig,
     Provider,
@@ -16,6 +14,8 @@ use augur_domain::domain::string_newtypes::{
     EndpointName, EndpointUrl, FilePath, ModelName, OutputText, StringNewtype,
 };
 use augur_domain::domain::types::StreamChunk;
+use augur_provider_openrouter::actors::llm::providers::openrouter::stream_complete;
+use augur_provider_shared::request_context::{GenerationParams, RequestContext, RequestPayload};
 use serde::Deserialize;
 use tokio::sync::mpsc;
 
@@ -95,8 +95,8 @@ fn make_app_config(endpoints: Vec<EndpointConfig>) -> AppConfig {
             log_dir: FilePath::new("./logs"),
             sessions_dir: None,
         },
-            program_settings: Default::default(),
-            user_settings: Default::default(),
+        program_settings: Default::default(),
+        user_settings: Default::default(),
     }
 }
 

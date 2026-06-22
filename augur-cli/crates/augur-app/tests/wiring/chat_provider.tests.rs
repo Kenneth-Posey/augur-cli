@@ -1,4 +1,4 @@
-use augur_cli::wiring::{spawn_chat_runtime, EndpointRoutingChatProvider};
+use augur_cli::wiring::{EndpointRoutingChatProvider, spawn_chat_runtime};
 
 /// Verifies the mirrored unit-test module can reach this file's surface symbols.
 #[test]

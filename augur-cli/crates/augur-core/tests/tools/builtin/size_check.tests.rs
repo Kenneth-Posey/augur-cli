@@ -1,6 +1,6 @@
 use augur_core::tools::builtin::size_check::{
-    check_size_with_scope, ExclusionConfig, RecommendationType, SizeCheckError, SizeCheckRequest,
-    SizeCheckTool,
+    ExclusionConfig, RecommendationType, SizeCheckError, SizeCheckRequest, SizeCheckTool,
+    check_size_with_scope,
 };
 use augur_core::tools::handler::ToolHandler;
 use augur_domain::domain::newtypes::NumericNewtype;

@@ -1,4 +1,4 @@
-use augur_domain::domain::agent_spec_parser::{parse_agent_spec, AgentSpecParseError};
+use augur_domain::domain::agent_spec_parser::{AgentSpecParseError, parse_agent_spec};
 use augur_domain::domain::{AgentSpecName, AgentToolSet, ModelId, StringNewtype};
 
 /// Verifies that a minimal frontmatter block is parsed with description and body.

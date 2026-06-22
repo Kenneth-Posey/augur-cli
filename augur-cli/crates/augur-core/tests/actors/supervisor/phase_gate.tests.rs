@@ -3,7 +3,7 @@
 
 use augur_domain::domain::newtypes::IsPredicate;
 
-use augur_core::actors::supervisor::phase_gate::{evaluate_gate, StepOutcome};
+use augur_core::actors::supervisor::phase_gate::{StepOutcome, evaluate_gate};
 use augur_domain::domain::plan_tree::{NodeStatus, PlanNode, PlanNodeId};
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype};
 

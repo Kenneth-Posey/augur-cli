@@ -8,10 +8,10 @@
 use augur_core::actors::token_tracker;
 use augur_core::token_history::ProjectSettings;
 use augur_domain::domain::{
+    Count, Temperature, TokenCount,
     newtypes::NumericNewtype,
     string_newtypes::{OutputText, StringNewtype},
     types::{ContextUsageStats, LlmTokenCounts, LlmUsage, ProjectTokenTotals},
-    Count, Temperature, TokenCount,
 };
 use tempfile::TempDir;
 
@@ -229,7 +229,7 @@ async fn test_spawn_returns_non_completed_join_handle() {
 #[tokio::test]
 async fn test_record_usage_persists_totals_to_settings_file() {
     use augur_core::token_history::load_or_create;
-    use tokio::time::{sleep, Duration};
+    use tokio::time::{Duration, sleep};
 
     let dir = TempDir::new().unwrap();
     let path = tmp_settings_path(&dir);

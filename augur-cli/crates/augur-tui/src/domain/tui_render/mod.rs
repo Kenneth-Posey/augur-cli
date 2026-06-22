@@ -8,11 +8,11 @@ mod render_slice;
 mod selection;
 
 pub use render_slice::{
-    compute_render_slice, format_response_prefix, line_display_rows, rendered_line_text,
-    RenderSlice, RenderSliceInput,
+    RenderSlice, RenderSliceInput, compute_render_slice, format_response_prefix, line_display_rows,
+    rendered_line_text,
 };
 pub use selection::{
-    extract_selected_text, screen_pos_to_line_char, LineCharPosition, ScreenPosToLineCharInput,
+    LineCharPosition, ScreenPosToLineCharInput, extract_selected_text, screen_pos_to_line_char,
 };
 
 /// Function contract for rendering the current display state into a Ratatui frame.

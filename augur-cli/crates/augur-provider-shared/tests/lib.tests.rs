@@ -2,8 +2,8 @@ use augur_domain::domain::newtypes::{Count, WaitSecs};
 use augur_domain::domain::string_newtypes::{AccumulatedText, OutputText};
 use augur_domain::{NumericNewtype, StringNewtype};
 use augur_provider_shared::{
-    compute_backoff_wait, drain_complete_sse_lines, is_requests_exceeded, parse_retry_after,
-    SseChunk, BACKOFF_INITIAL_SECS,
+    BACKOFF_INITIAL_SECS, SseChunk, compute_backoff_wait, drain_complete_sse_lines,
+    is_requests_exceeded, parse_retry_after,
 };
 
 #[test]

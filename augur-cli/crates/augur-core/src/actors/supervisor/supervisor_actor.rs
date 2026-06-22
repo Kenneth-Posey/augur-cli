@@ -23,9 +23,9 @@ use augur_domain::domain::types::{AgentOutput, SupervisorEvent};
 
 use super::checkpoint::CheckpointTracker;
 use super::commands::SupervisorCmd;
-use super::handle::{make_event_channel, SupervisorHandle};
-use super::meta_planner::{apply_meta_output, build_meta_prompt, MetaPlanError};
-use super::phase_gate::{evaluate_gate, StepOutcome};
+use super::handle::{SupervisorHandle, make_event_channel};
+use super::meta_planner::{MetaPlanError, apply_meta_output, build_meta_prompt};
+use super::phase_gate::{StepOutcome, evaluate_gate};
 
 // ── LeafInfo ──────────────────────────────────────────────────────────────────
 

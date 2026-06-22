@@ -9,10 +9,10 @@ use augur_domain::newtypes::NumericNewtype;
 use augur_domain::types::AgentFeedOutput;
 use augur_domain::{StringNewtype, TokenTrackerCommand, TokenTrackerHandle};
 use augur_provider_copilot_sdk::actors::copilot::background_feed_dispatcher::{
-    stream_to_feed, StreamFeedConfig,
+    StreamFeedConfig, stream_to_feed,
 };
-use copilot_sdk::events::UserMessageData;
 use copilot_sdk::SessionEventData;
+use copilot_sdk::events::UserMessageData;
 use futures_util::StreamExt;
 use tokio::sync::mpsc;
 

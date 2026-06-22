@@ -4,11 +4,11 @@ use crate::domain::tui_display_state::TuiDisplayState;
 use crate::domain::tui_state::InputFocus;
 use augur_domain::domain::newtypes::Count;
 use augur_domain::domain::types::{CommandDef, FileCompletion, ModelOption};
+use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Paragraph, Wrap};
-use ratatui::Frame;
 
 #[derive(Clone, Copy)]
 struct HintRenderState {

@@ -1,7 +1,7 @@
 //! Test helper: factory for a throwaway `CatalogManagerHandle` for use in TUI handle tests.
 
-use crate::actors::catalog_manager::catalog_manager_actor::spawn as spawn_catalog_manager;
 use crate::actors::catalog_manager::CatalogManagerHandle;
+use crate::actors::catalog_manager::catalog_manager_actor::spawn as spawn_catalog_manager;
 
 /// Spawn a minimal catalog manager actor and return its handle.
 ///

@@ -1,5 +1,5 @@
-use augur_domain::guided_plan::{CopilotAgentHookParams, HookOutcome, VerdictKind};
 use augur_domain::CopilotAgentHookArgs;
+use augur_domain::guided_plan::{CopilotAgentHookParams, HookOutcome, VerdictKind};
 
 fn args() -> CopilotAgentHookArgs {
     let (event_tx, _event_rx) = tokio::sync::broadcast::channel(8);

@@ -1,6 +1,6 @@
 //! LLM request context, commands, and API-key resolution for provider crates.
 
-use augur_domain::config::types::{find_endpoint, AppConfig, EndpointConfig};
+use augur_domain::config::types::{AppConfig, EndpointConfig, find_endpoint};
 use augur_domain::domain::newtypes::{Temperature, TokenCount};
 use augur_domain::domain::string_newtypes::ModelId;
 use augur_domain::domain::types::{CacheSnapshot, Message, StreamChunk};

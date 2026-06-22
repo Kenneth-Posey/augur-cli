@@ -6,8 +6,8 @@
 //!
 //! Phase 1.3 deliverable: Output type mapping for all 41 events.
 
-use crate::domain::string_newtypes::{EventType, StringNewtype};
 use crate::domain::IsPredicate;
+use crate::domain::string_newtypes::{EventType, StringNewtype};
 
 /// Output category for an event - the semantic type of output produced.
 ///

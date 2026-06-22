@@ -11,12 +11,20 @@ fn test_resolve_workspace_manifest_not_found() {
 fn test_resolve_workspace_extra_manifest() {
     // Try resolving the actual workspace from the repo root.
     let result = workspace_graph::resolve_workspace(
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../Cargo.toml").as_path(),
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../Cargo.toml")
+            .as_path(),
     );
     if let Ok(resolved) = result {
         // The workspace should have at least a few crate nodes.
-        assert!(!resolved.graph.nodes.is_empty(), "expected at least one workspace crate");
-        assert!(!resolved.crate_paths.is_empty(), "expected at least one crate path");
+        assert!(
+            !resolved.graph.nodes.is_empty(),
+            "expected at least one workspace crate"
+        );
+        assert!(
+            !resolved.crate_paths.is_empty(),
+            "expected at least one crate path"
+        );
     }
     // If it fails (e.g., network or manifest issues), that's OK for this test.
 }
@@ -40,12 +48,10 @@ fn test_graph_data_serialization() {
                     layer: 1,
                 },
             ],
-            edges: vec![
-                CrateEdge {
-                    source: "crate-a".to_string(),
-                    target: "crate-b".to_string(),
-                },
-            ],
+            edges: vec![CrateEdge {
+                source: "crate-a".to_string(),
+                target: "crate-b".to_string(),
+            }],
         },
         crates: std::collections::HashMap::new(),
     };
@@ -84,19 +90,15 @@ fn test_graph_data_module_node_children() {
                 symbols: vec![],
             },
         ],
-        edges: vec![
-            ModuleEdge {
-                source: "my-crate::lib".to_string(),
-                target: "my-crate::actors".to_string(),
-            },
-        ],
-        cross_edges: vec![
-            CrossCrateEdge {
-                source: "my-crate::actors".to_string(),
-                target_crate: "other-crate".to_string(),
-                target_module: "other-crate::lib".to_string(),
-            },
-        ],
+        edges: vec![ModuleEdge {
+            source: "my-crate::lib".to_string(),
+            target: "my-crate::actors".to_string(),
+        }],
+        cross_edges: vec![CrossCrateEdge {
+            source: "my-crate::actors".to_string(),
+            target_crate: "other-crate".to_string(),
+            target_module: "other-crate::lib".to_string(),
+        }],
     };
 
     let json = serde_json::to_string_pretty(&module_graph).unwrap();

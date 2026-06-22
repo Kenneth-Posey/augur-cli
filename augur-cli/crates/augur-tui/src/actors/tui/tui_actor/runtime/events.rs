@@ -3,7 +3,7 @@
 use super::super::guided_plan::{
     apply_guided_plan_actions, handle_guided_plan_event, supervisor_event_to_feed,
 };
-use super::super::{EventOutcome, TuiHandles, TuiStreams, CHARS_PER_TICK};
+use super::super::{CHARS_PER_TICK, EventOutcome, TuiHandles, TuiStreams};
 use super::maybe_finish_guided_plan_compaction;
 use super::terminal::handle_terminal_event;
 use crate::actors::tui::assistant::output_buf::{drain_char_buf, handle_agent_output};

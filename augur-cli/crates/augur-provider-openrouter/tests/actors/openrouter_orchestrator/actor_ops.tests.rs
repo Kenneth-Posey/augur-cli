@@ -11,8 +11,8 @@ use augur_domain::tools::registry::ToolRegistry;
 use augur_domain::{NumericNewtype, StringNewtype};
 use augur_provider_openrouter::actors::llm::llm_actor;
 use augur_provider_openrouter::actors::openrouter_orchestrator::openrouter_orchestrator_actor::{
-    spawn, OpenRouterOrchestratorArgs, OrchestratorIoChannels, OrchestratorRuntimeHandles,
-    OrchestratorTaskConfig,
+    OpenRouterOrchestratorArgs, OrchestratorIoChannels, OrchestratorRuntimeHandles,
+    OrchestratorTaskConfig, spawn,
 };
 use std::sync::Arc;
 use tokio::sync::{broadcast, mpsc, watch};
@@ -57,8 +57,12 @@ fn test_logger() -> augur_domain::domain::actor_contracts::LoggerHandle {
 #[tokio::test]
 async fn zero_max_parallel_workers_defaults_to_four() {
     let (agent_tx, _agent_rx) = broadcast::channel(8);
-    let (llm_join, llm_handle) =
-        llm_actor::spawn(test_app_config(), agent_tx, "test-session".to_string(), test_logger());
+    let (llm_join, llm_handle) = llm_actor::spawn(
+        test_app_config(),
+        agent_tx,
+        "test-session".to_string(),
+        test_logger(),
+    );
     let (feed_tx, _feed_rx) = mpsc::channel(8);
     let tool_executor = InlineToolExecutor::new(ToolRegistry::new());
 

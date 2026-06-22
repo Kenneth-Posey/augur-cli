@@ -32,16 +32,22 @@ fn options_returns_five_variants() {
 
 #[test]
 fn display_label_contains_variant_name() {
-    assert!(ReasoningEffort::Auto
-        .display_label()
-        .as_str()
-        .contains("auto"));
-    assert!(ReasoningEffort::High
-        .display_label()
-        .as_str()
-        .contains("high"));
-    assert!(ReasoningEffort::None
-        .display_label()
-        .as_str()
-        .contains("none"));
+    assert!(
+        ReasoningEffort::Auto
+            .display_label()
+            .as_str()
+            .contains("auto")
+    );
+    assert!(
+        ReasoningEffort::High
+            .display_label()
+            .as_str()
+            .contains("high")
+    );
+    assert!(
+        ReasoningEffort::None
+            .display_label()
+            .as_str()
+            .contains("none")
+    );
 }

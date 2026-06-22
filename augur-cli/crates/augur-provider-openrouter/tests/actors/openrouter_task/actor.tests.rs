@@ -1,3 +1,4 @@
+use augur_domain::ToolDefinition;
 use augur_domain::string_newtypes::OutputText;
 use augur_domain::task_types::{
     AgentSpecName, InstructionPrefix, RepoRoot, TaskDepth, TaskRunId, TaskSignal,
@@ -5,14 +6,13 @@ use augur_domain::task_types::{
 use augur_domain::tools::handler::ToolCallResult;
 use augur_domain::traits::{CompletionRequest, LlmClient, ToolExecutor};
 use augur_domain::types::{AgentFeedOutput, FeedEntry, StreamChunk, ToolCall};
-use augur_domain::ToolDefinition;
 use augur_domain::{ModelId, PromptText, StringNewtype};
 use augur_provider_openrouter::actors::openrouter_task::openrouter_task_actor::{
-    spawn, OpenRouterTaskArgs, TaskConfig, TaskCorrelation, TaskRequestSpec, TaskRuntimeOptions,
-    TaskServices,
+    OpenRouterTaskArgs, TaskConfig, TaskCorrelation, TaskRequestSpec, TaskRuntimeOptions,
+    TaskServices, spawn,
 };
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tokio::sync::{mpsc, oneshot};
 
 struct FakeLlm;

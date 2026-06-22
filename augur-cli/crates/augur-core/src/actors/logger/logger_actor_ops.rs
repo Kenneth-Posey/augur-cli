@@ -1,8 +1,8 @@
 //! Private helper operations for the logger actor run loop.
 
 use crate::actors::logger::logger_ops::{
-    format_as_jsonl, history_entry_to_log_entry, message_log_file_name, message_to_entry,
-    LogCommand, LogEntry,
+    LogCommand, LogEntry, format_as_jsonl, history_entry_to_log_entry, message_log_file_name,
+    message_to_entry,
 };
 use augur_domain::domain::newtypes::{NumericNewtype, TimestampMs, TimestampSecs};
 use augur_domain::domain::string_newtypes::{EndpointName, OutputText, StringNewtype};
@@ -110,11 +110,7 @@ async fn handle_log_command(log_path: &PathBuf, cmd: LogCommand) -> bool {
             })
             .to_string();
             log_write_result(
-                append_payload(
-                    log_path,
-                    &OutputText::new(format!("{line}\n")),
-                )
-                .await,
+                append_payload(log_path, &OutputText::new(format!("{line}\n"))).await,
                 log_path,
                 &OutputText::new("failed to write llm_raw entry"),
             );

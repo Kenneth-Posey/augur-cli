@@ -1,10 +1,10 @@
 //! Subprocess hook runner: executes a shell command and checks exit code.
 
 use super::MAX_HOOK_OUTPUT_LINES;
-use augur_domain::domain::guided_plan::HookOutcome;
-use augur_domain::domain::string_newtypes::ShellCommand;
 use augur_domain::domain::FailureReason;
 use augur_domain::domain::StringNewtype;
+use augur_domain::domain::guided_plan::HookOutcome;
+use augur_domain::domain::string_newtypes::ShellCommand;
 use std::process::ExitStatus;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Child;

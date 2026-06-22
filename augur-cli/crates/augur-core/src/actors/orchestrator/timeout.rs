@@ -1,10 +1,10 @@
 //! Stage 3.2 signature surfaces for timeout enforcement (M8).
 
 use crate::actors::orchestrator::ingestion::{
-    drive_scheduler_tick, handle_step_terminal, OrchestratorContext, OrchestratorError, StepOutcome,
+    OrchestratorContext, OrchestratorError, StepOutcome, drive_scheduler_tick, handle_step_terminal,
 };
 use crate::persistence::plan_persistence::update_step_status;
-use augur_domain::domain::{build_wait_or_reply_event, PlanState, RunId, StepKey, StepStatus};
+use augur_domain::domain::{PlanState, RunId, StepKey, StepStatus, build_wait_or_reply_event};
 
 /// Handle one per-step timeout callback.
 ///

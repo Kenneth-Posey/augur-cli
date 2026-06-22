@@ -1,13 +1,13 @@
 //! Stage 3.2 signature surfaces for orchestrator ingestion and scheduling (M7).
 
 use crate::persistence::plan_persistence::{
-    persist_execution_plan, persist_step_artifacts, update_step_status, PlanPersistenceError,
-    StepArtifactRow,
+    PlanPersistenceError, StepArtifactRow, persist_execution_plan, persist_step_artifacts,
+    update_step_status,
 };
 use augur_domain::domain::{
-    apply_step_completion, build_wait_or_reply_event, ready_steps, validate_execution_plan,
     ExecutionPlan, ExecutionPlanError, Map, OrchestratorEvent, PlanState, RunId, StepArtifact,
-    StepKey, StepStatus,
+    StepKey, StepStatus, apply_step_completion, build_wait_or_reply_event, ready_steps,
+    validate_execution_plan,
 };
 use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex};

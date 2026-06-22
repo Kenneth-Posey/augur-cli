@@ -3,6 +3,7 @@ use augur_domain::background_events::*;
 use augur_domain::newtypes::{BufferThreshold, ErrorMessage, ExecutionSuccess, TimestampMs};
 use augur_domain::string_newtypes::{ContentDelta, StringNewtype, ToolName};
 use augur_provider_copilot_sdk::actors::copilot::event_classifier::CopilotEventClassifier;
+use copilot_sdk::SessionEventData;
 use copilot_sdk::events::{
     AbortData, AssistantIntentData, AssistantMessageData, AssistantMessageDeltaData,
     AssistantReasoningData, AssistantReasoningDeltaData, AssistantTurnEndData,
@@ -16,7 +17,6 @@ use copilot_sdk::events::{
     ToolExecutionPartialResultData, ToolExecutionProgressData, ToolExecutionStartData,
     ToolUserRequestedData, UserMessageData,
 };
-use copilot_sdk::SessionEventData;
 
 use std::collections::HashMap;
 

@@ -6,7 +6,7 @@ use super::models::filter::filter_models;
 use super::models::formatter::{to_markdown_catalog, to_yaml_snippet};
 use super::models::{FilterOpts, ModelInfo, OutputFormat, ProviderChoice, ProviderName};
 use crate::config::provider_catalog::{
-    default_provider_catalog_dir, write_provider_catalog, ProviderCatalogFile, ProviderCatalogModel,
+    ProviderCatalogFile, ProviderCatalogModel, default_provider_catalog_dir, write_provider_catalog,
 };
 use augur_domain::domain::newtypes::{Count, NumericNewtype, TokenCount, ToolResultStripFraction};
 use augur_domain::domain::string_newtypes::{ModelId, ModelLabel, OutputText, StringNewtype};

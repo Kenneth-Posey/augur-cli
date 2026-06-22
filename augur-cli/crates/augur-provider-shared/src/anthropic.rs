@@ -4,8 +4,8 @@ mod body;
 mod retry;
 
 use crate::{
-    request_context::{resolve_api_key, RequestContext},
-    streaming::{drain_complete_sse_lines, SseChunk},
+    request_context::{RequestContext, resolve_api_key},
+    streaming::{SseChunk, drain_complete_sse_lines},
 };
 use augur_domain::domain::newtypes::{NumericNewtype, TokenCount};
 use augur_domain::domain::string_newtypes::{

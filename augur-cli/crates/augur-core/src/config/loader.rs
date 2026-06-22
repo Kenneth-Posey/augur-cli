@@ -1,8 +1,9 @@
 //! YAML configuration loader.
 
+use crate::config::write_section_value;
 use anyhow::Context;
 use augur_domain::config::types::AppConfig;
-use augur_domain::domain::string_newtypes::{FilePath, StringNewtype};use crate::config::write_section_value;
+use augur_domain::domain::string_newtypes::{FilePath, StringNewtype};
 use serde_yaml::Value;
 use std::path::{Path, PathBuf};
 
@@ -144,7 +145,10 @@ pub fn init_config_layout(base: &Path) {
         // appending a duplicate section.
         let log_dir_str = logs_dir.display().to_string();
         let sessions_dir_str = sessions_dir.display().to_string();
-        let yaml_body = format!("log_dir: \"{}\"\nsessions_dir: \"{}\"\n", log_dir_str, sessions_dir_str);
+        let yaml_body = format!(
+            "log_dir: \"{}\"\nsessions_dir: \"{}\"\n",
+            log_dir_str, sessions_dir_str
+        );
         write_section_value(&app_yaml_path, "persistence", &yaml_body);
     }
 

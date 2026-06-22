@@ -4,7 +4,7 @@ use crate::domain::tui_state::GuidedPlanUiState;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Block, Paragraph, Wrap};
-use ratatui::{layout::Rect, Frame};
+use ratatui::{Frame, layout::Rect};
 
 /// Render the right-hand guided plan phase panel.
 pub(super) fn render_guided_plan_panel(frame: &mut Frame, state: &GuidedPlanUiState, area: Rect) {

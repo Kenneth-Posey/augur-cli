@@ -1,7 +1,7 @@
 //! Test helper: factory for a throwaway `LoggerHandle` for use in TUI handle tests.
 
-use crate::actors::logger::logger_actor::spawn as spawn_logger;
 use crate::actors::LoggerHandle;
+use crate::actors::logger::logger_actor::spawn as spawn_logger;
 
 /// Spawn a minimal logger actor and return its handle.
 ///

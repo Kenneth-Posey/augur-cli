@@ -43,7 +43,12 @@ fn test_logger() -> augur_domain::domain::actor_contracts::LoggerHandle {
 #[tokio::test]
 async fn complete_stream_emits_error_when_endpoint_is_missing() {
     let (agent_tx, _agent_rx) = tokio::sync::broadcast::channel(8);
-    let (join, handle) = llm_actor::spawn(test_app_config(), agent_tx, "test-session".to_string(), test_logger());
+    let (join, handle) = llm_actor::spawn(
+        test_app_config(),
+        agent_tx,
+        "test-session".to_string(),
+        test_logger(),
+    );
     let request = CompletionRequest::builder()
         .endpoint(EndpointName::new("missing"))
         .messages(vec![])

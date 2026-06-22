@@ -4,7 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::domain::string_newtypes::{FilePath, SessionId, StringNewtype};
-use crate::persistence::types::{summarize, SessionRecord, SessionSummary};
+use crate::persistence::types::{SessionRecord, SessionSummary, summarize};
 
 const MAX_SESSION_LIST_SIZE: usize = 20;
 

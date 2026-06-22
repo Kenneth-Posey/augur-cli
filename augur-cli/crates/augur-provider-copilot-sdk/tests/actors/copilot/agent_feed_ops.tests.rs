@@ -15,8 +15,8 @@ mod suite {
     use augur_domain::types::AgentFeedOutput;
     use augur_domain::{StringNewtype, ToolCallId, ToolName};
     use augur_provider_copilot_sdk::actors::copilot::agent_feed_ops::{
-        map_sub_agent_delta_output, map_tool_complete_output, map_tool_progress_output,
-        map_tool_start_output, ActiveToolCallMap, ToolInfo,
+        ActiveToolCallMap, ToolInfo, map_sub_agent_delta_output, map_tool_complete_output,
+        map_tool_progress_output, map_tool_start_output,
     };
 
     // ── Helpers ───────────────────────────────────────────────────────────────

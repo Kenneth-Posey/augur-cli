@@ -2,10 +2,10 @@
 
 use super::agent_actor::AgentCommand;
 use super::agent_ops::AgentOutput;
+use augur_domain::domain::SdkSessionId;
 use augur_domain::domain::string_newtypes::{EndpointName, PromptText, StringNewtype};
 use augur_domain::domain::traits::ChatProvider;
 use augur_domain::domain::types::{CancelSignal, Message};
-use augur_domain::domain::SdkSessionId;
 use augur_domain::persistence::types::{MessageRecord, MessageType};
 use std::sync::Arc;
 use tokio::sync::{broadcast, mpsc, watch};

@@ -1,10 +1,10 @@
 //! Unit tests for `event_mapper::map_session_event`.
 
+use augur_domain::NumericNewtype;
 use augur_domain::newtypes::TokenCount;
 use augur_domain::plan_tree::{NodeStatus, PlanNodeId};
 use augur_domain::string_newtypes::{OutputText, StringNewtype, ToolCallId, ToolName};
 use augur_domain::types::AgentOutput;
-use augur_domain::NumericNewtype;
 use augur_provider_copilot_sdk::actors::executor::commands::SessionEvent;
 use augur_provider_copilot_sdk::actors::executor::event_mapper::map_session_event;
 

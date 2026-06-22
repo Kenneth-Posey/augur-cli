@@ -1,7 +1,7 @@
 //! Private helper operations for the token-tracker actor.
 
 use super::token_tracker_actor::TokenTrackerState;
-use super::token_tracker_ops::{accumulate, TokenTrackerCommand};
+use super::token_tracker_ops::{TokenTrackerCommand, accumulate};
 use crate::token_history;
 use augur_domain::domain::newtypes::IsPredicate;
 use augur_domain::domain::types::ProjectTokenTotals;

@@ -7,4 +7,5 @@
 pub mod doc_extractor;
 pub mod graph_data;
 pub mod module_walker;
-pub mod workspace_graph;pub mod symbol_extractor;
+pub mod symbol_extractor;
+pub mod workspace_graph;

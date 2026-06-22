@@ -5,7 +5,7 @@ use augur_domain::domain::newtypes::NumericNewtype;
 use augur_domain::domain::string_newtypes::{EndpointName, OutputText, StringNewtype};
 use augur_domain::domain::types::{Message, Role};
 use std::path::PathBuf;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 /// Helper to create a temporary directory for log files.
 fn temp_log_dir() -> PathBuf {

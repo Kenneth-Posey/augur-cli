@@ -1,8 +1,8 @@
 use augur_domain::domain::events::inventory::{
-    base_route, categorize_event, displays_in_agent_feed, displays_in_main_feed,
-    has_parent_tool_call_id, is_always_suppressed, is_config_dependent, is_state_dependent,
-    EventCategory, EventRoute, ALWAYS_ENABLED_EVENTS, ALWAYS_SUPPRESSED, ALWAYS_SUPPRESSED_EVENTS,
-    GATE_DEPENDENT_EVENTS,
+    ALWAYS_ENABLED_EVENTS, ALWAYS_SUPPRESSED, ALWAYS_SUPPRESSED_EVENTS, EventCategory, EventRoute,
+    GATE_DEPENDENT_EVENTS, base_route, categorize_event, displays_in_agent_feed,
+    displays_in_main_feed, has_parent_tool_call_id, is_always_suppressed, is_config_dependent,
+    is_state_dependent,
 };
 use augur_domain::domain::{EventType, StringNewtype};
 

@@ -1,10 +1,10 @@
 //! Actor-level tests for the history adapter: spawn, route, and shutdown.
 
-use augur_core::actors::history_adapter::history_adapter_actor::{spawn, HistoryAdapterConfig};
+use augur_core::actors::history_adapter::history_adapter_actor::{HistoryAdapterConfig, spawn};
 use augur_domain::domain::feeds::HistoryFeedMessage;
 use augur_domain::domain::types::Message;
 use tokio::sync::mpsc;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 /// Verifies that a `RecordUser` command causes `HistoryFeedMessage::UserEntry` to appear on the history channel.
 #[tokio::test]

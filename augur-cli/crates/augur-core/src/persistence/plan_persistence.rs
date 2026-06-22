@@ -1,10 +1,10 @@
 //! Stage 3 behavior wiring for execution-plan persistence (M6).
 
+use augur_domain::StringNewtype;
 use augur_domain::domain::{
     ArtifactData, ArtifactName, ExecutionStepId, PlanState, PlanStateReconstructionError, RunId,
     StepArtifact, StepKey, StepSpecJson, StepStatus, ValidatedPlan,
 };
-use augur_domain::StringNewtype;
 use std::sync::{Mutex, OnceLock};
 
 /// Platform timestamp projection used by persistence rows.
@@ -288,13 +288,13 @@ pub fn persist_step_artifacts(
 #[cfg(test)]
 mod tests {
     use super::{
-        load_plan_from_db, persist_execution_plan, store, ExecutionStepId, PlanPersistenceError,
-        RunId, ValidatedPlan,
-    };
-    use augur_domain::domain::{
-        validate_execution_plan, ExecutionPlan, ExecutionStepSpec, RawStepId, StepSpecJson,
+        ExecutionStepId, PlanPersistenceError, RunId, ValidatedPlan, load_plan_from_db,
+        persist_execution_plan, store,
     };
     use augur_domain::StringNewtype;
+    use augur_domain::domain::{
+        ExecutionPlan, ExecutionStepSpec, RawStepId, StepSpecJson, validate_execution_plan,
+    };
 
     fn validated_single_step_plan() -> ValidatedPlan {
         let plan = ExecutionPlan::new(

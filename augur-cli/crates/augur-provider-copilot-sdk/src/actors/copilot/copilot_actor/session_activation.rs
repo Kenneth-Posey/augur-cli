@@ -1,4 +1,4 @@
-use super::super::assistant::{register_query_user_tool, start_event_dispatch, EventDispatchArgs};
+use super::super::assistant::{EventDispatchArgs, register_query_user_tool, start_event_dispatch};
 use super::super::feed_router::FeedChannels;
 use super::runtime_types::{
     ActivateSessionArgs, ActiveSessionCommandContextArgs, CommandContextArgs, CopilotCmdContext,

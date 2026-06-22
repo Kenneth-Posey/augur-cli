@@ -2,8 +2,8 @@ use augur_core::tools::builtin::spawn_agent::SpawnAgentTool;
 use augur_core::tools::handler::ToolHandler;
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype};
 use augur_domain::domain::task_types::{
-    AgentSpecName, SpawnAgentAck, SpawnAgentHandle, SpawnAgentRequest, SpawnDispatchStatus,
-    TaskDepth, TaskDispatchState, TaskQueueSnapshot, MAX_TASK_DEPTH,
+    AgentSpecName, MAX_TASK_DEPTH, SpawnAgentAck, SpawnAgentHandle, SpawnAgentRequest,
+    SpawnDispatchStatus, TaskDepth, TaskDispatchState, TaskQueueSnapshot,
 };
 use tokio::sync::mpsc;
 

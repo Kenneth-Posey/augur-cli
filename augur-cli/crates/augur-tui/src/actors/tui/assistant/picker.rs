@@ -2,7 +2,7 @@
 
 use super::session_restore::apply_restored_session;
 use crate::actors::tui::tui_actor::TuiHandles;
-use crate::domain::tui_input::{apply_picker_key, classify_picker_key, PickerKeyAction};
+use crate::domain::tui_input::{PickerKeyAction, apply_picker_key, classify_picker_key};
 use crate::domain::tui_state::{AppScreen, AppState, ConversationMode, PickerState};
 use augur_domain::domain::newtypes::{Count, NumericNewtype};
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype};

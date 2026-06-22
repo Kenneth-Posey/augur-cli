@@ -8,11 +8,11 @@ use std::collections::HashMap;
 
 pub use crate::domain::types::{MessageRecord, MessageType};
 
+use crate::domain::IsPredicate;
 use crate::domain::newtypes::{Count, NumericNewtype, TimestampMs};
 use crate::domain::string_newtypes::{
     EndpointName, OutputText, PromptText, SdkSessionId, SessionId, StrategyNodeName, StringNewtype,
 };
-use crate::domain::IsPredicate;
 
 // ── Strategy tree ────────────────────────────────────────────────────────────
 

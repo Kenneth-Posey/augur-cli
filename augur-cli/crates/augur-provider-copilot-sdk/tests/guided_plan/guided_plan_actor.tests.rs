@@ -1,5 +1,5 @@
-use augur_domain::guided_plan::{CopilotAgentHookParams, HookOutcome, VerdictKind};
 use augur_domain::CopilotAgentHookArgs;
+use augur_domain::guided_plan::{CopilotAgentHookParams, HookOutcome, VerdictKind};
 
 #[tokio::test]
 async fn guided_plan_actor_runner_returns_needs_rework_for_test_rework_agent() {
@@ -18,9 +18,11 @@ async fn guided_plan_actor_runner_returns_needs_rework_for_test_rework_agent() {
             .await;
     match outcome {
         HookOutcome::NeedsRework(reason) => {
-            assert!(reason
-                .to_string()
-                .contains("address gap in behavior mapping"));
+            assert!(
+                reason
+                    .to_string()
+                    .contains("address gap in behavior mapping")
+            );
         }
         other => panic!("expected NeedsRework outcome, got {other:?}"),
     }

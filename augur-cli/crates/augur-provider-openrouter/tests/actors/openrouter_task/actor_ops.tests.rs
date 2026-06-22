@@ -22,12 +22,16 @@ fn build_task_system_prompt_includes_tool_list_and_size_check_guidance() {
     ];
     let prompt = build_task_system_prompt(&AgentInstructions::new("base"), &tools);
     assert!(prompt.as_str().contains("## Available tools"));
-    assert!(prompt
-        .as_str()
-        .contains("**shell_exec**: Run shell commands"));
-    assert!(prompt
-        .as_str()
-        .contains("call `size_check` before heavy reads/searches"));
+    assert!(
+        prompt
+            .as_str()
+            .contains("**shell_exec**: Run shell commands")
+    );
+    assert!(
+        prompt
+            .as_str()
+            .contains("call `size_check` before heavy reads/searches")
+    );
 }
 
 #[test]

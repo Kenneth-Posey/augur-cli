@@ -1,5 +1,5 @@
 use augur_domain::domain::string_newtypes::{AccumulatedText, OutputText};
-use augur_provider_shared::{drain_complete_sse_lines, SseChunk};
+use augur_provider_shared::{SseChunk, drain_complete_sse_lines};
 
 #[test]
 fn drain_complete_sse_lines_preserves_remainder() {

@@ -1,6 +1,6 @@
 //! Private helper operations for the file-read actor.
 
-use super::file_read_ops::{apply_range, is_within_allowed_dirs, FileReadCommand};
+use super::file_read_ops::{FileReadCommand, apply_range, is_within_allowed_dirs};
 use crate::tools::ports::{FileReadResult, ReadRange};
 use augur_domain::domain::newtypes::IsPredicate;
 use augur_domain::domain::string_newtypes::{FilePath, OutputText, StringNewtype};

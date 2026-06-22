@@ -24,8 +24,9 @@ struct ModuleTreeContext<'a> {
     cross_edges: &'a mut Vec<CrossCrateEdge>,
 }
 
-use crate::symbol_extractor;use crate::doc_extractor;
+use crate::doc_extractor;
 use crate::graph_data::{CrateModuleGraph, CrossCrateEdge, ModuleEdge, ModuleNode};
+use crate::symbol_extractor;
 
 /// Walk all workspace crates and produce per-crate module graphs.
 pub fn walk_all_crates(
@@ -53,10 +54,7 @@ pub fn walk_all_crates(
                 result.insert(crate_name.clone(), graph);
             }
             Err(e) => {
-                eprintln!(
-                    "[skip] {}: failed to walk module tree: {}",
-                    crate_name, e
-                );
+                eprintln!("[skip] {}: failed to walk module tree: {}", crate_name, e);
             }
         }
     }
@@ -100,7 +98,8 @@ fn walk_crate(
         .iter()
         .flat_map(|s| vec![s.clone(), s.replace('-', "_")])
         .collect();
-    let ws_normalized_refs: HashSet<&str> = ws_names_normalized.iter().map(|s| s.as_str()).collect();
+    let ws_normalized_refs: HashSet<&str> =
+        ws_names_normalized.iter().map(|s| s.as_str()).collect();
 
     // Build a map from underscore form to canonical hyphen form for cross-crate edges.
     let crate_name_map: HashMap<String, String> = workspace_crate_names
@@ -127,7 +126,15 @@ fn walk_crate(
                 && path.file_name().and_then(|n| n.to_str()) != Some("main.rs")
             {
                 if let Ok(src) = std::fs::read_to_string(&path) {
-                    collect_use_edges(&src, crate_name, &root_id, &ws_normalized_refs, &crate_name_map, &mut edges, &mut cross_edges);
+                    collect_use_edges(
+                        &src,
+                        crate_name,
+                        &root_id,
+                        &ws_normalized_refs,
+                        &crate_name_map,
+                        &mut edges,
+                        &mut cross_edges,
+                    );
                 }
             }
         }
@@ -225,10 +232,19 @@ fn collect_module_tree(desc: &ModuleDesc, ctx: &mut ModuleTreeContext<'_>) {
         .iter()
         .flat_map(|s| vec![s.clone(), s.replace('-', "_")])
         .collect();
-    let ws_normalized_refs: HashSet<&str> = ws_names_normalized.iter().map(|s| s.as_str()).collect();
+    let ws_normalized_refs: HashSet<&str> =
+        ws_names_normalized.iter().map(|s| s.as_str()).collect();
 
     // Scan mod.rs for use edges
-    collect_use_edges(&source, ctx.crate_name, &desc.id, &ws_normalized_refs, ctx.crate_name_map, ctx.edges, ctx.cross_edges);
+    collect_use_edges(
+        &source,
+        ctx.crate_name,
+        &desc.id,
+        &ws_normalized_refs,
+        ctx.crate_name_map,
+        ctx.edges,
+        ctx.cross_edges,
+    );
 
     // Also scan all sibling .rs files in this module's directory for use edges.
     // These files (e.g. agent_actor.rs, agent_ops.rs) contain the majority of
@@ -240,7 +256,15 @@ fn collect_module_tree(desc: &ModuleDesc, ctx: &mut ModuleTreeContext<'_>) {
                 && path.file_name().and_then(|n| n.to_str()) != Some("mod.rs")
             {
                 if let Ok(src) = std::fs::read_to_string(&path) {
-                    collect_use_edges(&src, ctx.crate_name, &desc.id, &ws_normalized_refs, ctx.crate_name_map, ctx.edges, ctx.cross_edges);
+                    collect_use_edges(
+                        &src,
+                        ctx.crate_name,
+                        &desc.id,
+                        &ws_normalized_refs,
+                        ctx.crate_name_map,
+                        ctx.edges,
+                        ctx.cross_edges,
+                    );
                 }
             }
         }

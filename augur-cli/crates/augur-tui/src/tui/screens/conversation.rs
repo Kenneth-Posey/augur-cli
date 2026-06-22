@@ -16,16 +16,16 @@ use crate::tui::components::footer::{render_controls_row, render_status_bar};
 use crate::tui::components::primary_feed::render_separator;
 use crate::tui::components::text_entry::{active_hint_count, render_active_hints, render_input};
 use crate::tui::layout::{
-    compute_layout, compute_query_input_rows, split_controls_area, ChatLayoutInput,
-    ConversationArea, QueryInputRowsInput,
+    ChatLayoutInput, ConversationArea, QueryInputRowsInput, compute_layout,
+    compute_query_input_rows, split_controls_area,
 };
 use augur_domain::domain::newtypes::{Count, NumericNewtype};
-use ratatui::layout::Rect;
 use ratatui::Frame;
+use ratatui::layout::Rect;
 
 use layout_zones::{conv_area_above, split_layout};
 use plan_layout::{
-    render_guided_plan_layout, render_plan_layout, GuidedPlanLayoutContext, PlanLayoutContext,
+    GuidedPlanLayoutContext, PlanLayoutContext, render_guided_plan_layout, render_plan_layout,
 };
 use query_input::render_query_input;
 pub use query_input::{build_inline_choice_lines, split_question_lines};

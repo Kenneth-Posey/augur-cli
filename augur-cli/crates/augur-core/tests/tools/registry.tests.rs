@@ -1,11 +1,11 @@
+use augur_core::tools::ToolDefinition;
 use augur_core::tools::builtin::shell_exec::ShellExecTool;
 use augur_core::tools::handler::{ToolCallResult, ToolHandler};
 use augur_core::tools::registry::ToolRegistry;
-use augur_core::tools::ToolDefinition;
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype, ToolName};
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Arc,
+    atomic::{AtomicBool, Ordering},
 };
 
 struct SnapshotSensitiveTool {

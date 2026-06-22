@@ -167,7 +167,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "augur-app"
-version = "6.0.0"
+version = "7.0.0"
 dependencies = [
  "anyhow",
  "augur-core",
@@ -189,48 +189,37 @@ dependencies = [
 
 [[package]]
 name = "augur-core"
-version = "7.0.0"
+version = "8.0.0"
 dependencies = [
  "anyhow",
- "arboard",
  "async-trait",
  "augur-domain",
  "bon",
- "cargo_metadata",
  "chrono",
  "clap",
- "crossterm",
- "futures-util",
  "insta",
  "libc",
  "mockall",
  "mockito",
  "notify",
  "proptest",
- "quote",
- "ratatui",
  "reqwest",
  "rusqlite",
  "serde",
  "serde_json",
  "serde_yaml",
  "shell-words",
- "syn 2.0.118",
  "tempfile",
- "thiserror 2.0.18",
  "tokio",
- "tokio-stream",
  "tokio-test",
  "tracing",
- "tracing-subscriber",
  "trybuild",
- "unicode-width",
  "uuid",
 ]
 
 [[package]]
 name = "augur-domain"
-version = "6.0.0"
+version = "7.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -249,7 +238,7 @@ dependencies = [
 
 [[package]]
 name = "augur-graph-builder"
-version = "2.0.0"
+version = "3.0.0"
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -257,12 +246,11 @@ dependencies = [
  "serde",
  "serde_json",
  "syn 2.0.118",
- "walkdir",
 ]
 
 [[package]]
 name = "augur-integration-tests"
-version = "4.0.0"
+version = "5.0.0"
 dependencies = [
  "anyhow",
  "augur-app",
@@ -287,14 +275,11 @@ dependencies = [
 
 [[package]]
 name = "augur-provider-anthropic"
-version = "4.0.0"
+version = "5.0.0"
 dependencies = [
  "augur-domain",
  "augur-provider-shared",
- "bon",
- "futures-util",
  "mockito",
- "reqwest",
  "serde",
  "serde_json",
  "tokio",
@@ -303,19 +288,16 @@ dependencies = [
 
 [[package]]
 name = "augur-provider-copilot-sdk"
-version = "7.0.0"
+version = "8.0.0"
 dependencies = [
- "anyhow",
  "async-trait",
  "augur-domain",
- "augur-provider-shared",
  "bon",
  "copilot-sdk",
  "futures-util",
  "serde",
  "serde_json",
  "tempfile",
- "thiserror 2.0.18",
  "tokio",
  "tracing",
  "uuid",
@@ -335,14 +317,11 @@ dependencies = [
 
 [[package]]
 name = "augur-provider-openai"
-version = "4.0.0"
+version = "5.0.0"
 dependencies = [
  "augur-domain",
  "augur-provider-shared",
- "bon",
- "futures-util",
  "mockito",
- "reqwest",
  "serde",
  "serde_json",
  "tokio",
@@ -351,29 +330,26 @@ dependencies = [
 
 [[package]]
 name = "augur-provider-openrouter"
-version = "6.0.0"
+version = "7.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
  "augur-domain",
  "augur-provider-shared",
  "bon",
- "futures-util",
  "mockito",
  "reqwest",
  "serde",
  "serde_json",
  "tempfile",
- "thiserror 2.0.18",
  "tokio",
- "tokio-stream",
  "tracing",
  "uuid",
 ]
 
 [[package]]
 name = "augur-provider-shared"
-version = "3.0.0"
+version = "4.0.0"
 dependencies = [
  "augur-domain",
  "bon",
@@ -387,11 +363,10 @@ dependencies = [
 
 [[package]]
 name = "augur-tui"
-version = "3.0.0"
+version = "4.0.0"
 dependencies = [
  "anyhow",
  "arboard",
- "async-trait",
  "augur-core",
  "augur-domain",
  "bon",
@@ -403,7 +378,6 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tokio",
- "tokio-stream",
  "tracing",
  "unicode-width",
 ]

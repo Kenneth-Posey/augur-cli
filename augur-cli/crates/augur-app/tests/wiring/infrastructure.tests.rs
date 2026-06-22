@@ -1,5 +1,5 @@
 use augur_cli::wiring::{
-    build_registry, spawn_core_runtime, BuildRegistryArgs, OptionalToolArgs, RegistryDirectoryScope,
+    BuildRegistryArgs, OptionalToolArgs, RegistryDirectoryScope, build_registry, spawn_core_runtime,
 };
 use augur_domain::config::types::ProgramSettings;
 use augur_domain::domain::{StringNewtype, ToolName};

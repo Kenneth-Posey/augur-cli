@@ -7,7 +7,7 @@
 //! the field is set to its zero sentinel (meaning "use provider default").
 
 use augur_domain::config::provider_catalog::{
-    default_provider_catalog_dir, load_provider_catalog, ProviderCatalogFile,
+    ProviderCatalogFile, default_provider_catalog_dir, load_provider_catalog,
 };
 use augur_domain::config::types::Provider;
 use augur_domain::newtypes::{Count, NumericNewtype, TokenCount, ToolResultStripFraction};
@@ -116,11 +116,7 @@ fn resolve_fraction(
 }
 
 fn resolve_iterations(value: Count, fallback: Count) -> Count {
-    if value > Count::ZERO {
-        value
-    } else {
-        fallback
-    }
+    if value > Count::ZERO { value } else { fallback }
 }
 
 /// Fallback strip fraction when model config is absent or set to zero (90%).
@@ -141,10 +137,10 @@ fn fallback_config() -> ResolvedModelConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use augur_domain::StringNewtype;
     use augur_domain::config::provider_catalog::ProviderCatalogModel;
     use augur_domain::newtypes::CostPerMtok;
     use augur_domain::string_newtypes::{ModelLabel, ProviderName};
-    use augur_domain::StringNewtype;
 
     fn make_catalog_with_model(
         id: &str,

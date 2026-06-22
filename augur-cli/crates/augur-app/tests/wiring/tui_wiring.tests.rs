@@ -5,12 +5,12 @@ use augur_domain::config::types::{
     AgentConfig, AppConfig, CopilotConfig, EndpointConfig, EndpointCredentials, PersistenceConfig,
     ProgramSettings, Provider,
 };
+use augur_domain::domain::StringNewtype;
 use augur_domain::domain::newtypes::{NumericNewtype, Temperature, TimestampSecs, TokenCount};
 use augur_domain::domain::string_newtypes::{
     EndpointName, EndpointUrl, FilePath, ModelName, OutputText,
 };
 use augur_domain::domain::types::StreamChunk;
-use augur_domain::domain::StringNewtype;
 
 fn test_config() -> AppConfig {
     AppConfig {

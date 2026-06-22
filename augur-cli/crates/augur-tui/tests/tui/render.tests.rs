@@ -19,9 +19,10 @@ use augur_tui::domain::tui_state::{
 };
 use augur_tui::domain::types::AgentOutput;
 use augur_tui::tui::render::{
-    build_inline_choice_lines, compute_render_slice, extract_selected_text, format_response_prefix,
-    line_display_rows, rendered_line_text, screen_pos_to_line_char, scroll_marker_row,
-    separator_line, split_question_lines, RenderSlice, RenderSliceInput, ScreenPosToLineCharInput,
+    RenderSlice, RenderSliceInput, ScreenPosToLineCharInput, build_inline_choice_lines,
+    compute_render_slice, extract_selected_text, format_response_prefix, line_display_rows,
+    rendered_line_text, screen_pos_to_line_char, scroll_marker_row, separator_line,
+    split_question_lines,
 };
 use ratatui::layout::{Position, Rect};
 use std::path::{Path, PathBuf};
@@ -1105,8 +1106,8 @@ fn render_with_ask_panel_open_does_not_panic() {
     use augur_tui::domain::string_newtypes::EndpointName;
     use augur_tui::domain::tui_state::{AppScreen, AppState, AskPanelState};
     use augur_tui::tui::render::render_with_overlays;
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).expect("terminal must be created");
     let ep = EndpointName::new("test");
     let mut state = AppState::new(ep, AppScreen::Conversation);
@@ -1122,8 +1123,8 @@ fn render_controls_row_visible_when_no_ask_panel() {
     use augur_tui::domain::string_newtypes::EndpointName;
     use augur_tui::domain::tui_state::{AppScreen, AppState};
     use augur_tui::tui::render::render_with_overlays;
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).expect("terminal must be created");
     let ep = EndpointName::new("test");
     let state = AppState::new(ep, AppScreen::Conversation);
@@ -1138,8 +1139,8 @@ fn render_ask_panel_with_focused_state_does_not_panic() {
     use augur_tui::domain::string_newtypes::EndpointName;
     use augur_tui::domain::tui_state::{AppScreen, AppState, AskPanelState, InputFocus};
     use augur_tui::tui::render::render_with_overlays;
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).expect("terminal must be created");
     let ep = EndpointName::new("test");
     let mut state = AppState::new(ep, AppScreen::Conversation);
@@ -1160,8 +1161,8 @@ fn render_input_shows_ask_prefix_when_ask_focused() {
     use augur_tui::domain::string_newtypes::EndpointName;
     use augur_tui::domain::tui_state::{AppScreen, AppState, AskPanelState, InputFocus};
     use augur_tui::tui::render::render_with_overlays;
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).expect("terminal must be created");
     let ep = EndpointName::new("test");
     let mut state = AppState::new(ep, AppScreen::Conversation);
@@ -1209,8 +1210,8 @@ fn render_status_bar_omits_ask_prefix_when_ask_focused() {
     use augur_tui::domain::string_newtypes::EndpointName;
     use augur_tui::domain::tui_state::{AppScreen, AppState, AskPanelState, InputFocus};
     use augur_tui::tui::render::render_with_overlays;
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).expect("terminal must be created");
     let ep = EndpointName::new("test");
     let mut state = AppState::new(ep, AppScreen::Conversation);
@@ -1241,11 +1242,11 @@ fn render_status_bar_omits_ask_prefix_when_ask_focused() {
 fn render_model_picker_scrolls_to_keep_selected_item_visible() {
     use augur_tui::actors::tui::assistant::key_dispatch::refresh_model_hints;
     use augur_tui::domain::string_newtypes::EndpointName;
-    use augur_tui::domain::tui_input::{apply_key, KeyAction};
+    use augur_tui::domain::tui_input::{KeyAction, apply_key};
     use augur_tui::domain::tui_state::{AppScreen, AppState};
     use augur_tui::tui::render::render_with_overlays;
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
 
     let mut state = AppState::new(EndpointName::new("test"), AppScreen::Conversation);
     state.prompt.models.available = (0..12)
@@ -1331,8 +1332,8 @@ fn render_shell_dispatches_to_session_selector() {
     use augur_tui::domain::string_newtypes::EndpointName;
     use augur_tui::domain::tui_state::{AppScreen, AppState, PickerState};
     use augur_tui::tui::render::render_with_overlays;
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
 
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).expect("terminal must be created");
     let mut state = AppState::new(EndpointName::new("test"), AppScreen::Conversation);
@@ -1354,8 +1355,8 @@ fn render_shell_dispatches_to_conversation() {
     use augur_tui::domain::string_newtypes::EndpointName;
     use augur_tui::domain::tui_state::{AppScreen, AppState};
     use augur_tui::tui::render::render_with_overlays;
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
 
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).expect("terminal must be created");
     let state = AppState::new(EndpointName::new("test"), AppScreen::Conversation);

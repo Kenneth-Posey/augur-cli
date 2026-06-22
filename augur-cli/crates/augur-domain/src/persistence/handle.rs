@@ -3,10 +3,10 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use crate::domain::IsPredicate;
 use crate::domain::newtypes::TimestampMs;
 use crate::domain::string_newtypes::{EndpointName, SdkSessionId, SessionId, StringNewtype};
 use crate::domain::types::Message;
-use crate::domain::IsPredicate;
 use crate::persistence::store;
 use crate::persistence::types::{
     MessageRecord, SessionMeta, SessionMetaFlags, SessionRecord, SessionState,

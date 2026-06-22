@@ -1,12 +1,12 @@
 use crate::domain::tui_display_state::TuiDisplayState;
 use crate::domain::tui_state::{GuidedPlanUiState, PlanModeState};
 use crate::tui::layout::{
-    compute_plan_layout, compute_three_pane_layout, ConversationArea, PRIMARY_FEED_WIDTH_PERCENT,
+    ConversationArea, PRIMARY_FEED_WIDTH_PERCENT, compute_plan_layout, compute_three_pane_layout,
 };
-use crate::tui::plan_panel::{render_plan_panel, PlanPanelRender};
+use crate::tui::plan_panel::{PlanPanelRender, render_plan_panel};
 use augur_domain::domain::newtypes::{Count, NumericNewtype};
-use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::Frame;
+use ratatui::layout::{Constraint, Layout, Rect};
 
 use super::guided_plan_panel::render_guided_plan_panel;
 

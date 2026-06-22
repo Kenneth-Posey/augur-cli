@@ -2,9 +2,9 @@
 //! supervisor event handling, and query lifecycle functions.
 
 use super::clipboard::paste_from_clipboard;
-use crate::domain::tui_input::{classify_mouse, MouseAction, MOUSE_SCROLL_LINES};
+use crate::domain::tui_input::{MOUSE_SCROLL_LINES, MouseAction, classify_mouse};
 use crate::domain::tui_state::{
-    current_timestamp_ms, AppState, ConversationMode, OutputLine, PlanModeState, QueryState,
+    AppState, ConversationMode, OutputLine, PlanModeState, QueryState, current_timestamp_ms,
 };
 use augur_domain::domain::newtypes::{Count, ScrollOffset};
 use augur_domain::domain::plan_tree::{NodeStatus, PlanNodeId};

@@ -5,11 +5,11 @@
 //! down all other actors before returning.
 
 use augur_core::actors;
+use augur_core::actors::LlmFeedConsumerHandle;
+use augur_core::actors::UserMessageConsumerHandle;
 use augur_core::actors::cache::handle::CacheHandle;
 use augur_core::actors::file_read::FileReadHandle;
 use augur_core::actors::history_adapter::handle::HistoryAdapterHandle;
-use augur_core::actors::LlmFeedConsumerHandle;
-use augur_core::actors::UserMessageConsumerHandle;
 use augur_domain::config::types::AppConfig;
 use augur_domain::config::types::ProgramSettings;
 use augur_domain::domain::newtypes::TimestampSecs;
@@ -407,24 +407,24 @@ mod tui_wiring;
 
 // ── Public re-imports ──────────────────────────────────────────────────────
 
-pub use infrastructure::build_registry;
-pub use infrastructure::spawn_core_runtime;
-pub use infrastructure::take_openrouter_feed_rx;
 pub use infrastructure::BuildRegistryArgs;
 pub use infrastructure::OptionalToolArgs;
 pub use infrastructure::RegistryDirectoryScope;
+pub use infrastructure::build_registry;
+pub use infrastructure::spawn_core_runtime;
+pub use infrastructure::take_openrouter_feed_rx;
 pub use lifecycle::{await_runtime, shutdown_runtime};
 
 // Test and internal wiring re-imports
 pub use app_runtime::{
-    actor_runtime, build_run_runtime, forward_reply_to_broadcast, spawn_app_runtime,
-    spawn_deterministic_orchestrator_runtime, spawn_root_deterministic_orchestrator_runtime,
-    AppRuntimeConfigRef,
+    AppRuntimeConfigRef, actor_runtime, build_run_runtime, forward_reply_to_broadcast,
+    spawn_app_runtime, spawn_deterministic_orchestrator_runtime,
+    spawn_root_deterministic_orchestrator_runtime,
 };
-pub use chat_provider::{spawn_chat_runtime, EndpointRoutingChatProvider};
+pub use chat_provider::{EndpointRoutingChatProvider, spawn_chat_runtime};
 pub use domain::{
-    spawn_agent_runtime, spawn_ask_runtime, spawn_domain_actors, spawn_planning_actors,
-    DomainRuntimeConfigRef,
+    DomainRuntimeConfigRef, spawn_agent_runtime, spawn_ask_runtime, spawn_domain_actors,
+    spawn_planning_actors,
 };
 pub use supervisor::{spawn_supervisor_runtime, wire_supervisor};
 pub use tui_wiring::{

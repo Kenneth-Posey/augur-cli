@@ -12,11 +12,7 @@ pub(crate) enum ControlsVisibility {
 
 impl From<bool> for ControlsVisibility {
     fn from(value: bool) -> Self {
-        if value {
-            Self::Visible
-        } else {
-            Self::Hidden
-        }
+        if value { Self::Visible } else { Self::Hidden }
     }
 }
 

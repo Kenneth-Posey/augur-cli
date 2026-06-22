@@ -1,7 +1,7 @@
 //! Unit tests for LLM feed consumer ops: chunk classification and routing.
 
 use augur_core::actors::llm_feed_consumer::llm_feed_consumer_ops::{
-    classify_chunk, route_chunk, LlmFeedOutputChannels,
+    LlmFeedOutputChannels, classify_chunk, route_chunk,
 };
 use augur_domain::domain::feeds::LlmFeedTag;
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype, ToolCallId, ToolName};

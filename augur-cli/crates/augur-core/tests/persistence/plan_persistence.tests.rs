@@ -1,10 +1,10 @@
 use augur_core::persistence::plan_persistence::{
-    load_plan_from_db, persist_execution_plan, persist_step_artifacts, recover_plan_state_from_db,
-    update_step_status, PlanPersistenceError, StepArtifactRow,
+    PlanPersistenceError, StepArtifactRow, load_plan_from_db, persist_execution_plan,
+    persist_step_artifacts, recover_plan_state_from_db, update_step_status,
 };
 use augur_domain::domain::{
-    ready_steps, validate_execution_plan, ExecutionPlan, ExecutionStepId, ExecutionStepSpec,
-    RawStepId, RunId, StepKey, StepStatus,
+    ExecutionPlan, ExecutionStepId, ExecutionStepSpec, RawStepId, RunId, StepKey, StepStatus,
+    ready_steps, validate_execution_plan,
 };
 
 fn validated_single_step_plan() -> augur_domain::domain::ValidatedPlan {
