@@ -81,7 +81,18 @@ fi
 CONFIG_FILE="${CONFIG_DIR}/application.yaml"
 if [[ ! -f "${CONFIG_FILE}" ]]; then
     cp "${SCRIPT_DIR}/configs/application.yaml" "${CONFIG_FILE}"
-    # Append persistence overrides so logs and sessions go to installed locations.
+
+    # The copied config already has a persistence: section with ./logs and
+    # ./sessions defaults. Remove it first, then write the correct installed
+    # paths, to avoid creating duplicate persistence: keys in the YAML file.
+    awk '
+      /^persistence:/        { skip = 1; next }
+      skip && /^[[:blank:]]/ { next }
+      skip                  { skip = 0 }
+      { print }
+    ' "${CONFIG_FILE}" > "${CONFIG_FILE}.tmp" \
+      && mv "${CONFIG_FILE}.tmp" "${CONFIG_FILE}"
+
     printf '\npersistence:\n  log_dir: "%s"\n  sessions_dir: "%s"\n' "${LOG_DIR}" "${SESSIONS_DIR}" >> "${CONFIG_FILE}"
     echo "Created: ${CONFIG_FILE}"
 else

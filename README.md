@@ -1,5 +1,7 @@
 ## Rust-Powered Agentic Workflow CLI
 
+![readme screenshot](resources/readme-screenshot.png)
+
 This is a lightweight to run, but feature heavy, agentic CLI inspired by other tools like [Github Copilot CLI](https://github.com/features/copilot/cli/) and [Claude Code](https://claude.com/product/claude-code).
 
 Augur-CLI is written in [Rust](https://rust-lang.org/) and heavily tuned for building Rust applications. This project includes the CLI source code, instruction files, built in agentic conversation flow, and a guided feature implementation pipeline. 
@@ -28,7 +30,7 @@ The priority for loading configuration including .github files and the user/appl
 
 This was developed on Ubuntu 24, and while native MacOS versions are on my to-do list, I want to be more feature complete before I dedicate to going cross-platform with testing. Augur-cli uses the fantastic [Ratatui](https://ratatui.rs/) terminal-UI library, and it should hopefully work out of the box, but I'm leaning heavily on the library's cross-platform support. 
 
-For MacOS, it should work running from source using [the dev launcher](augur-cli/launch-dev.sh) or [local source installer](augur-cli/install.sh). You should make sure the configuration file paths are correct and adding your SDK keys to the application.secrets.yaml file. Refer to the [Install documentation](augur-cli/docs/INSTALL.md) for details. 
+For MacOS, it should work running from source using [the dev launcher](augur-cli/launch-dev.sh) or [local source installer](augur-cli/install.sh). You should make sure the configuration file paths are correct and add your SDK keys to the application.secrets.yaml file. Refer to the [Install documentation](augur-cli/docs/INSTALL.md) for details. 
 
 For Windows, good luck for now. I abandoned Windows as an operating system last year when Win10 went out of support and I have been using exclusively MacOS (work computer) and Ubuntu (personal computer) since then. I'm perfectly happy to help resolve issues with running on the windows operating system but for now due to time limitiations I can't set up a windows dev environment or proactively solve problems. 
 
