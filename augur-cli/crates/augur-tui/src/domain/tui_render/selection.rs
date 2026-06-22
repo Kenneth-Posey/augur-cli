@@ -1,8 +1,8 @@
 //! Output-selection helpers shared between the actor and render shell.
 
 use super::{
-    compute_render_slice, line_display_rows, rendered_line_text, RenderSlice, RenderSliceInput,
-    SCROLLBAR_WIDTH,
+    RenderSlice, RenderSliceInput, SCROLLBAR_WIDTH, compute_render_slice, line_display_rows,
+    rendered_line_text,
 };
 use crate::domain::tui_state::{AppState, OutputLine, SelectionPoint};
 use augur_domain::domain::newtypes::{Count, NumericNewtype};

@@ -8,8 +8,8 @@ use super::clipboard::{copy_selection_if_c_pressed, paste_from_clipboard};
 use super::plan_view::handle_query_submit;
 use crate::actors::tui::tui_actor::TuiHandles;
 use crate::domain::tui_input::{
-    apply_key, apply_query_key, classify_key, classify_query_key, push_turn_end, KeyAction,
-    QueryKeyAction,
+    KeyAction, QueryKeyAction, apply_key, apply_query_key, classify_key, classify_query_key,
+    push_turn_end,
 };
 use crate::domain::tui_state::{AppState, ConversationMode, InputFocus, SecondaryView};
 use augur_domain::domain::string_newtypes::OutputText;

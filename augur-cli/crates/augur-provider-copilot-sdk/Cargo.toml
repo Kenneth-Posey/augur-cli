@@ -1,6 +1,6 @@
 [package]
 name = "augur-provider-copilot-sdk"
-version = "7.0.0"
+version = "8.0.0"
 edition = "2024"
 autotests = false
 
@@ -18,14 +18,11 @@ path = "tests/shared/mod.tests.rs"
 
 [dependencies]
 augur-domain = { path = "../augur-domain" }
-augur-provider-shared = { path = "../augur-provider-shared" }
 copilot-sdk = { git = "https://github.com/Kenneth-Posey/copilot-sdk-rust", branch = "main" }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing = "0.1"
-anyhow = "1"
-thiserror = "2"
 async-trait = "0.1"
 bon = "3.9.1"
 futures-util = "0.3"

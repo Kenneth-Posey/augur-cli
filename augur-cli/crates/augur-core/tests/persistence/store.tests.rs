@@ -1,8 +1,8 @@
+use augur_core::persistence::SessionRecord;
 use augur_core::persistence::handle::PersistenceHandle;
 use augur_core::persistence::store::{
     delete_session, list_sessions, load_session, resolve_sessions_dir, save_session,
 };
-use augur_core::persistence::SessionRecord;
 use augur_domain::domain::{
     EndpointName, FilePath, IsPredicate, NumericNewtype, SessionId, StringNewtype, TimestampMs,
 };

@@ -3,10 +3,10 @@
 //! `LlmClient` is defined in `domain::traits` and re-exported here so all
 //! consumers can import from a single, stable path.
 
+use augur_domain::CompletionRequest;
 use augur_domain::channels::STREAM_CHUNK_CAPACITY;
 use augur_domain::string_newtypes::{EndpointName, OutputText, StringNewtype};
 use augur_domain::types::StreamChunk;
-use augur_domain::CompletionRequest;
 use augur_provider_shared::request_context::LlmCommand;
 use tokio::sync::mpsc;
 

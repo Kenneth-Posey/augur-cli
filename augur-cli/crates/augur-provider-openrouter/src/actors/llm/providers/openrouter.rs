@@ -8,7 +8,7 @@
 
 use augur_domain::string_newtypes::{BearerToken, OutputText, StringNewtype};
 use augur_domain::types::StreamChunk;
-use augur_provider_shared::request_context::{resolve_api_key, RequestContext};
+use augur_provider_shared::request_context::{RequestContext, resolve_api_key};
 
 /// Streaming completion for an OpenRouter endpoint.
 ///

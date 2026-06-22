@@ -3,13 +3,13 @@
 //! These tests use a real in-process actor so they exercise the full
 //! message-passing path without mocking the channel.
 
-use augur_core::actors::token_tracker::token_tracker_ops::TokenTrackerCommand;
 use augur_core::actors::token_tracker::TokenTrackerHandle;
+use augur_core::actors::token_tracker::token_tracker_ops::TokenTrackerCommand;
 use augur_domain::domain::{
+    Count, Temperature, TokenCount,
     newtypes::NumericNewtype,
     string_newtypes::{OutputText, StringNewtype},
     types::{ContextUsageStats, LlmTokenCounts, LlmUsage, ProjectTokenTotals},
-    Count, Temperature, TokenCount,
 };
 use tokio::sync::mpsc;
 

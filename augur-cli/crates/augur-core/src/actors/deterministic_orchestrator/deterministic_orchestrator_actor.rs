@@ -5,9 +5,9 @@ mod failure_routing;
 mod parallel_groups;
 mod progression;
 use deterministic_orchestrator_ops::{
-    annotate_last_failure_decision, apply_artifact_updates, dispatch_request, emit, emit_halted,
-    emit_step_progress, handle_evaluator_dispatch_failure, handle_worker_dispatch_failure,
-    merge_artifact_updates, StepProgressArgs,
+    StepProgressArgs, annotate_last_failure_decision, apply_artifact_updates, dispatch_request,
+    emit, emit_halted, emit_step_progress, handle_evaluator_dispatch_failure,
+    handle_worker_dispatch_failure, merge_artifact_updates,
 };
 
 use super::artifact_store::{ArtifactUpdate, StepArtifactResolver};
@@ -16,8 +16,8 @@ use super::background_dispatch::{
 };
 use super::commands::DeterministicOrchestratorCmd;
 use super::decision::{
-    choose_failure_decision, DefaultFailureDecisionPolicy, FailureDecisionInput,
-    FailureDecisionPolicy,
+    DefaultFailureDecisionPolicy, FailureDecisionInput, FailureDecisionPolicy,
+    choose_failure_decision,
 };
 use super::handle::DeterministicOrchestratorHandle;
 use super::loader::{ensure_local_workflow_file, load_workflow_document};
@@ -27,10 +27,10 @@ use crate::domain::deterministic_orchestrator::{
     WorkflowRunState, WorkflowStep, WorkflowStepKind,
 };
 use crate::domain::deterministic_orchestrator_ops::{
-    build_evaluator_dispatch_request, build_patch_dispatch_request, build_step_index,
-    build_worker_dispatch_request, derive_feature_slug, resolve_failure_transition,
-    resolve_pass_transition, DispatchRequestKind, ExecutedStepIndex, FailureTransitionContext,
-    FailureTransitionResolution, PassTransitionResolution, StepIndex, WorkflowDispatchRequest,
+    DispatchRequestKind, ExecutedStepIndex, FailureTransitionContext, FailureTransitionResolution,
+    PassTransitionResolution, StepIndex, WorkflowDispatchRequest, build_evaluator_dispatch_request,
+    build_patch_dispatch_request, build_step_index, build_worker_dispatch_request,
+    derive_feature_slug, resolve_failure_transition, resolve_pass_transition,
 };
 use augur_domain::domain::types::{AutomatedUserMessage, FeedEntry};
 use augur_domain::domain::{

@@ -127,8 +127,8 @@ pub async fn spawn_agent_runtime(
 /// `instruction_files` configured and all (or some) files load successfully.
 /// Returns `None` when the catalog is absent, the `openrouter` block is missing,
 /// or the file list is empty.
-pub(super) async fn load_openrouter_instruction_prefix(
-) -> Option<Arc<augur_domain::domain::task_types::InstructionPrefix>> {
+pub(super) async fn load_openrouter_instruction_prefix()
+-> Option<Arc<augur_domain::domain::task_types::InstructionPrefix>> {
     use augur_domain::config::provider_catalog::default_provider_catalog_dir;
     use augur_domain::config::provider_catalog::load_provider_catalog;
     use augur_domain::config::types::Provider;
@@ -167,9 +167,7 @@ fn load_openrouter_instruction_paths(
 }
 
 fn current_repo_root_string() -> String {
-    effective_repo_root()
-        .to_string_lossy()
-        .to_string()
+    effective_repo_root().to_string_lossy().to_string()
 }
 
 /// Spawn the ask-agent actor and return an [`AskRuntime`].

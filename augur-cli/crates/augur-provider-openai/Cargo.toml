@@ -1,6 +1,6 @@
 [package]
 name = "augur-provider-openai"
-version = "4.0.0"
+version = "5.0.0"
 edition = "2024"
 autotests = false
 
@@ -11,9 +11,6 @@ path = "tests/openai.tests.rs"
 [dependencies]
 augur-domain = { path = "../augur-domain" }
 augur-provider-shared = { path = "../augur-provider-shared" }
-bon = "3.9.1"
-futures-util = "0.3"
-reqwest = { version = "0.12", features = ["json", "stream"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }

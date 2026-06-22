@@ -3,9 +3,9 @@
 //! Defines [`ModelInfo`], [`ModelPricing`], and [`FilterOpts`] used across
 //! the fetchers, filter, and formatter modules.
 
+use augur_domain::domain::UsdCost;
 use augur_domain::domain::newtypes::IsPredicate;
 use augur_domain::domain::string_newtypes::ModelName;
-use augur_domain::domain::UsdCost;
 use serde::{Deserialize, Serialize};
 
 /// An opaque provider authentication key.

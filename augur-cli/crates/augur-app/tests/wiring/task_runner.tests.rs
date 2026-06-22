@@ -1,5 +1,5 @@
 use augur_cli::wiring::task_runner::{
-    build_execution_plan_for_request, TaskRequest, TaskRequestStep, TaskRunner,
+    TaskRequest, TaskRequestStep, TaskRunner, build_execution_plan_for_request,
 };
 use augur_core::actors::orchestrator::ingestion::OrchestratorContext;
 use augur_domain::domain::{
@@ -33,13 +33,15 @@ fn multi_step_request() -> TaskRequest {
 
 fn single_step_request() -> TaskRequest {
     TaskRequest::builder()
-        .steps(vec![TaskRequestStep::builder()
-            .step_id(RawStepId::new("single"))
-            .intent_name("intent-single".to_string().into())
-            .depends_on(Vec::new())
-            .required_artifacts(Vec::new())
-            .produces(vec!["artifact-single".to_string()])
-            .build()])
+        .steps(vec![
+            TaskRequestStep::builder()
+                .step_id(RawStepId::new("single"))
+                .intent_name("intent-single".to_string().into())
+                .depends_on(Vec::new())
+                .required_artifacts(Vec::new())
+                .produces(vec!["artifact-single".to_string()])
+                .build(),
+        ])
         .maybe_timeout(None)
         .build()
 }
@@ -47,13 +49,15 @@ fn single_step_request() -> TaskRequest {
 #[test]
 fn test_build_execution_plan_for_request_empty_derived_step_id_returns_empty_step_id() {
     let request = TaskRequest::builder()
-        .steps(vec![TaskRequestStep::builder()
-            .step_id(RawStepId::new(""))
-            .intent_name("intent-empty".to_string().into())
-            .depends_on(Vec::new())
-            .required_artifacts(Vec::new())
-            .produces(Vec::new())
-            .build()])
+        .steps(vec![
+            TaskRequestStep::builder()
+                .step_id(RawStepId::new(""))
+                .intent_name("intent-empty".to_string().into())
+                .depends_on(Vec::new())
+                .required_artifacts(Vec::new())
+                .produces(Vec::new())
+                .build(),
+        ])
         .maybe_timeout(None)
         .build();
 

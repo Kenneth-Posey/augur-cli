@@ -1,7 +1,7 @@
 use augur_core::actors::agent::agent_actor::AgentServices;
 use augur_core::actors::agent::agent_ops::AgentOutput;
 use augur_core::actors::ask::ask_actor::{
-    spawn, AskRegistryConfig, AskRuntimeConfig, AskSpawnArgs,
+    AskRegistryConfig, AskRuntimeConfig, AskSpawnArgs, spawn,
 };
 use augur_core::actors::file_read::file_read_actor::spawn as spawn_file_read;
 use augur_core::actors::logger::logger_actor::spawn as spawn_logger;

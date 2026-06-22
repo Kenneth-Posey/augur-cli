@@ -1,10 +1,10 @@
+use crate::domain::PromptText;
 use crate::domain::newtypes::IsPredicate;
 use crate::domain::string_newtypes::{OutputText, StringNewtype, ToolName};
 use crate::domain::task_types::{
     AgentSpecName, SpawnAgentAck, SpawnAgentChannels, SpawnAgentHandle, SpawnAgentRequest,
     TaskDepth, TaskDispatchState, TaskRunId,
 };
-use crate::domain::PromptText;
 use crate::tools::definition::ToolDefinition;
 use crate::tools::handler::{ToolCallResult, ToolHandler};
 use tokio::sync::oneshot;

@@ -1,6 +1,6 @@
 use super::super::assistant::{
-    build_client, check_auth_status, create_or_resume_session, query_user_tool_def,
-    CreateOrResumeSessionArgs, LogHandles, LogState,
+    CreateOrResumeSessionArgs, LogHandles, LogState, build_client, check_auth_status,
+    create_or_resume_session, query_user_tool_def,
 };
 use super::super::commands::CopilotChatCmd;
 use super::runtime_types::{

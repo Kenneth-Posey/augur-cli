@@ -5,8 +5,8 @@ use super::openrouter_orchestrator_actor::{
     OpenRouterOrchestratorState, QueuedSpawn, RunSchedulingState,
 };
 use super::openrouter_orchestrator_ops::{
-    consume_terminal_result, record_terminal_result, status_snapshot, transition_to_active,
-    StatusSnapshotInput, TerminalResultRecord, TransitionToActive,
+    StatusSnapshotInput, TerminalResultRecord, TransitionToActive, consume_terminal_result,
+    record_terminal_result, status_snapshot, transition_to_active,
 };
 use crate::actors::llm::handle::LlmHandle;
 use crate::actors::openrouter_task::openrouter_task_actor as actor;
@@ -14,12 +14,12 @@ use crate::actors::openrouter_task::openrouter_task_actor::{
     OpenRouterTaskArgs, TaskConfig, TaskCorrelation, TaskRequestSpec, TaskRuntimeOptions,
     TaskServices,
 };
+use augur_domain::Message;
 use augur_domain::actors::tool::InlineToolExecutor;
 use augur_domain::task_types::{
     AwaitRunResult, InstructionPrefix, RepoRoot, SpawnAgentAck, SpawnAgentRequest,
     SpawnDispatchStatus, TaskDispatchState, TaskQueueSnapshot, TaskRunId,
 };
-use augur_domain::Message;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::sync::Arc;

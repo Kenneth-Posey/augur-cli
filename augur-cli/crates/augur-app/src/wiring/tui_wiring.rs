@@ -7,7 +7,7 @@ use augur_core::actors;
 use augur_core::actors::llm_feed_consumer::llm_feed_consumer_actor::spawn as spawn_llm_feed_consumer;
 use augur_core::actors::llm_feed_consumer::llm_feed_consumer_ops::LlmFeedOutputChannels;
 use augur_core::actors::user_message_consumer::user_message_consumer_actor::{
-    spawn as spawn_user_msg_consumer, UserMessageOutputChannels,
+    UserMessageOutputChannels, spawn as spawn_user_msg_consumer,
 };
 use augur_domain::domain::feeds::{LlmFeedMessage, UserFeedMessage};
 use augur_domain::domain::newtypes::Count;
@@ -16,18 +16,18 @@ use augur_tui::actors::tui::tui_actor::{
     TuiInputChannels, TuiOverlayHandles, TuiServiceHandles, TuiServiceTools, TuiStartupData,
     TuiSubActorHandles,
 };
-use augur_tui::actors::tui_agent_panel::tui_agent_panel_actor::{
-    spawn as spawn_agent_panel, TuiAgentPanelConfig,
-};
 use augur_tui::actors::tui_agent_panel::TuiAgentPanelHandle;
+use augur_tui::actors::tui_agent_panel::tui_agent_panel_actor::{
+    TuiAgentPanelConfig, spawn as spawn_agent_panel,
+};
 use augur_tui::actors::tui_ask_panel::tui_ask_panel_actor::spawn as spawn_ask_panel;
 use augur_tui::actors::tui_chat_menu::tui_chat_menu_actor::spawn as spawn_chat_menu;
 use augur_tui::actors::tui_dynamic_controls::tui_dynamic_controls_actor::spawn as spawn_controls;
+use augur_tui::actors::tui_main_feed_panel::TuiMainFeedPanelHandle;
 use augur_tui::actors::tui_main_feed_panel::tui_main_feed_panel_actor::{
-    spawn as spawn_main_feed, TuiMainFeedConfig,
+    TuiMainFeedConfig, spawn as spawn_main_feed,
 };
 use augur_tui::actors::tui_main_feed_panel::tui_main_feed_panel_ops::MainFeedItem;
-use augur_tui::actors::tui_main_feed_panel::TuiMainFeedPanelHandle;
 use augur_tui::actors::tui_spinner::tui_spinner_actor::spawn as spawn_spinner;
 use tokio::sync::mpsc;
 

@@ -4,15 +4,20 @@
 //! verifies that the complete Submit → stream → AgentOutput::Done flow works
 //! end-to-end without needing a real terminal or live API endpoints.
 
-use augur_core::actors::agent::agent_actor::{spawn as spawn_agent, AgentSpawnArgs, AgentRuntime};
+use augur_cli::wiring::BuildRegistryArgs;
+use augur_cli::wiring::OptionalToolArgs;
+use augur_cli::wiring::RegistryDirectoryScope;
+use augur_cli::wiring::build_registry;
+use augur_core::actors::agent::agent_actor::{AgentRuntime, AgentSpawnArgs, spawn as spawn_agent};
 use augur_core::actors::agent::agent_ops::AgentOutput;
 use augur_core::actors::file_read::file_read_actor::spawn as spawn_file_read;
 use augur_core::actors::history_adapter::history_adapter_actor::{
-    spawn as spawn_history_adapter, HistoryAdapterConfig,
+    HistoryAdapterConfig, spawn as spawn_history_adapter,
 };
 use augur_core::actors::logger::logger_actor::spawn as spawn_logger;
 use augur_core::actors::token_tracker;
 use augur_core::actors::tool::tool_actor::spawn as spawn_tool;
+use augur_core::persistence::handle::PersistenceHandle;
 use augur_domain::config::types::{
     AgentConfig, AppConfig, CopilotConfig, EndpointConfig, EndpointCredentials, PersistenceConfig,
     Provider,
@@ -23,12 +28,7 @@ use augur_domain::domain::string_newtypes::{
     EndpointName, EndpointUrl, FilePath, ModelName, OutputText, PromptText, StringNewtype,
 };
 use augur_domain::domain::task_types::AgentExtensions;
-use augur_core::persistence::handle::PersistenceHandle;
 use augur_provider_openrouter::actors::llm::llm_actor::spawn as spawn_llm;
-use augur_cli::wiring::build_registry;
-use augur_cli::wiring::BuildRegistryArgs;
-use augur_cli::wiring::OptionalToolArgs;
-use augur_cli::wiring::RegistryDirectoryScope;
 use std::sync::Once;
 use std::time::Duration;
 use tokio::sync::{broadcast, mpsc};
@@ -77,7 +77,9 @@ async fn recv_output_with_timeout(
 ) -> AgentOutput {
     match tokio::time::timeout(Duration::from_secs(RECV_TIMEOUT_SECS), rx.recv()).await {
         Ok(Ok(output)) => output,
-        Ok(Err(error)) => panic!("{test_name}: output channel error after {observed_events} events: {error}"),
+        Ok(Err(error)) => {
+            panic!("{test_name}: output channel error after {observed_events} events: {error}")
+        }
         Err(_) => panic!(
             "{test_name}: timed out waiting for AgentOutput after {RECV_TIMEOUT_SECS}s (observed_events={observed_events})"
         ),
@@ -121,8 +123,8 @@ fn make_config(base_url: &str) -> AppConfig {
             log_dir: FilePath::new("./logs"),
             sessions_dir: None,
         },
-            program_settings: Default::default(),
-            user_settings: Default::default(),
+        program_settings: Default::default(),
+        user_settings: Default::default(),
     }
 }
 
@@ -150,7 +152,12 @@ async fn full_turn_no_tools() {
     let (agent_tx, _) = broadcast::channel(256);
     let tmp_log = tempfile::tempdir().expect("log tmp dir");
     let (_logger_join, logger) = spawn_logger(tmp_log.path().to_path_buf());
-    let (llm_join, llm_handle) = spawn_llm(config.clone(), agent_tx, "test-session".to_string(), logger.clone());
+    let (llm_join, llm_handle) = spawn_llm(
+        config.clone(),
+        agent_tx,
+        "test-session".to_string(),
+        logger.clone(),
+    );
     let (query_tx, _query_rx) = mpsc::channel(1);
     let (_fr_join, file_read) = spawn_file_read(vec![]);
     let (tool_join, tool_handle) = spawn_tool(build_registry(BuildRegistryArgs {
@@ -203,7 +210,10 @@ async fn full_turn_no_tools() {
     loop {
         let output = recv_output_with_timeout(&mut rx, "full_turn_no_tools", observed_events).await;
         observed_events += 1;
-        info!(event = output_kind(&output), observed_events, "full_turn_no_tools: received output");
+        info!(
+            event = output_kind(&output),
+            observed_events, "full_turn_no_tools: received output"
+        );
         match output {
             AgentOutput::Token(t) => tokens.push(t.into_inner()),
             AgentOutput::MessageBreak => {}
@@ -284,7 +294,12 @@ async fn full_turn_one_tool_call() {
     let (agent_tx2, _) = broadcast::channel(256);
     let tmp_log2 = tempfile::tempdir().expect("log tmp dir 2");
     let (_logger_join2, logger2) = spawn_logger(tmp_log2.path().to_path_buf());
-    let (llm_join, llm_handle) = spawn_llm(config.clone(), agent_tx2, "test-session".to_string(), logger2.clone());
+    let (llm_join, llm_handle) = spawn_llm(
+        config.clone(),
+        agent_tx2,
+        "test-session".to_string(),
+        logger2.clone(),
+    );
     let (query_tx, _query_rx) = mpsc::channel(1);
     let (_fr_join2, file_read2) = spawn_file_read(vec![]);
     let (tool_join, tool_handle) = spawn_tool(build_registry(BuildRegistryArgs {
@@ -340,8 +355,7 @@ async fn full_turn_one_tool_call() {
         observed_events += 1;
         info!(
             event = output_kind(&output),
-            observed_events,
-            "full_turn_one_tool_call: received output"
+            observed_events, "full_turn_one_tool_call: received output"
         );
         match output {
             AgentOutput::Token(t) => last_token = t.into_inner(),

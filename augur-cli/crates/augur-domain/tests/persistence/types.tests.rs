@@ -4,8 +4,8 @@ use augur_domain::domain::{
     Temperature, TimestampMs, TokenCount, ToolName,
 };
 use augur_domain::persistence::types::{
-    summarize, MessageRecord, NodeMeta, SessionMeta, SessionMetaFlags, SessionRecord, SessionState,
-    StrategyNode, StrategyNodeKind, StrategyTree,
+    MessageRecord, NodeMeta, SessionMeta, SessionMetaFlags, SessionRecord, SessionState,
+    StrategyNode, StrategyNodeKind, StrategyTree, summarize,
 };
 
 fn make_record(endpoint: &str) -> SessionRecord {

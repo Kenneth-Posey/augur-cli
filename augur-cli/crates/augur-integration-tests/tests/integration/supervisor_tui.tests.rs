@@ -5,14 +5,14 @@
 //! rendered buffer contains the expected status icons. They verify the full
 //! path from plan data → panel renderer → terminal cell buffer.
 
-use augur_tui::domain::newtypes::{Count, NumericNewtype, ScrollOffset};
 use augur_domain::domain::plan_tree::{NodeStatus, PlanNode, PlanTree, PlanTreeId};
 use augur_domain::string_newtypes::StringNewtype;
-use augur_tui::tui::layout::{compute_plan_layout, PLAN_PANEL_WIDTH_PERCENT};
-use augur_tui::tui::plan_panel::{render_plan_panel, PlanPanelRender};
+use augur_tui::domain::newtypes::{Count, NumericNewtype, ScrollOffset};
+use augur_tui::tui::layout::{PLAN_PANEL_WIDTH_PERCENT, compute_plan_layout};
+use augur_tui::tui::plan_panel::{PlanPanelRender, render_plan_panel};
+use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use ratatui::layout::Rect;
-use ratatui::Terminal;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 

@@ -8,7 +8,10 @@ fn test_extract_simple_inner_doc_comment() {
 fn main() {}
 "#;
     let result = doc_extractor::extract_first_doc_comment(source);
-    assert_eq!(result, Some(" This is a crate-level doc comment.".to_string()));
+    assert_eq!(
+        result,
+        Some(" This is a crate-level doc comment.".to_string())
+    );
 }
 
 #[test]

@@ -16,9 +16,9 @@ use ratatui::Frame;
 // Re-exports so existing tests can import from `crate::tui::render` without change.
 #[allow(unused_imports)]
 pub use crate::domain::tui_render::{
+    LineCharPosition, RenderSlice, RenderSliceInput, ScreenPosToLineCharInput,
     compute_render_slice, extract_selected_text, format_response_prefix, line_display_rows,
-    rendered_line_text, screen_pos_to_line_char, LineCharPosition, RenderSlice, RenderSliceInput,
-    ScreenPosToLineCharInput,
+    rendered_line_text, screen_pos_to_line_char,
 };
 #[allow(unused_imports)]
 pub use crate::tui::components::footer::{controls_row_hint, status_left, status_right};

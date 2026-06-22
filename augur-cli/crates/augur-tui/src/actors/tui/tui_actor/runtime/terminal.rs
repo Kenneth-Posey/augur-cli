@@ -7,7 +7,7 @@ use crate::actors::tui::assistant::key_dispatch::{
     dispatch_chat_key, dispatch_guided_plan_key, dispatch_plan_esc, dispatch_query_key,
 };
 use crate::actors::tui::assistant::plan_view::handle_plan_mouse_scroll;
-use crate::domain::tui_input::{classify_mouse, insert_paste, MouseAction};
+use crate::domain::tui_input::{MouseAction, classify_mouse, insert_paste};
 use crate::domain::tui_state::{AppState, ConversationMode, SelectionPoint};
 use augur_domain::domain::string_newtypes::PromptText;
 use ratatui::layout::Rect;

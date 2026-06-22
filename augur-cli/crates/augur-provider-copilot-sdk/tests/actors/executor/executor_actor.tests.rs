@@ -10,7 +10,7 @@ use copilot_sdk::{
 };
 use serde_json::json;
 use tokio::sync::{broadcast, mpsc};
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 fn test_session() -> Session {
     Session::new(

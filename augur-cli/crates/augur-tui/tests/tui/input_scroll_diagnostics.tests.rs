@@ -5,7 +5,7 @@
 
 use augur_tui::domain::newtypes::{Count, NumericNewtype};
 use augur_tui::domain::string_newtypes::{EndpointName, OutputText, StringNewtype};
-use augur_tui::domain::tui_input::{classify_mouse, MouseAction, MOUSE_SCROLL_LINES};
+use augur_tui::domain::tui_input::{MOUSE_SCROLL_LINES, MouseAction, classify_mouse};
 use augur_tui::domain::tui_state::{AppScreen, AppState, OutputLine};
 use crossterm::event::{MouseEvent, MouseEventKind};
 use ratatui::layout::Rect;

@@ -37,18 +37,12 @@ fn main() -> Result<()> {
         .context("Failed to resolve workspace graph")?;
 
     // Collect workspace crate names.
-    let workspace_crate_names: Vec<String> = resolved
-        .graph
-        .nodes
-        .iter()
-        .map(|n| n.id.clone())
-        .collect();
+    let workspace_crate_names: Vec<String> =
+        resolved.graph.nodes.iter().map(|n| n.id.clone()).collect();
 
     // Walk module trees.
-    let crate_graphs = module_walker::walk_all_crates(
-        &resolved.crate_paths,
-        &workspace_crate_names,
-    );
+    let crate_graphs =
+        module_walker::walk_all_crates(&resolved.crate_paths, &workspace_crate_names);
 
     // Build output.
     let output = augur_graph_builder::graph_data::GraphData {
@@ -57,13 +51,11 @@ fn main() -> Result<()> {
     };
 
     // Serialize and write.
-    let json = serde_json::to_string_pretty(&output)
-        .context("Failed to serialize graph data")?;
+    let json = serde_json::to_string_pretty(&output).context("Failed to serialize graph data")?;
 
     // Ensure parent directory exists.
     if let Some(parent) = cli.output.parent() {
-        std::fs::create_dir_all(parent)
-            .context("Failed to create output directory")?;
+        std::fs::create_dir_all(parent).context("Failed to create output directory")?;
     }
 
     std::fs::write(&cli.output, &json)

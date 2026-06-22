@@ -6,8 +6,8 @@ use crate::domain::deterministic_orchestrator::{
     FailureDecision, FailureOrigin, PendingFailureContext, WorkflowRunState, WorkflowStep,
 };
 use crate::domain::deterministic_orchestrator_ops::{
-    validate_backtrack_target, BacktrackTargetValidation, BacktrackValidationCtx,
-    ExecutedStepIndex, StepIndex,
+    BacktrackTargetValidation, BacktrackValidationCtx, ExecutedStepIndex, StepIndex,
+    validate_backtrack_target,
 };
 use augur_domain::domain::WorkflowStepId;
 

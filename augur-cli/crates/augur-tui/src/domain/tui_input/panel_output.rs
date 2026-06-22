@@ -228,7 +228,7 @@ fn apply_task_completed(
     feed: &mut crate::domain::tui_state::AgentFeedTranscript,
     name: augur_domain::domain::string_newtypes::AgentName,
 ) {
-    use crate::domain::tui_state::{current_timestamp_ms, OutputLine};
+    use crate::domain::tui_state::{OutputLine, current_timestamp_ms};
     flush_pending_tool_event(feed);
     flush_pending_status_message(feed);
     let mut line = OutputLine::plain(OutputText::new(format!("{name} completed")));
@@ -243,7 +243,7 @@ fn apply_task_failed(
     name: augur_domain::domain::string_newtypes::AgentName,
     reason: augur_domain::domain::string_newtypes::OutputText,
 ) {
-    use crate::domain::tui_state::{current_timestamp_ms, OutputLine};
+    use crate::domain::tui_state::{OutputLine, current_timestamp_ms};
     flush_pending_tool_event(feed);
     flush_pending_status_message(feed);
     let mut line = OutputLine::error(OutputText::new(format!("{name} failed: {reason}")));
@@ -273,7 +273,7 @@ fn accumulate_status_line(
     feed: &mut crate::domain::tui_state::AgentFeedTranscript,
     text: augur_domain::domain::string_newtypes::OutputText,
 ) {
-    use crate::domain::tui_state::{current_timestamp_ms, OutputLine};
+    use crate::domain::tui_state::{OutputLine, current_timestamp_ms};
 
     if feed.buffers.pending_status_message.is_none() {
         let mut line = OutputLine::plain(text);
@@ -296,7 +296,7 @@ fn buffer_tool_event(
     feed: &mut crate::domain::tui_state::AgentFeedTranscript,
     text: augur_domain::domain::string_newtypes::OutputText,
 ) {
-    use crate::domain::tui_state::{current_timestamp_ms, OutputLine};
+    use crate::domain::tui_state::{OutputLine, current_timestamp_ms};
 
     let mut line = OutputLine::tool_call(text);
     line.header.timestamp = Some(current_timestamp_ms());
@@ -340,8 +340,8 @@ fn flush_pending_status_message(feed: &mut crate::domain::tui_state::AgentFeedTr
 /// If `pending_tool_event` is Some, moves it to output and clears buffer.
 /// No-op if buffer is empty.
 fn flush_pending_tool_event(feed: &mut crate::domain::tui_state::AgentFeedTranscript) {
-    use crate::domain::tui_state::current_timestamp_ms;
     use crate::domain::tui_state::OutputLine;
+    use crate::domain::tui_state::current_timestamp_ms;
     use augur_domain::domain::string_newtypes::OutputText;
 
     let Some(line) = feed.buffers.pending_tool_event.take() else {

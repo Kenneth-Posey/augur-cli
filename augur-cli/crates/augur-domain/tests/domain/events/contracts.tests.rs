@@ -1,4 +1,4 @@
-use augur_domain::domain::events::contracts::{output_contract, OutputCategory};
+use augur_domain::domain::events::contracts::{OutputCategory, output_contract};
 use augur_domain::domain::{EventType, StringNewtype};
 
 /// Verifies that all 39 known event type strings have a callable
@@ -106,20 +106,30 @@ fn test_output_categories_valid_values() {
 /// delivery, while streaming content and error events are not batched.
 #[test]
 fn test_batching_configuration() {
-    assert!(output_contract(&EventType::new("AssistantUsage"))
-        .map(|c| c.is_batched.0)
-        .unwrap_or(false));
-    assert!(output_contract(&EventType::new("AssistantReasoning"))
-        .map(|c| c.is_batched.0)
-        .unwrap_or(false));
+    assert!(
+        output_contract(&EventType::new("AssistantUsage"))
+            .map(|c| c.is_batched.0)
+            .unwrap_or(false)
+    );
+    assert!(
+        output_contract(&EventType::new("AssistantReasoning"))
+            .map(|c| c.is_batched.0)
+            .unwrap_or(false)
+    );
 
-    assert!(!output_contract(&EventType::new("AssistantMessageDelta"))
-        .map(|c| c.is_batched.0)
-        .unwrap_or(true));
-    assert!(!output_contract(&EventType::new("SessionError"))
-        .map(|c| c.is_batched.0)
-        .unwrap_or(true));
-    assert!(!output_contract(&EventType::new("ToolExecutionStart"))
-        .map(|c| c.is_batched.0)
-        .unwrap_or(true));
+    assert!(
+        !output_contract(&EventType::new("AssistantMessageDelta"))
+            .map(|c| c.is_batched.0)
+            .unwrap_or(true)
+    );
+    assert!(
+        !output_contract(&EventType::new("SessionError"))
+            .map(|c| c.is_batched.0)
+            .unwrap_or(true)
+    );
+    assert!(
+        !output_contract(&EventType::new("ToolExecutionStart"))
+            .map(|c| c.is_batched.0)
+            .unwrap_or(true)
+    );
 }

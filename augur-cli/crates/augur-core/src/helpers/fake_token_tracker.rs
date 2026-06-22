@@ -1,7 +1,7 @@
 //! Test helper: factory for a throwaway `TokenTrackerHandle` for use in tests.
 
-use crate::actors::token_tracker;
 use crate::actors::TokenTrackerHandle;
+use crate::actors::token_tracker;
 
 /// Spawn a minimal token-tracker actor and return its handle.
 ///

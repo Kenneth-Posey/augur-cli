@@ -41,7 +41,7 @@ mod tests {
     use super::*;
     use augur_domain::domain::feeds::UserInputTag;
     use augur_domain::domain::string_newtypes::OutputText;
-    use tokio::time::{timeout, Duration};
+    use tokio::time::{Duration, timeout};
 
     /// Verifies that a plain text input sent via the handle arrives on the raw channel.
     #[tokio::test]

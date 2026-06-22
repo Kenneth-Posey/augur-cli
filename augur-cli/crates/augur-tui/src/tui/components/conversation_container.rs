@@ -5,17 +5,17 @@
 //! the full container width.
 
 use crate::domain::tui_display_state::TuiDisplayState;
-use crate::tui::components::primary_feed::{render_output, render_thinking, SCROLLBAR_TRACK_COLOR};
+use crate::tui::components::primary_feed::{SCROLLBAR_TRACK_COLOR, render_output, render_thinking};
 use crate::tui::components::secondary_container::render_secondary_container;
 use crate::tui::layout::{
-    compute_secondary_layout, compute_secondary_layout_with_ref, ConversationArea,
+    ConversationArea, compute_secondary_layout, compute_secondary_layout_with_ref,
 };
 use augur_domain::domain::newtypes::Count;
+use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::Style;
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
-use ratatui::Frame;
 
 const MIN_SECONDARY_PANE_COLS: u16 = 10;
 

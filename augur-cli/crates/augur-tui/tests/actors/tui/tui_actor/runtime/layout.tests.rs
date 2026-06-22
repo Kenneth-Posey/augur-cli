@@ -1,7 +1,7 @@
 //! Tests for TUI layout module: snapshot collection and render correctness.
 
 use crate::actors::tui::tui_actor::runtime::layout::{
-    collect_render_snapshot, render_layout, TuiOverlayHandles, TuiSubActorHandles,
+    TuiOverlayHandles, TuiSubActorHandles, collect_render_snapshot, render_layout,
 };
 use crate::actors::tui_chat_menu::tui_chat_menu_ops::ChatMenuState;
 use crate::actors::tui_dynamic_controls::tui_dynamic_controls_ops::DynamicControlsState;
@@ -17,13 +17,13 @@ fn noop_renderer_for_display(_: &mut ratatui::Frame<'_>, _: &TuiDisplayState) {}
 
 fn make_sub_actor_handles() -> TuiSubActorHandles {
     use crate::actors::tui_agent_panel::tui_agent_panel_actor::{
-        spawn as spawn_agent_panel, TuiAgentPanelConfig,
+        TuiAgentPanelConfig, spawn as spawn_agent_panel,
     };
     use crate::actors::tui_ask_panel::tui_ask_panel_actor::spawn as spawn_ask_panel;
     use crate::actors::tui_chat_menu::tui_chat_menu_actor::spawn as spawn_chat_menu;
     use crate::actors::tui_dynamic_controls::tui_dynamic_controls_actor::spawn as spawn_controls;
     use crate::actors::tui_main_feed_panel::tui_main_feed_panel_actor::{
-        spawn as spawn_main_feed, TuiMainFeedConfig,
+        TuiMainFeedConfig, spawn as spawn_main_feed,
     };
     use crate::actors::tui_main_feed_panel::tui_main_feed_panel_ops::MainFeedItem;
     use crate::actors::tui_spinner::tui_spinner_actor::spawn as spawn_spinner;
@@ -124,7 +124,7 @@ async fn test_collect_render_snapshot_copies_spinner_state() {
 /// default `AppState`. Uses ratatui `TestBackend` to produce a real `Frame`.
 #[tokio::test]
 async fn test_render_layout_does_not_panic_on_empty_snapshot() {
-    use ratatui::{backend::TestBackend, Terminal};
+    use ratatui::{Terminal, backend::TestBackend};
 
     let snapshot = empty_snapshot();
     let app_state = conversation_app_state();

@@ -5,8 +5,8 @@ use augur_domain::traits::{CompletionRequest, LlmClient, ToolExecutor};
 use augur_domain::types::{StreamChunk, ToolCall};
 use augur_domain::{PromptText, StringNewtype, ToolDefinition};
 use augur_provider_openrouter::actors::openrouter_task::openrouter_task_actor::{
-    spawn, OpenRouterTaskArgs, TaskConfig, TaskCorrelation, TaskRequestSpec, TaskRuntimeOptions,
-    TaskServices,
+    OpenRouterTaskArgs, TaskConfig, TaskCorrelation, TaskRequestSpec, TaskRuntimeOptions,
+    TaskServices, spawn,
 };
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};

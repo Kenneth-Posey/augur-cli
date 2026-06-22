@@ -24,8 +24,8 @@ pub use domain::{
     tui_display_state::TuiDisplayState,
     tui_state::{AppScreen, AppState, ConversationMode},
 };
-pub use tui::layout::{compute_plan_layout, PLAN_PANEL_WIDTH_PERCENT};
-pub use tui::plan_panel::{render_plan_panel, PlanPanelRender};
+pub use tui::layout::{PLAN_PANEL_WIDTH_PERCENT, compute_plan_layout};
+pub use tui::plan_panel::{PlanPanelRender, render_plan_panel};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 /// Provider marker exposed by the TUI crate.

@@ -1,7 +1,7 @@
 //! Test helper: factory for a throwaway `HistoryAdapterHandle` for use in tests.
 
 use crate::actors::history_adapter::handle::HistoryAdapterHandle;
-use crate::actors::history_adapter::history_adapter_actor::{spawn, HistoryAdapterConfig};
+use crate::actors::history_adapter::history_adapter_actor::{HistoryAdapterConfig, spawn};
 
 /// Spawn a minimal history-adapter actor and return its handle.
 ///

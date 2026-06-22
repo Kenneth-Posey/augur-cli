@@ -183,14 +183,18 @@ fn compute_layers(
         changed = false;
         for name in member_names.iter().rev() {
             let current_layer = *layers.get(name.as_str()).unwrap_or(&0);
-            if current_layer == 0 { continue; } // never push roots
+            if current_layer == 0 {
+                continue;
+            } // never push roots
 
             if let Some(consumer_list) = consumers.get(name.as_str()) {
                 // Find the minimum consumer layer
                 let mut min_consumer = usize::MAX;
                 for consumer in consumer_list {
                     let cl = *layers.get(*consumer).unwrap_or(&0);
-                    if cl < min_consumer { min_consumer = cl; }
+                    if cl < min_consumer {
+                        min_consumer = cl;
+                    }
                 }
 
                 if min_consumer != usize::MAX && min_consumer > current_layer + 1 {

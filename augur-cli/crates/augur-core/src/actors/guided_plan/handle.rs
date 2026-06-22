@@ -1,8 +1,8 @@
 //! Handle for the `GuidedPlanActor`: command senders and event subscription.
 
 use super::commands::GuidedPlanCmd;
-use augur_domain::domain::guided_plan::{GuidedPlanConfig, GuidedPlanEvent};
 use augur_domain::domain::FilePath;
+use augur_domain::domain::guided_plan::{GuidedPlanConfig, GuidedPlanEvent};
 use tokio::sync::{broadcast, mpsc};
 
 /// Public handle for sending commands to and subscribing to events from the

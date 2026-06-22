@@ -29,12 +29,12 @@
 //! - `FlushIntervalMs(u64)`: Milliseconds between periodic flushes
 
 use crate::actors::copilot::background_event_mapper::map_background_event_with_usage;
+use augur_domain::TokenTrackerHandle;
 use augur_domain::background_events::{
     BackgroundEventClassifier, BackgroundPanelMode, FlushIntervalMs, QueueCapacity,
 };
 use augur_domain::newtypes::NumericNewtype;
 use augur_domain::types::AgentFeedOutput;
-use augur_domain::TokenTrackerHandle;
 use copilot_sdk::SessionEventData;
 use futures_util::stream::BoxStream;
 use std::any::Any;
@@ -42,7 +42,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use tokio::sync::mpsc;
-use tokio::time::{interval, Duration, Interval};
+use tokio::time::{Duration, Interval, interval};
 
 /// Placeholder duration used to initialize the flush timer before first poll.
 ///

@@ -1,5 +1,5 @@
 use augur_domain::domain::channels::TUI_FEED_CAPACITY;
-use augur_tui::actors::tui_agent_panel::tui_agent_panel_actor::{spawn, TuiAgentPanelConfig};
+use augur_tui::actors::tui_agent_panel::tui_agent_panel_actor::{TuiAgentPanelConfig, spawn};
 use augur_tui::domain::newtypes::NumericNewtype;
 use augur_tui::domain::string_newtypes::OutputText;
 use augur_tui::domain::types::AgentFeedOutput;

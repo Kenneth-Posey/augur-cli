@@ -80,7 +80,9 @@ async fn run_command(argv: &[String], timeout_secs: u64) -> ToolCallResult {
     child.args(&argv[1..]);
     let execution = timeout(Duration::from_secs(timeout_secs), child.output()).await;
     match execution {
-        Err(_elapsed) => shell_exec_result(format!("command timed out after {timeout_secs}s"), true),
+        Err(_elapsed) => {
+            shell_exec_result(format!("command timed out after {timeout_secs}s"), true)
+        }
         Ok(Err(error)) => shell_exec_result(error.to_string(), true),
         Ok(Ok(out)) => shell_exec_result(combine_process_output(&out), !out.status.success()),
     }

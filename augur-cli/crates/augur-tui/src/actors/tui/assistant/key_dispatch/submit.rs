@@ -2,7 +2,7 @@
 
 use crate::actors::tui::tui_actor::TuiHandles;
 use crate::domain::tui_state::{
-    current_timestamp_ms, AppState, ConversationMode, PendingResponseMeta,
+    AppState, ConversationMode, PendingResponseMeta, current_timestamp_ms,
 };
 use augur_core::actors::catalog_manager::models::OutputFormat;
 use augur_core::actors::catalog_manager::models::ProviderName;
@@ -1008,11 +1008,11 @@ mod tests {
         AgentConfig, AppConfig, CopilotConfig, EndpointConfig, EndpointCredentials,
         PersistenceConfig, Provider,
     };
+    use augur_domain::domain::TokenCount;
     use augur_domain::domain::newtypes::{NumericNewtype, Temperature};
     use augur_domain::domain::string_newtypes::{
         EndpointName, EndpointUrl, FilePath, ModelName, OutputText, StringNewtype,
     };
-    use augur_domain::domain::TokenCount;
 
     fn test_config() -> AppConfig {
         AppConfig {

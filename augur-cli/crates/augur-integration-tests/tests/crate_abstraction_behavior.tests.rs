@@ -1,13 +1,11 @@
-use augur_core::actors::guided_plan::guided_plan_actor::{
-    spawn, spawn_with_copilot_hook_runner,
-};
+use augur_core::actors::guided_plan::guided_plan_actor::{spawn, spawn_with_copilot_hook_runner};
 use augur_core::actors::guided_plan::hooks::CopilotAgentHookRunner;
 use augur_domain::domain::guided_plan::{
     CopilotAgentHookParams, GuidedPlanConfig, GuidedPlanEvent, GuidedPlanPhase, HookConfig,
     HookOutcome, HookType, OnFailure, PostPhaseConfig, VerdictKind,
 };
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 fn guided_plan_config_for_agent(agent: &str) -> GuidedPlanConfig {
@@ -77,12 +75,16 @@ async fn gwt_b1_core_guided_plan_hook_runner_is_runtime_injected() {
     handle.shutdown();
 
     assert!(invoked.load(Ordering::SeqCst));
-    assert!(events
-        .iter()
-        .any(|event| matches!(event, GuidedPlanEvent::PlanComplete)));
-    assert!(!events
-        .iter()
-        .any(|event| matches!(event, GuidedPlanEvent::PlanFailed { .. })));
+    assert!(
+        events
+            .iter()
+            .any(|event| matches!(event, GuidedPlanEvent::PlanComplete))
+    );
+    assert!(
+        !events
+            .iter()
+            .any(|event| matches!(event, GuidedPlanEvent::PlanFailed { .. }))
+    );
 }
 
 #[tokio::test]
@@ -97,12 +99,16 @@ async fn gwt_b2_unwired_copilot_hook_fails_without_skip() {
     let events = collect_events_until_terminal(&mut rx).await;
     handle.shutdown();
 
-    assert!(events
-        .iter()
-        .any(|event| matches!(event, GuidedPlanEvent::PlanFailed { .. })));
-    assert!(!events
-        .iter()
-        .any(|event| matches!(event, GuidedPlanEvent::PlanComplete)));
+    assert!(
+        events
+            .iter()
+            .any(|event| matches!(event, GuidedPlanEvent::PlanFailed { .. }))
+    );
+    assert!(
+        !events
+            .iter()
+            .any(|event| matches!(event, GuidedPlanEvent::PlanComplete))
+    );
     let failure_reason = events.iter().find_map(|event| match event {
         GuidedPlanEvent::PlanFailed { reason, .. } => Some(reason.to_string()),
         _ => None,
@@ -124,12 +130,14 @@ async fn gwt_b3_provider_crate_copilot_hook_runner_is_wired_into_core() {
     let events = collect_events_until_terminal(&mut rx).await;
     handle.shutdown();
 
-    assert!(events
-        .iter()
-        .any(|event| matches!(event, GuidedPlanEvent::PlanComplete)));
-    assert!(!events
-        .iter()
-        .any(|event| matches!(event, GuidedPlanEvent::PlanFailed { .. })));
+    assert!(
+        events
+            .iter()
+            .any(|event| matches!(event, GuidedPlanEvent::PlanComplete))
+    );
+    assert!(
+        !events
+            .iter()
+            .any(|event| matches!(event, GuidedPlanEvent::PlanFailed { .. }))
+    );
 }
-
-

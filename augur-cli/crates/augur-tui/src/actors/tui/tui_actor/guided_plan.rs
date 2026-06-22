@@ -2,13 +2,13 @@
 
 use super::TuiHandles;
 use crate::domain::tui_state::{
-    current_timestamp_ms, AppState, ConversationMode, OutputLine, PendingResponseMeta,
+    AppState, ConversationMode, OutputLine, PendingResponseMeta, current_timestamp_ms,
 };
+use augur_domain::domain::AgentName;
 use augur_domain::domain::guided_plan::{GuidedPlanEvent, PhaseStatus};
 use augur_domain::domain::newtypes::{NumericNewtype, PhaseIndex};
 use augur_domain::domain::string_newtypes::{OutputText, PromptText, StringNewtype};
 use augur_domain::domain::types::{AgentFeedOutput, SupervisorEvent};
-use augur_domain::domain::AgentName;
 
 /// Dispatch handle-owning side effects for guided-plan events.
 pub(super) fn apply_guided_plan_actions(

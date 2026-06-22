@@ -2,10 +2,10 @@
 
 use augur_core::actors::token_tracker::token_tracker_ops::accumulate;
 use augur_domain::domain::{
+    Temperature, TokenCount,
     newtypes::NumericNewtype,
     string_newtypes::{OutputText, StringNewtype},
     types::{LlmTokenCounts, LlmUsage, ProjectTokenTotals},
-    Temperature, TokenCount,
 };
 
 fn usage(tokens_in: u64, tokens_out: u64) -> LlmUsage {

@@ -9,8 +9,8 @@ use crate::domain::deterministic_orchestrator::{
     StepExecutionRecord, WorkflowArtifactRef, WorkflowStep,
 };
 use crate::domain::deterministic_orchestrator_ops::StepIndex;
-use augur_domain::domain::string_newtypes::StringNewtype;
 use augur_domain::domain::WorkflowStepId;
+use augur_domain::domain::string_newtypes::StringNewtype;
 
 /// Concrete artifact content resolved for a workflow step input.
 #[derive(Clone, Debug, PartialEq, Eq)]

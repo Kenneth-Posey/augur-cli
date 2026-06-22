@@ -3,9 +3,9 @@
 use crate::domain::tui_state::PickerState;
 use augur_domain::domain::newtypes::NumericNewtype;
 use augur_domain::domain::string_newtypes::StringNewtype;
+use ratatui::Frame;
 use ratatui::layout::{Alignment, Rect};
 use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
-use ratatui::Frame;
 
 /// Milliseconds per second used to convert epoch deltas to elapsed seconds.
 const MILLIS_PER_SECOND: u64 = 1_000;

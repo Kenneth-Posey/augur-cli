@@ -33,11 +33,7 @@ pub(crate) enum ThinkingState {
 
 impl From<bool> for ThinkingState {
     fn from(value: bool) -> Self {
-        if value {
-            Self::Thinking
-        } else {
-            Self::Idle
-        }
+        if value { Self::Thinking } else { Self::Idle }
     }
 }
 

@@ -3,11 +3,11 @@
 use augur_domain::domain::newtypes::{Count, NumericNewtype, ScrollOffset};
 use augur_domain::domain::plan_tree::{NodeStatus, PlanNode, PlanTree};
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype};
+use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Block, Paragraph};
-use ratatui::Frame;
 
 /// Input bundle for rendering the right-side plan panel.
 #[derive(Clone, Copy, bon::Builder)]

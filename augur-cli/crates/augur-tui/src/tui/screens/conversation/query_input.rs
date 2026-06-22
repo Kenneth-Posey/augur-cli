@@ -6,7 +6,7 @@ use augur_domain::domain::string_newtypes::{ChoiceText, OutputText, PromptText};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Paragraph, Wrap};
-use ratatui::{layout::Rect, Frame};
+use ratatui::{Frame, layout::Rect};
 
 /// Render the inline query choice list and free-form input line into `area`.
 pub(super) fn render_query_input(frame: &mut Frame, qs: &QueryDisplayState, area: Rect) {

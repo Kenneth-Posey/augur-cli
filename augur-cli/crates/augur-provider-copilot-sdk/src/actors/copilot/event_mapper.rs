@@ -4,9 +4,9 @@
 //! directly to `map_sdk_event`; the dispatch loop forwards the result when
 //! `Some`. Gated on `copilot-executor` because it uses SDK types.
 
+use augur_domain::ExecutionSuccess;
 use augur_domain::string_newtypes::{ModelId, OutputText, StringNewtype, ToolCallId, ToolName};
 use augur_domain::types::AgentOutput;
-use augur_domain::ExecutionSuccess;
 
 /// Map an SDK session event to an `AgentOutput`, if one applies.
 ///

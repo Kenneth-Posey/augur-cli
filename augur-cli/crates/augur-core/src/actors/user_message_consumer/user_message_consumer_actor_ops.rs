@@ -1,7 +1,7 @@
 //! Private helper operations for the user-message consumer actor.
 
 use super::user_message_consumer_actor::UserMessageOutputChannels;
-use super::user_message_consumer_ops::{parse_user_input, UserMessageCmd};
+use super::user_message_consumer_ops::{UserMessageCmd, parse_user_input};
 use augur_domain::domain::feeds::UserInputTag;
 use augur_domain::domain::string_newtypes::OutputText;
 use tokio::sync::mpsc;

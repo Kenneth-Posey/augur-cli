@@ -1,6 +1,6 @@
 use super::super::assistant::{
-    apply_log_event, build_sdk_attachments, compact_or_shutdown, drain_log_events,
-    format_sdk_error, keepalive_session, log_sdk_error, send_or_shutdown, SessionOpOutcome,
+    SessionOpOutcome, apply_log_event, build_sdk_attachments, compact_or_shutdown,
+    drain_log_events, format_sdk_error, keepalive_session, log_sdk_error, send_or_shutdown,
 };
 use super::super::commands::CopilotChatCmd;
 use super::runtime_types::{CommandLoopState, CopilotCmdContext, LoopExit};
@@ -156,7 +156,7 @@ fn spawn_background_agent(
     prompt: augur_domain::string_newtypes::PromptText,
 ) {
     use crate::actors::copilot::background_agent::{
-        run_background_agent, BackgroundAgentArgs, BackgroundAgentConfig,
+        BackgroundAgentArgs, BackgroundAgentConfig, run_background_agent,
     };
     use crate::actors::copilot::event_classifier::CopilotEventClassifier;
     let feed_id = augur_domain::types::FeedId::Agent(

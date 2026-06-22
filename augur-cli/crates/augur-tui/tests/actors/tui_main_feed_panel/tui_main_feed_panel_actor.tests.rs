@@ -1,6 +1,6 @@
 use augur_core::domain::deterministic_orchestrator::DeterministicOrchestratorEvent;
 use augur_domain::domain::channels::TUI_FEED_CAPACITY;
-use augur_tui::actors::tui_main_feed_panel::tui_main_feed_panel_actor::{spawn, TuiMainFeedConfig};
+use augur_tui::actors::tui_main_feed_panel::tui_main_feed_panel_actor::{TuiMainFeedConfig, spawn};
 use augur_tui::actors::tui_main_feed_panel::tui_main_feed_panel_ops::MainFeedItem;
 use augur_tui::domain::newtypes::NumericNewtype;
 use augur_tui::domain::string_newtypes::OutputText;

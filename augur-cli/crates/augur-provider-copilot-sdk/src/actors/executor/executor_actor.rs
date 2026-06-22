@@ -15,7 +15,7 @@ use super::commands::ExecutorCmd;
 use super::commands::SessionEvent;
 use super::event_mapper::map_session_event;
 use super::executor_ops;
-use super::handle::{make_output_channel, ExecutorHandle};
+use super::handle::{ExecutorHandle, make_output_channel};
 use augur_domain::channels::EXECUTOR_COMMAND_CAPACITY;
 use augur_domain::config::types::ExecutorConfig;
 use augur_domain::newtypes::{NumericNewtype, TokenCount};

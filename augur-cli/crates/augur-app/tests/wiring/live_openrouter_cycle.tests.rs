@@ -3,10 +3,10 @@ use augur_cli::wiring::{
 };
 use augur_core::config::load_config;
 use augur_domain::config::types::{AppConfig, ProgramSettings};
+use augur_domain::domain::StringNewtype;
 use augur_domain::domain::newtypes::{NumericNewtype, TimestampSecs};
 use augur_domain::domain::string_newtypes::{EndpointName, PromptText};
 use augur_domain::domain::types::{AgentFeedOutput, AgentOutput};
-use augur_domain::domain::StringNewtype;
 use std::sync::Once;
 use tokio::sync::broadcast;
 

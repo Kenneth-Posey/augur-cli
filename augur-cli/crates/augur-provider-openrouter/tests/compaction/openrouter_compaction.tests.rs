@@ -1,7 +1,7 @@
+use augur_domain::NumericNewtype;
 use augur_domain::domain::newtypes::{TokenCount, ToolResultStripFraction};
 use augur_domain::domain::string_newtypes::StringNewtype;
 use augur_domain::domain::types::{Message, Role};
-use augur_domain::NumericNewtype;
 
 use augur_provider_openrouter::compaction::compact_messages_for_openrouter;
 

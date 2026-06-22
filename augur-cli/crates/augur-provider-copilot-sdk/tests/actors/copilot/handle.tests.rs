@@ -10,9 +10,9 @@ use augur_domain::{
     TokenTrackerCommand, TokenTrackerHandle,
 };
 use augur_provider_copilot_sdk::actors::copilot::copilot_actor::{
-    spawn, CopilotChannels, CopilotSpawnArgs,
+    CopilotChannels, CopilotSpawnArgs, spawn,
 };
-use augur_provider_copilot_sdk::actors::copilot::handle::{into_chat_provider, CopilotChatHandle};
+use augur_provider_copilot_sdk::actors::copilot::handle::{CopilotChatHandle, into_chat_provider};
 use tokio::sync::mpsc;
 
 fn spawn_args() -> CopilotSpawnArgs {

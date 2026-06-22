@@ -20,9 +20,9 @@ use crate::domain::tui_state::{
     AgentStatus, AppScreen, GuidedPlanUiState, OutputPane, PanelOverlayState, PlanModeState,
     PromptPane, QueryState, StatusBarData,
 };
+use augur_domain::domain::IsPredicate;
 use augur_domain::domain::newtypes::ScrollOffset;
 use augur_domain::domain::string_newtypes::{ChoiceText, EndpointName, PromptText};
-use augur_domain::domain::IsPredicate;
 
 /// Display-only projection of [`QueryState`]: identical to [`QueryState`] but
 /// without the `reply_tx` oneshot sender, making it safe to `Clone`.

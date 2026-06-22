@@ -6,7 +6,7 @@ use augur_domain::domain::string_newtypes::{EndpointName, PromptText};
 use augur_domain::domain::types::Message;
 use augur_domain::persistence::types::MessageRecord;
 use std::sync::Arc;
-use tokio::sync::{broadcast, Mutex};
+use tokio::sync::{Mutex, broadcast};
 use tokio::task::JoinHandle;
 
 /// Cloneable handle to the running ask-panel actor.

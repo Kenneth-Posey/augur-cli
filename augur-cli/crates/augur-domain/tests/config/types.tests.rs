@@ -1,6 +1,6 @@
 use augur_domain::config::types::{
-    find_endpoint, AgentConfig, AppConfig, CopilotConfig, EndpointConfig, EndpointCredentials,
-    PersistenceConfig, Provider,
+    AgentConfig, AppConfig, CopilotConfig, EndpointConfig, EndpointCredentials, PersistenceConfig,
+    Provider, find_endpoint,
 };
 use augur_domain::domain::{
     ApiKey, BearerToken, EndpointName, EndpointUrl, EnvVarName, FilePath, ModelName, OutputText,

@@ -13,7 +13,7 @@ mod suite {
         use augur_domain::string_newtypes::{OutputText, StringNewtype};
         use augur_domain::types::AgentOutput;
         use augur_provider_copilot_sdk::actors::copilot::assistant::turn_log::{
-            apply_log_event, LogState,
+            LogState, apply_log_event,
         };
 
         let tmp = tempfile::tempdir().expect("tempdir");
@@ -52,7 +52,7 @@ mod suite {
         use augur_domain::string_newtypes::{OutputText, StringNewtype};
         use augur_domain::types::{AgentOutput, Message};
         use augur_provider_copilot_sdk::actors::copilot::assistant::turn_log::{
-            apply_log_event, LogState,
+            LogState, apply_log_event,
         };
 
         let tmp = tempfile::tempdir().expect("tempdir");

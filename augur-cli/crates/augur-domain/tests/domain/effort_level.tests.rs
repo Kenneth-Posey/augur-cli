@@ -1,7 +1,7 @@
+use augur_domain::domain::Temperature;
 use augur_domain::domain::effort_level::EffortLevel;
 use augur_domain::domain::newtypes::NumericNewtype;
 use augur_domain::domain::string_newtypes::StringNewtype;
-use augur_domain::domain::Temperature;
 
 fn temp(v: f64) -> Temperature {
     Temperature::new(v)

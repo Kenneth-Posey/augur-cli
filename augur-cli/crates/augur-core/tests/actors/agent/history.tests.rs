@@ -120,10 +120,12 @@ fn openrouter_context_history_can_diverge_from_conversation() {
     assert_eq!(h.messages().len(), 1);
     assert_eq!(h.openrouter_context_messages().len(), 1);
     assert!(h.messages()[0].content.as_str().contains("raw output"));
-    assert!(h.openrouter_context_messages()[0]
-        .content
-        .as_str()
-        .contains("warning output"));
+    assert!(
+        h.openrouter_context_messages()[0]
+            .content
+            .as_str()
+            .contains("warning output")
+    );
 }
 
 #[test]

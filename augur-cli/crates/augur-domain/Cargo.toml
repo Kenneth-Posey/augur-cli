@@ -1,6 +1,6 @@
 [package]
 name = "augur-domain"
-version = "6.0.0"
+version = "7.0.0"
 edition = "2024"
 autotests = false
 

@@ -4,11 +4,11 @@ use crate::domain::tui_display_state::{DisplayConversationMode, TuiDisplayState}
 use crate::domain::tui_state::{OutputSelection, SecondaryView, StatusBarData};
 use augur_domain::domain::newtypes::UsdCost;
 use augur_domain::domain::string_newtypes::{StatusLabel, StringNewtype};
+use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
-use ratatui::Frame;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ControlHint {

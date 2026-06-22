@@ -1,9 +1,9 @@
 //! Private helper operations for the LLM actor run loop.
 
-use super::llm_actor::{dispatch_request, inject_openrouter_headers, LlmRunConfig};
+use super::llm_actor::{LlmRunConfig, dispatch_request, inject_openrouter_headers};
 use augur_domain::string_newtypes::{OutputText, StringNewtype};
 use augur_domain::types::StreamChunk;
-use augur_provider_shared::request_context::{build_request_context, CompleteFields};
+use augur_provider_shared::request_context::{CompleteFields, build_request_context};
 use tokio::sync::mpsc;
 
 /// Build request context and dispatch one completion request task.
@@ -34,12 +34,12 @@ pub(super) fn dispatch_complete(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use augur_domain::NumericNewtype;
     use augur_domain::config::provider_catalog::OpenRouterCacheConfig;
     use augur_domain::config::{AgentConfig, AppConfig, CopilotConfig, PersistenceConfig};
     use augur_domain::newtypes::{Temperature, TokenCount};
     use augur_domain::string_newtypes::{EndpointName, FilePath, OutputText};
     use augur_domain::types::StreamChunk;
-    use augur_domain::NumericNewtype;
     use augur_provider_shared::request_context::{CompleteFields, CompleteRoute, RequestPayload};
 
     fn test_app_config() -> AppConfig {

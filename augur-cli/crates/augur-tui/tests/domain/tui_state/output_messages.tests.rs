@@ -12,24 +12,32 @@ fn push_output_message_helpers_append_lines() {
     state.push_self_feedback_line("self line");
     state.push_system_message("system line");
 
-    assert!(state
-        .output
-        .lines
-        .iter()
-        .any(|line| matches!(line.kind, LineKind::Error)));
-    assert!(state
-        .output
-        .lines
-        .iter()
-        .any(|line| matches!(line.kind, LineKind::ToolCall)));
-    assert!(state
-        .output
-        .lines
-        .iter()
-        .any(|line| matches!(line.kind, LineKind::SelfFeedback)));
-    assert!(state
-        .output
-        .lines
-        .iter()
-        .any(|line| matches!(line.kind, LineKind::System)));
+    assert!(
+        state
+            .output
+            .lines
+            .iter()
+            .any(|line| matches!(line.kind, LineKind::Error))
+    );
+    assert!(
+        state
+            .output
+            .lines
+            .iter()
+            .any(|line| matches!(line.kind, LineKind::ToolCall))
+    );
+    assert!(
+        state
+            .output
+            .lines
+            .iter()
+            .any(|line| matches!(line.kind, LineKind::SelfFeedback))
+    );
+    assert!(
+        state
+            .output
+            .lines
+            .iter()
+            .any(|line| matches!(line.kind, LineKind::System))
+    );
 }

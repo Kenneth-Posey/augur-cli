@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 use crate::domain::deterministic_orchestrator::WorkflowDocument;
 use crate::domain::deterministic_orchestrator_ops::{
-    decide_local_workflow_source_action, LocalWorkflowPresence, LocalWorkflowSourceAction,
+    LocalWorkflowPresence, LocalWorkflowSourceAction, decide_local_workflow_source_action,
 };
 
 /// Canonical workflow seed source copied only when the local file is missing.
@@ -31,7 +31,10 @@ impl fmt::Display for WorkflowLoaderError {
             Self::Io(error) => write!(f, "workflow loader I/O error: {error}"),
             Self::Parse(error) => write!(f, "workflow loader parse error: {error}"),
             Self::InvalidWorkflowPath => {
-                write!(f, "workflow loader path error: workflow path must stay within the repository root")
+                write!(
+                    f,
+                    "workflow loader path error: workflow path must stay within the repository root"
+                )
             }
         }
     }

@@ -102,12 +102,12 @@ impl ToolHandler for FileReplaceTool {
             }
             if start_count > 1 {
                 return result_msg(
-                        format!(
-                            "start_text '{}' is not unique (found {} occurrences); please be more specific",
-                            start_text, start_count
-                        ),
-                        false,
-                    );
+                    format!(
+                        "start_text '{}' is not unique (found {} occurrences); please be more specific",
+                        start_text, start_count
+                    ),
+                    false,
+                );
             }
 
             // Validate end_text
@@ -117,12 +117,12 @@ impl ToolHandler for FileReplaceTool {
             }
             if end_count > 1 {
                 return result_msg(
-                        format!(
-                            "end_text '{}' is not unique (found {} occurrences); please be more specific",
-                            end_text, end_count
-                        ),
-                        false,
-                    );
+                    format!(
+                        "end_text '{}' is not unique (found {} occurrences); please be more specific",
+                        end_text, end_count
+                    ),
+                    false,
+                );
             }
 
             let start_pos = content.find(start_text.as_str()).unwrap();

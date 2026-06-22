@@ -1,9 +1,9 @@
 //! Persistence-related transformations: converting messages to records, extracting message types, annotating errors.
 
+use augur_domain::domain::TimestampMs;
 use augur_domain::domain::newtypes::{Count, NumericNewtype};
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype, ToolName};
 use augur_domain::domain::types::{LlmUsage, Message, Role};
-use augur_domain::domain::TimestampMs;
 use augur_domain::persistence::types::{MessageRecord, MessageType};
 
 /// Context bundled for message type derivation.

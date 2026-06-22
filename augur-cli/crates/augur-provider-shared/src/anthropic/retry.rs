@@ -1,6 +1,6 @@
 use crate::retry::{
-    compute_backoff_wait, is_requests_exceeded, parse_retry_after, HTTP_RATE_LIMIT_STATUS,
-    MAX_RETRY_ATTEMPTS,
+    HTTP_RATE_LIMIT_STATUS, MAX_RETRY_ATTEMPTS, compute_backoff_wait, is_requests_exceeded,
+    parse_retry_after,
 };
 use augur_domain::domain::newtypes::{Count, NumericNewtype};
 use augur_domain::domain::string_newtypes::{ApiKeyValue, OutputText, StringNewtype};

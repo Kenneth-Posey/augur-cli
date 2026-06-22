@@ -1,6 +1,6 @@
 use augur_core::config::provider_catalog::{
-    load_provider_catalog, provider_catalog_path, write_provider_catalog, ProviderCatalogFile,
-    ProviderCatalogModel,
+    ProviderCatalogFile, ProviderCatalogModel, load_provider_catalog, provider_catalog_path,
+    write_provider_catalog,
 };
 use augur_domain::config::types::Provider;
 use augur_domain::domain::{ModelId, ModelLabel, StringNewtype};

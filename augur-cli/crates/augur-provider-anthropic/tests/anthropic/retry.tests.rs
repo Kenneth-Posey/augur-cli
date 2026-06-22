@@ -5,8 +5,8 @@ use augur_domain::domain::string_newtypes::{EndpointName, EndpointUrl, ModelName
 use augur_domain::domain::types::StreamChunk;
 use augur_domain::{NumericNewtype, StringNewtype};
 use augur_provider_anthropic::stream_complete;
-use augur_provider_shared::request_context::{GenerationParams, RequestContext, RequestPayload};
 use augur_provider_shared::MAX_RETRY_ATTEMPTS;
+use augur_provider_shared::request_context::{GenerationParams, RequestContext, RequestPayload};
 use tokio::sync::mpsc;
 
 fn make_ctx(base_url: &str) -> (RequestContext, mpsc::Receiver<StreamChunk>) {

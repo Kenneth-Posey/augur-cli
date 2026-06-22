@@ -8,7 +8,7 @@ use augur_domain::{
     TokenTrackerCommand, TokenTrackerHandle,
 };
 use augur_provider_copilot_sdk::actors::copilot::copilot_actor::{
-    spawn, CopilotChannels, CopilotSpawnArgs,
+    CopilotChannels, CopilotSpawnArgs, spawn,
 };
 use tokio::sync::mpsc;
 

@@ -9,9 +9,11 @@ use augur_domain::domain::string_newtypes::{PromptText, StringNewtype};
 #[test]
 fn completions_for_empty_for_plain_text() {
     let handle = build(&[]);
-    assert!(handle
-        .completions_for(&PromptText::from("hello"))
-        .is_empty());
+    assert!(
+        handle
+            .completions_for(&PromptText::from("hello"))
+            .is_empty()
+    );
     assert!(handle.completions_for(&PromptText::from("")).is_empty());
 }
 

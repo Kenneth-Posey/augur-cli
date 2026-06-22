@@ -8,7 +8,7 @@ use tokio::task::JoinHandle;
 
 use crate::domain::deterministic_orchestrator::{NormalizedSignal, WorkflowArtifactRef};
 use crate::domain::deterministic_orchestrator_ops::{
-    normalize_agent_signal, DispatchRequestKind, WorkflowDispatchRequest,
+    DispatchRequestKind, WorkflowDispatchRequest, normalize_agent_signal,
 };
 use augur_domain::domain::newtypes::NumericNewtype;
 use augur_domain::domain::types::{FeedEntry, FeedId};

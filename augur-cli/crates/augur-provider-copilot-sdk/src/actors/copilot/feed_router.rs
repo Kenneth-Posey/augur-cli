@@ -4,15 +4,15 @@
 //! feed or a background-agent feed. Symbols implemented in Phase 2 Step 3.
 
 use crate::actors::copilot::agent_feed_ops::{
-    advance_subagent_state, extract_active_task_id, map_custom_agent_completed,
-    map_custom_agent_failed, map_custom_agent_started, map_sub_agent_delta_output,
-    map_tool_complete_output, map_tool_progress_output, map_tool_start_output, ActiveToolCallMap,
-    SubAgentState, ToolInfo, TASK_TOOL_NAME,
+    ActiveToolCallMap, SubAgentState, TASK_TOOL_NAME, ToolInfo, advance_subagent_state,
+    extract_active_task_id, map_custom_agent_completed, map_custom_agent_failed,
+    map_custom_agent_started, map_sub_agent_delta_output, map_tool_complete_output,
+    map_tool_progress_output, map_tool_start_output,
 };
 use crate::actors::copilot::event_mapper::map_event_to_output;
+use augur_domain::ToolCallId;
 use augur_domain::string_newtypes::{DisplayLine, EventType};
 use augur_domain::types::{AgentFeedOutput, AgentOutput, FeedEntry, FeedId, RouteResult};
-use augur_domain::ToolCallId;
 use copilot_sdk::{SessionEvent, SessionEventData};
 use std::collections::{HashMap, HashSet};
 use tokio::sync::mpsc;
@@ -192,13 +192,13 @@ impl FeedRouter {
         }
         match data {
             E::CustomAgentStarted(d) => {
-                return Some(FeedId::Agent(ToolCallId::from(d.tool_call_id.as_str())))
+                return Some(FeedId::Agent(ToolCallId::from(d.tool_call_id.as_str())));
             }
             E::CustomAgentCompleted(d) => {
-                return Some(FeedId::Agent(ToolCallId::from(d.tool_call_id.as_str())))
+                return Some(FeedId::Agent(ToolCallId::from(d.tool_call_id.as_str())));
             }
             E::CustomAgentFailed(d) => {
-                return Some(FeedId::Agent(ToolCallId::from(d.tool_call_id.as_str())))
+                return Some(FeedId::Agent(ToolCallId::from(d.tool_call_id.as_str())));
             }
             _ => {}
         }

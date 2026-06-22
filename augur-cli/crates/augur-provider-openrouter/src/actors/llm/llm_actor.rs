@@ -5,14 +5,14 @@ use super::llm_actor_ops as actor_ops;
 use super::providers::openrouter_cache::build_openrouter_cache_headers;
 use augur_domain::channels::LLM_COMMAND_CAPACITY;
 use augur_domain::config::provider_catalog::{
-    default_provider_catalog_dir, load_provider_catalog, OpenRouterCacheConfig,
+    OpenRouterCacheConfig, default_provider_catalog_dir, load_provider_catalog,
 };
 use augur_domain::config::{AppConfig, Provider};
 use augur_domain::string_newtypes::{OutputText, StringNewtype};
 use augur_domain::types::{AgentOutput, Message, StreamChunk};
 use augur_provider_shared::request_context::{
-    build_request_context, CompleteFields, CompleteRoute, LlmCommand, RequestContext,
-    RequestPayload,
+    CompleteFields, CompleteRoute, LlmCommand, RequestContext, RequestPayload,
+    build_request_context,
 };
 use augur_provider_shared::{
     stream_anthropic_complete, stream_ollama_complete, stream_openai_complete,

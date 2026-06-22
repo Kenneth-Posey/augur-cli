@@ -3,8 +3,8 @@
 //! `accumulate` is a **pure function** - no I/O, no side effects. The actor
 //! calls it to fold one `LlmUsage` into the running `ProjectTokenTotals`.
 
-use augur_domain::domain::types::{LlmUsage, ProjectTokenTotals};
 pub use augur_domain::TokenTrackerCommand;
+use augur_domain::domain::types::{LlmUsage, ProjectTokenTotals};
 
 /// Fold one `LlmUsage` into the running `ProjectTokenTotals`.
 ///

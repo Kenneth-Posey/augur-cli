@@ -2,10 +2,10 @@
 
 use crate::domain::tui_state::StatusBarData;
 use crate::domain::tui_status::refresh_status_bar_base_fields;
-use augur_domain::config::types::find_endpoint;
 use augur_domain::config::types::AppConfig;
-use augur_domain::domain::string_newtypes::{EndpointName, ModelLabel, StringNewtype, WorkingDir};
+use augur_domain::config::types::find_endpoint;
 use augur_domain::domain::EffortLevel;
+use augur_domain::domain::string_newtypes::{EndpointName, ModelLabel, StringNewtype, WorkingDir};
 
 /// Fallback model display label used when Copilot SDK manages the model internally.
 const COPILOT_FALLBACK_LABEL: &str = "copilot";

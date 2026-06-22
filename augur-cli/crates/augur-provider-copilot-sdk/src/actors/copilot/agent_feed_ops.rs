@@ -5,10 +5,10 @@
 //! from the async dispatch loop. Gated on `copilot-executor` because it
 //! uses SDK types.
 
+use augur_domain::StringNewtype;
 use augur_domain::string_newtypes::{AgentName, OutputText, ToolCallId, ToolName};
 use augur_domain::tool_call_formatting::format_tool_call_line;
 use augur_domain::types::AgentFeedOutput;
-use augur_domain::StringNewtype;
 use copilot_sdk::{
     AssistantMessageDeltaData, CustomAgentCompletedData, CustomAgentFailedData,
     CustomAgentStartedData, SessionEventData, ToolExecutionCompleteData, ToolExecutionProgressData,

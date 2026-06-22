@@ -3,7 +3,7 @@
 use super::commands::GuidedPlanCmd;
 use super::handle::GuidedPlanHandle;
 use super::hooks::subprocess::run_subprocess_hook;
-use super::hooks::{unavailable_copilot_hook_runner, CopilotAgentHookArgs, CopilotAgentHookRunner};
+use super::hooks::{CopilotAgentHookArgs, CopilotAgentHookRunner, unavailable_copilot_hook_runner};
 use augur_domain::domain::guided_plan::{
     GuidedPlanConfig, GuidedPlanEvent, HookConfig, HookOutcome, HookType, OnFailure, PhaseStatus,
 };
@@ -590,13 +590,13 @@ fn emit(tx: &broadcast::Sender<GuidedPlanEvent>, event: GuidedPlanEvent) {
 mod tests {
     use super::{spawn, spawn_with_copilot_hook_runner};
     use crate::actors::guided_plan::hooks::CopilotAgentHookRunner;
+    use augur_domain::domain::StringNewtype;
     use augur_domain::domain::guided_plan::{
         CopilotAgentHookParams, GuidedPlanConfig, GuidedPlanEvent, GuidedPlanPhase, HookConfig,
         HookOutcome, HookType, OnFailure, PostPhaseConfig, VerdictKind,
     };
-    use augur_domain::domain::StringNewtype;
-    use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
     use std::time::Duration;
 
     fn guided_plan_config_for_agent(agent: &str) -> GuidedPlanConfig {
@@ -666,12 +666,16 @@ mod tests {
         handle.shutdown();
 
         assert!(invoked.load(Ordering::SeqCst));
-        assert!(events
-            .iter()
-            .any(|event| matches!(event, GuidedPlanEvent::PlanComplete)));
-        assert!(!events
-            .iter()
-            .any(|event| matches!(event, GuidedPlanEvent::PlanFailed { .. })));
+        assert!(
+            events
+                .iter()
+                .any(|event| matches!(event, GuidedPlanEvent::PlanComplete))
+        );
+        assert!(
+            !events
+                .iter()
+                .any(|event| matches!(event, GuidedPlanEvent::PlanFailed { .. }))
+        );
     }
 
     #[tokio::test]
@@ -686,12 +690,16 @@ mod tests {
         let events = collect_events_until_terminal(&mut rx).await;
         handle.shutdown();
 
-        assert!(events
-            .iter()
-            .any(|event| matches!(event, GuidedPlanEvent::PlanFailed { .. })));
-        assert!(!events
-            .iter()
-            .any(|event| matches!(event, GuidedPlanEvent::PlanComplete)));
+        assert!(
+            events
+                .iter()
+                .any(|event| matches!(event, GuidedPlanEvent::PlanFailed { .. }))
+        );
+        assert!(
+            !events
+                .iter()
+                .any(|event| matches!(event, GuidedPlanEvent::PlanComplete))
+        );
         let failure_reason = events.iter().find_map(|event| match event {
             GuidedPlanEvent::PlanFailed { reason, .. } => Some(reason.as_str().to_owned()),
             _ => None,

@@ -1,7 +1,7 @@
 use augur_domain::domain::dag_validation::validate_execution_plan;
 use augur_domain::domain::plan_state::PlanState;
 use augur_domain::domain::scheduler::{
-    apply_step_completion, ready_steps, reply_decision, ReplyDecision,
+    ReplyDecision, apply_step_completion, ready_steps, reply_decision,
 };
 use augur_domain::domain::task_types::RawStepId;
 use augur_domain::domain::{ExecutionPlan, ExecutionStepId, ExecutionStepSpec, RunId, StepStatus};

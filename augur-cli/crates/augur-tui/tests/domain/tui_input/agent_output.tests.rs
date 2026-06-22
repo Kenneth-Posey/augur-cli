@@ -62,23 +62,29 @@ fn apply_agent_output_models_available_is_ignored_for_non_auto_endpoint() {
     use augur_tui::domain::types::ModelOption;
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.models.endpoint_catalog = vec![EndpointModelCatalog::builder()
-        .endpoint_name(EndpointName::new("ep"))
-        .models(vec![])
-        .default_display("yaml-default".into())
-        .supports_auto(SupportsAuto::no())
-        .build()];
-    state.prompt.models.available = vec![ModelOption::builder()
-        .id(ModelId::new("yaml/model"))
-        .display_name(ModelLabel::new("YAML Model"))
-        .build()];
+    state.prompt.models.endpoint_catalog = vec![
+        EndpointModelCatalog::builder()
+            .endpoint_name(EndpointName::new("ep"))
+            .models(vec![])
+            .default_display("yaml-default".into())
+            .supports_auto(SupportsAuto::no())
+            .build(),
+    ];
+    state.prompt.models.available = vec![
+        ModelOption::builder()
+            .id(ModelId::new("yaml/model"))
+            .display_name(ModelLabel::new("YAML Model"))
+            .build(),
+    ];
 
     augur_tui::domain::tui_input::apply_agent_output(
         &mut state,
-        AgentOutput::ModelsAvailable(vec![ModelOption::builder()
-            .id(ModelId::new("provider/endpoint-name"))
-            .display_name(ModelLabel::new("Provider Endpoint"))
-            .build()]),
+        AgentOutput::ModelsAvailable(vec![
+            ModelOption::builder()
+                .id(ModelId::new("provider/endpoint-name"))
+                .display_name(ModelLabel::new("Provider Endpoint"))
+                .build(),
+        ]),
     );
 
     assert_eq!(
@@ -95,19 +101,23 @@ fn apply_agent_output_models_available_applies_for_auto_endpoint() {
     use augur_tui::domain::types::ModelOption;
 
     let mut state = AppState::new(EndpointName::new("copilot"), AppScreen::Conversation);
-    state.prompt.models.endpoint_catalog = vec![EndpointModelCatalog::builder()
-        .endpoint_name(EndpointName::new("copilot"))
-        .models(vec![])
-        .default_display("copilot".into())
-        .supports_auto(SupportsAuto::yes())
-        .build()];
+    state.prompt.models.endpoint_catalog = vec![
+        EndpointModelCatalog::builder()
+            .endpoint_name(EndpointName::new("copilot"))
+            .models(vec![])
+            .default_display("copilot".into())
+            .supports_auto(SupportsAuto::yes())
+            .build(),
+    ];
 
     augur_tui::domain::tui_input::apply_agent_output(
         &mut state,
-        AgentOutput::ModelsAvailable(vec![ModelOption::builder()
-            .id(ModelId::new("gpt-5"))
-            .display_name(ModelLabel::new("GPT-5"))
-            .build()]),
+        AgentOutput::ModelsAvailable(vec![
+            ModelOption::builder()
+                .id(ModelId::new("gpt-5"))
+                .display_name(ModelLabel::new("GPT-5"))
+                .build(),
+        ]),
     );
 
     assert_eq!(
@@ -127,23 +137,29 @@ fn apply_agent_output_models_available_ignored_when_endpoint_row_missing() {
         EndpointName::new("unknown-endpoint"),
         AppScreen::Conversation,
     );
-    state.prompt.models.endpoint_catalog = vec![EndpointModelCatalog::builder()
-        .endpoint_name(EndpointName::new("known-endpoint"))
-        .models(vec![])
-        .default_display("known".into())
-        .supports_auto(SupportsAuto::no())
-        .build()];
-    state.prompt.models.available = vec![ModelOption::builder()
-        .id(ModelId::new("yaml/model"))
-        .display_name(ModelLabel::new("YAML Model"))
-        .build()];
+    state.prompt.models.endpoint_catalog = vec![
+        EndpointModelCatalog::builder()
+            .endpoint_name(EndpointName::new("known-endpoint"))
+            .models(vec![])
+            .default_display("known".into())
+            .supports_auto(SupportsAuto::no())
+            .build(),
+    ];
+    state.prompt.models.available = vec![
+        ModelOption::builder()
+            .id(ModelId::new("yaml/model"))
+            .display_name(ModelLabel::new("YAML Model"))
+            .build(),
+    ];
 
     augur_tui::domain::tui_input::apply_agent_output(
         &mut state,
-        AgentOutput::ModelsAvailable(vec![ModelOption::builder()
-            .id(ModelId::new("provider/endpoint-name"))
-            .display_name(ModelLabel::new("Provider Endpoint"))
-            .build()]),
+        AgentOutput::ModelsAvailable(vec![
+            ModelOption::builder()
+                .id(ModelId::new("provider/endpoint-name"))
+                .display_name(ModelLabel::new("Provider Endpoint"))
+                .build(),
+        ]),
     );
 
     assert_eq!(
@@ -327,9 +343,11 @@ fn apply_agent_output_tool_call_format_view_with_range() {
         "tool call should include line range, got: {}",
         text
     );
-    assert!(tool_lines
-        .iter()
-        .any(|line| line.contains("[lines: 1, 30]")));
+    assert!(
+        tool_lines
+            .iter()
+            .any(|line| line.contains("[lines: 1, 30]"))
+    );
 }
 
 #[test]

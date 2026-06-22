@@ -1,7 +1,7 @@
 //! Commands sent to the `GuidedPlanActor` via its mpsc channel.
 
-use augur_domain::domain::guided_plan::GuidedPlanConfig;
 use augur_domain::domain::FilePath;
+use augur_domain::domain::guided_plan::GuidedPlanConfig;
 
 /// Commands accepted by the `GuidedPlanActor`.
 ///

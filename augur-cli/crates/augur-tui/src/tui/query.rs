@@ -3,10 +3,10 @@
 use crate::domain::tui_state::QueryState;
 use augur_domain::domain::string_newtypes::ChoiceText;
 use augur_domain::domain::string_newtypes::{OutputText, PromptText, StringNewtype};
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap};
-use ratatui::Frame;
 
 struct ChoicesBlockParams<'a> {
     choices: &'a [ChoiceText],

@@ -6,8 +6,8 @@
 //! The only side-effect is reading the process working directory via
 //! `std::env::current_dir()`.
 
-use augur_domain::config::types::ExecutorConfig;
 use augur_domain::StringNewtype;
+use augur_domain::config::types::ExecutorConfig;
 
 /// Build `ClientOptions` from the executor configuration.
 ///

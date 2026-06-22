@@ -4,9 +4,9 @@
 //! `to_history_entry` maps each command variant to its corresponding
 //! [`HistoryFeedMessage`], returning `None` for the `Shutdown` sentinel.
 
+pub use augur_domain::HistoryAdapterCmd;
 use augur_domain::domain::feeds::HistoryFeedMessage;
 use augur_domain::domain::types::Message;
-pub use augur_domain::HistoryAdapterCmd;
 
 // ── to_history_entry ──────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-use super::agent_ops::{AgentOutput, TurnConfig, DEFAULT_MAX_CONTEXT_LENGTH};
+use super::agent_ops::{AgentOutput, DEFAULT_MAX_CONTEXT_LENGTH, TurnConfig};
 use super::history::ConversationHistory;
 use crate::actors::cache::handle::CacheHandle;
 use augur_domain::domain::newtypes::{Count, IsPredicate, NumericNewtype, TokenCount};

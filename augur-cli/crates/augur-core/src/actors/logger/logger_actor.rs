@@ -2,7 +2,7 @@
 
 use super::handle::LoggerHandle;
 use super::logger_actor_ops as actor_ops;
-use super::logger_ops::{current_unix_secs, LogCommand};
+use super::logger_ops::{LogCommand, current_unix_secs};
 use augur_domain::domain::channels::LOGGER_COMMAND_CAPACITY;
 use augur_domain::domain::newtypes::TimestampSecs;
 use std::path::PathBuf;

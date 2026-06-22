@@ -2,8 +2,8 @@
 
 use super::registry::CommandRegistry;
 use super::types::{CommandDef, CommandOutcome};
-use augur_domain::domain::string_newtypes::PromptText;
 use augur_domain::domain::StringNewtype;
+use augur_domain::domain::string_newtypes::PromptText;
 use std::sync::Arc;
 
 /// Cheaply cloneable handle to the read-only command registry.

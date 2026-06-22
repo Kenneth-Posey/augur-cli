@@ -67,7 +67,7 @@ pub fn is_within_allowed_dirs<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::{is_within_allowed_dirs, FileReadPort, FileReadResult, ReadRange};
+    use super::{FileReadPort, FileReadResult, ReadRange, is_within_allowed_dirs};
 
     #[test]
     fn read_range_type_is_reachable_in_owning_module() {

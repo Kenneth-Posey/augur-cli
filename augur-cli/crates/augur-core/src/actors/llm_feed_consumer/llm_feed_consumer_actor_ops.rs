@@ -1,6 +1,6 @@
 //! Private helper operations for the LLM-feed consumer actor.
 
-use super::llm_feed_consumer_ops::{route_chunk, LlmFeedConsumerCmd, LlmFeedOutputChannels};
+use super::llm_feed_consumer_ops::{LlmFeedConsumerCmd, LlmFeedOutputChannels, route_chunk};
 use tokio::sync::mpsc;
 
 /// Actor receive loop: routes each `Consume` command and exits on `Shutdown`.

@@ -1,6 +1,6 @@
 //! Tests for the guided plan file loader.
 
-use augur_core::actors::guided_plan::loader::{load_guided_plan, LoadError};
+use augur_core::actors::guided_plan::loader::{LoadError, load_guided_plan};
 use augur_domain::domain::string_newtypes::StringNewtype;
 use std::io::Write;
 use tempfile::NamedTempFile;

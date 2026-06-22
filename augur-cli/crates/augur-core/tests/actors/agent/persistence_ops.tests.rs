@@ -1,5 +1,5 @@
 use augur_core::actors::agent::persistence_ops::{
-    build_message_records, make_error_annotation, merge_with_error_annotations, MessageContext,
+    MessageContext, build_message_records, make_error_annotation, merge_with_error_annotations,
 };
 use augur_core::persistence::{MessageRecord, MessageType};
 use augur_domain::domain::newtypes::{Count, NumericNewtype};

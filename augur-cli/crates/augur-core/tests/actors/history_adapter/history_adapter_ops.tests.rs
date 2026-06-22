@@ -1,7 +1,7 @@
 //! Unit tests for history adapter ops: pure command-to-feed-message conversion.
 
 use augur_core::actors::history_adapter::history_adapter_ops::{
-    to_history_entry, HistoryAdapterCmd,
+    HistoryAdapterCmd, to_history_entry,
 };
 use augur_domain::domain::feeds::HistoryFeedMessage;
 use augur_domain::domain::types::Message;

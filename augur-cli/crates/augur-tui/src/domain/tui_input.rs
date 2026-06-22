@@ -14,7 +14,7 @@ mod prompt_edit;
 mod query;
 
 use crate::domain::tui_state::{
-    current_timestamp_ms, AppState, LineKind, PendingResponseMeta, PickerState, QueryState,
+    AppState, LineKind, PendingResponseMeta, PickerState, QueryState, current_timestamp_ms,
 };
 use crate::domain::tui_status::refresh_status_bar_base_fields;
 use augur_domain::domain::newtypes::NumericNewtype;

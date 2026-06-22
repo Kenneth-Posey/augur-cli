@@ -24,7 +24,7 @@ mod session_activation;
 mod session_lifecycle;
 mod startup;
 
-use super::handle::{make_output_channel, CopilotChatHandle};
+use super::handle::{CopilotChatHandle, make_output_channel};
 use augur_domain::channels::COPILOT_COMMAND_CAPACITY;
 use augur_domain::config::types::CopilotChatConfig;
 use augur_domain::persistence::handle::PersistenceHandle;

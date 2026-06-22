@@ -9,7 +9,7 @@ use augur_domain::domain::string_newtypes::{
 use augur_domain::domain::types::Message;
 use augur_domain::{NumericNewtype, StringNewtype};
 use augur_provider_shared::request_context::{
-    build_request_context, resolve_api_key, CompleteFields, CompleteRoute, LlmError, RequestPayload,
+    CompleteFields, CompleteRoute, LlmError, RequestPayload, build_request_context, resolve_api_key,
 };
 
 fn test_app_config(endpoint: EndpointConfig) -> AppConfig {

@@ -1,9 +1,9 @@
+use augur_domain::StringNewtype;
 use augur_domain::domain::newtypes::{Count, NumericNewtype, WaitSecs};
 use augur_domain::domain::string_newtypes::OutputText;
-use augur_domain::StringNewtype;
 use augur_provider_shared::{
-    compute_backoff_wait, is_requests_exceeded, parse_retry_after, BACKOFF_FACTOR,
-    BACKOFF_INITIAL_SECS, HTTP_RATE_LIMIT_STATUS, MAX_RETRY_ATTEMPTS,
+    BACKOFF_FACTOR, BACKOFF_INITIAL_SECS, HTTP_RATE_LIMIT_STATUS, MAX_RETRY_ATTEMPTS,
+    compute_backoff_wait, is_requests_exceeded, parse_retry_after,
 };
 
 #[test]

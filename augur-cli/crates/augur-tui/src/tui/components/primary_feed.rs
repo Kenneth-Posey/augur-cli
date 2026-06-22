@@ -1,16 +1,16 @@
 //! Primary feed (output pane) rendering: output lines, scroll indicator, separator, thinking row.
 
-use super::primary_feed_utils::{normalize_selection, ScrollRenderContext};
+use super::primary_feed_utils::{ScrollRenderContext, normalize_selection};
 use crate::domain::tui_display_state::TuiDisplayState;
 use crate::domain::tui_render::RenderSliceInput;
 use crate::domain::tui_state::{LineKind, OutputLine, OutputSelection};
 use augur_domain::domain::newtypes::{Count, NumericNewtype, ScrollOffset};
 use augur_domain::domain::string_newtypes::StringNewtype;
+use ratatui::Frame;
 use ratatui::layout::{Position, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::{Paragraph, Wrap};
-use ratatui::Frame;
 
 pub use super::primary_feed_utils::{scroll_marker_row, separator_line, split_output_area};
 #[allow(unused_imports)]

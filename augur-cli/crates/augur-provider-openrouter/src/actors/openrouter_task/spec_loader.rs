@@ -4,7 +4,7 @@
 //! is responsible only for file IO and error mapping. No parsing logic lives
 //! here.
 
-use augur_domain::{parse_agent_spec, AgentSpec, AgentSpecName, AgentSpecParseError};
+use augur_domain::{AgentSpec, AgentSpecName, AgentSpecParseError, parse_agent_spec};
 use std::fmt;
 use std::path::{Path, PathBuf};
 
@@ -119,7 +119,7 @@ pub fn find_agent_spec_path(base: &Path, name: &AgentSpecName) -> Option<PathBuf
     // Fall back to installed config directory.
     if let Ok(home) = std::env::var("HOME") {
         let fallback = PathBuf::from(home).join(".augur-cli/.github/agents");
-        if fallback.exists() && &fallback != base {
+        if fallback.exists() && fallback != base {
             return find_in_dir(&fallback, name);
         }
     }

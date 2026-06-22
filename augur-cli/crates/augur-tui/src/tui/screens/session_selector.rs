@@ -5,8 +5,8 @@
 
 use crate::domain::tui_state::PickerState;
 use crate::tui::picker::render_picker;
-use ratatui::layout::Rect;
 use ratatui::Frame;
+use ratatui::layout::Rect;
 
 /// Render the session selector screen into `area`.
 ///

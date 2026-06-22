@@ -193,7 +193,7 @@ async fn validate_file_arg(
             return Err(make_error_result(
                 op,
                 "missing or invalid 'file_path' argument",
-            ))
+            ));
         }
     };
     if let Err(msg) = check_file_exists(&file_path).await {
@@ -626,7 +626,7 @@ async fn find_callers(handle: &dyn LspClient, input: &LspQueryInput) -> ToolCall
                         op,
                         0,
                         "No call hierarchy item found at position".to_string(),
-                    )
+                    );
                 }
                 Some(i) => i,
             }
@@ -716,13 +716,13 @@ async fn rename_symbol(handle: &dyn LspClient, input: &LspQueryInput) -> ToolCal
             } else if let Some(doc_changes_arr) = document_changes.as_array() {
                 for change in doc_changes_arr {
                     if let Some(text_doc_edit) = change.get("textDocument")
-                            && let Some(edits) = change.get("edits").and_then(|e| e.as_array())
-                        {
-                            let doc_uri = text_doc_edit["uri"].as_str().unwrap_or("?");
-                            total_edits += edits.len();
-                            let path = doc_uri.strip_prefix("file://").unwrap_or(doc_uri);
-                            summary_lines.push(format!("{}: {} edit(s)", path, edits.len()));
-                        }
+                        && let Some(edits) = change.get("edits").and_then(|e| e.as_array())
+                    {
+                        let doc_uri = text_doc_edit["uri"].as_str().unwrap_or("?");
+                        total_edits += edits.len();
+                        let path = doc_uri.strip_prefix("file://").unwrap_or(doc_uri);
+                        summary_lines.push(format!("{}: {} edit(s)", path, edits.len()));
+                    }
                 }
             }
 

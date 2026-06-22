@@ -5,7 +5,7 @@ pub mod layout;
 mod state;
 mod terminal;
 
-use super::{TuiHandles, TuiStreams, TERMINAL_TITLE, TICKER_INTERVAL_MS};
+use super::{TERMINAL_TITLE, TICKER_INTERVAL_MS, TuiHandles, TuiStreams};
 use crate::actors::tui::assistant::output_buf::drain_channel_to_buf;
 use crate::actors::tui::handle::ShutdownSignal;
 use crate::domain::tui_state::AppState;
@@ -17,7 +17,7 @@ use tokio::sync::{broadcast, mpsc, watch};
 
 use augur_core::actors::token_tracker::TokenTrackerHandle;
 use events::select_next_event;
-use layout::{collect_render_snapshot, render_layout, TuiSubActorHandles};
+use layout::{TuiSubActorHandles, collect_render_snapshot, render_layout};
 use state::build_initial_state;
 
 /// Re-exported mouse-event handler used by actor-level tests.

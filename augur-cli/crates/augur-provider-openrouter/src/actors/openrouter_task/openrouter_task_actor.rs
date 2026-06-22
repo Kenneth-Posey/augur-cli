@@ -6,7 +6,7 @@ use super::openrouter_task_actor_ops as actor_ops;
 use super::spec_loader::load_agent_spec;
 use crate::actors::openrouter_orchestrator::handle::OpenRouterOrchestratorHandle;
 use crate::compaction::{compact_messages_for_openrouter, estimate_request_tokens_for_compaction};
-use crate::model_config::{resolve_model_config, ResolvedModelConfig};
+use crate::model_config::{ResolvedModelConfig, resolve_model_config};
 use actor_ops::{
     build_task_system_prompt, is_at_iteration_limit, prepend_prefix, signal_to_feed_event,
 };

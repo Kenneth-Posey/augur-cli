@@ -7,10 +7,10 @@ use augur_domain::domain::string_newtypes::{
 use augur_domain::domain::types::StreamChunk;
 use augur_domain::{NumericNewtype, StringNewtype};
 use augur_provider_openai::stream_openai_compat;
+use augur_provider_shared::MAX_RETRY_ATTEMPTS;
 use augur_provider_shared::request_context::{
     GenerationParams, RequestContext, RequestPayload, ToolDefinition,
 };
-use augur_provider_shared::MAX_RETRY_ATTEMPTS;
 use tokio::sync::mpsc;
 
 fn make_ctx(base_url: &str) -> (RequestContext, mpsc::Receiver<StreamChunk>) {

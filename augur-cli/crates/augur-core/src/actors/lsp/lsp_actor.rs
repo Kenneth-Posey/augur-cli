@@ -207,13 +207,13 @@ fn state_from_spawned_child(
     let stdin = match child.stdin.take() {
         Some(stdin) => stdin,
         None => {
-            return missing_pipe_state(child, root_uri, "stdin pipe missing after spawn", kill_rx)
+            return missing_pipe_state(child, root_uri, "stdin pipe missing after spawn", kill_rx);
         }
     };
     let stdout = match child.stdout.take() {
         Some(stdout) => stdout,
         None => {
-            return missing_pipe_state(child, root_uri, "stdout pipe missing after spawn", kill_rx)
+            return missing_pipe_state(child, root_uri, "stdout pipe missing after spawn", kill_rx);
         }
     };
     LspActorState {

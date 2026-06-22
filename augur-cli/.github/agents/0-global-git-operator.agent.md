@@ -80,8 +80,6 @@ Invoke at start:
      - stage only the authorized file scope,
      - summarize staged files before commit,
      - create the commit using the approved message scope,
-     - include the required Copilot co-author trailer when repository policy
-       requires it.
 6. For push requests:
    - confirm the current branch and requested remote/target,
    - refuse branch switching or merge-target changes unless explicitly requested,

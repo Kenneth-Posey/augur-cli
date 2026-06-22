@@ -1,9 +1,9 @@
 use augur_core::actors::agent::agent_ops::{
-    build_extended_system_prompt, merge_chunks_into_result, tool_result_message, AgentOutput,
+    AgentOutput, build_extended_system_prompt, merge_chunks_into_result, tool_result_message,
 };
 use augur_core::actors::tool::tool_ops::ToolCall;
-use augur_core::tools::handler::ToolCallResult;
 use augur_core::tools::ToolDefinition;
+use augur_core::tools::handler::ToolCallResult;
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype, ToolCallId, ToolName};
 use augur_domain::domain::types::Role;
 
@@ -91,9 +91,11 @@ fn build_extended_system_prompt_adds_size_check_guidance_when_registered() {
     )];
     let result = build_extended_system_prompt(&base, &tools);
     assert!(result.as_str().contains("call `size_check` first"));
-    assert!(result
-        .as_str()
-        .contains("proceed, filter, paginate, or split"));
+    assert!(
+        result
+            .as_str()
+            .contains("proceed, filter, paginate, or split")
+    );
 }
 
 #[test]

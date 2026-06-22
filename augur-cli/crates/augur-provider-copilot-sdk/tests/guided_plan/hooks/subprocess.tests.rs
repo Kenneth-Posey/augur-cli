@@ -1,5 +1,5 @@
-use augur_domain::guided_plan::{CopilotAgentHookParams, HookOutcome, VerdictKind};
 use augur_domain::CopilotAgentHookArgs;
+use augur_domain::guided_plan::{CopilotAgentHookParams, HookOutcome, VerdictKind};
 
 #[tokio::test]
 async fn subprocess_hook_path_is_replaced_by_test_override_agents() {

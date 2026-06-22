@@ -4,9 +4,9 @@
 //! expected `PlanNode` onto a `PhaseGateResult`. It is kept free of I/O so
 //! it can be unit-tested without spawning actors.
 
+use augur_domain::domain::OutputText;
 use augur_domain::domain::newtypes::IsPredicate;
 use augur_domain::domain::plan_tree::{NodeStatus, PlanNode, PlanNodeId};
-use augur_domain::domain::OutputText;
 
 // ── StepOutcome ───────────────────────────────────────────────────────────────
 

@@ -1,12 +1,12 @@
 //! OpenAI-compatible streaming completion helpers shared by provider crates.
 
 use crate::{
-    request_context::{resolve_api_key, RequestContext, ToolDefinition},
+    request_context::{RequestContext, ToolDefinition, resolve_api_key},
     retry::{
-        compute_backoff_wait, is_requests_exceeded, parse_retry_after, HTTP_RATE_LIMIT_STATUS,
-        MAX_RETRY_ATTEMPTS,
+        HTTP_RATE_LIMIT_STATUS, MAX_RETRY_ATTEMPTS, compute_backoff_wait, is_requests_exceeded,
+        parse_retry_after,
     },
-    streaming::{drain_complete_sse_lines, SseChunk},
+    streaming::{SseChunk, drain_complete_sse_lines},
 };
 use augur_domain::config::types::Provider;
 use augur_domain::domain::newtypes::{Count, NumericNewtype, TokenCount};
@@ -400,11 +400,7 @@ async fn finish_stream(state: &OpenAiStreamState, ctx: &RequestContext) {
 /// accumulated `ToolCall` chunk is emitted and state is reset for the next call.
 /// The `model` field and `usage` object (from `stream_options.include_usage`) are
 /// captured into `state` for use when building the final `Usage` chunk.
-async fn accumulate_openai_delta(
-    data: &str,
-    ctx: &RequestContext,
-    state: &mut OpenAiStreamState,
-) {
+async fn accumulate_openai_delta(data: &str, ctx: &RequestContext, state: &mut OpenAiStreamState) {
     let Ok(val) = serde_json::from_str::<serde_json::Value>(data) else {
         tracing::warn!(
             event = "provider_delta_parse_failed",
