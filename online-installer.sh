@@ -187,7 +187,7 @@ check_deps() {
 # ---------------------------------------------------------------------------
 # Install
 # ---------------------------------------------------------------------------
-install() {
+do_install() {
     local run_after="$1"
     local use_beta="$2"
     local install_prefix="$3"
@@ -250,6 +250,7 @@ install() {
 
     # --- Install binary ---
     echo "Installing binary..."
+    mkdir -p "${tmpdir}/binary"
     tar xzf "${tmpdir}/augur-cli-latest-${target}.tar.gz" -C "${tmpdir}/binary"
     local binary_src
     binary_src="$(find "${tmpdir}/binary" -name 'augur-cli' -type f | head -1)"
@@ -280,6 +281,7 @@ install() {
     echo "Installing runtime assets (.github/)..."
     rm -rf "${GITHUB_ASSETS_DIR}"
     mkdir -p "${GITHUB_ASSETS_DIR}"
+    mkdir -p "${tmpdir}/dot-github"
     tar xzf "${tmpdir}/dot-github-latest.tar.gz" -C "${tmpdir}/dot-github"
     # The archive contains a .github/ directory; copy its contents excluding local/
     if [[ -d "${tmpdir}/dot-github/.github" ]]; then
@@ -395,7 +397,7 @@ main() {
     SESSIONS_DIR="${INSTALL_DIR}/sessions"
     GITHUB_ASSETS_DIR="${INSTALL_DIR}/.github"
 
-    install "${run_after}" "${use_beta}" "${install_dir}"
+    do_install "${run_after}" "${use_beta}" "${install_dir}"
 }
 
 main "$@"

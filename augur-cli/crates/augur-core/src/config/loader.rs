@@ -2,7 +2,7 @@
 
 use anyhow::Context;
 use augur_domain::config::types::AppConfig;
-use augur_domain::domain::string_newtypes::{FilePath, StringNewtype};
+use augur_domain::domain::string_newtypes::{FilePath, StringNewtype};use crate::config::write_section_value;
 use serde_yaml::Value;
 use std::path::{Path, PathBuf};
 
@@ -137,13 +137,15 @@ pub fn init_config_layout(base: &Path) {
             env!("CARGO_MANIFEST_DIR"),
             "/../../configs/application.yaml"
         ));
+        let _ = std::fs::write(&app_yaml_path, embedded.as_bytes());
+
+        // The embedded config already has a persistence: section with defaults.
+        // Replace it in-place with the correct installed paths instead of
+        // appending a duplicate section.
         let log_dir_str = logs_dir.display().to_string();
         let sessions_dir_str = sessions_dir.display().to_string();
-        let content = format!(
-            "{}\npersistence:\n  log_dir: \"{}\"\n  sessions_dir: \"{}\"\n",
-            embedded, log_dir_str, sessions_dir_str
-        );
-        let _ = std::fs::write(&app_yaml_path, content.as_bytes());
+        let yaml_body = format!("log_dir: \"{}\"\nsessions_dir: \"{}\"\n", log_dir_str, sessions_dir_str);
+        write_section_value(&app_yaml_path, "persistence", &yaml_body);
     }
 
     // Write provider templates only if missing (preserve user edits on upgrade).
