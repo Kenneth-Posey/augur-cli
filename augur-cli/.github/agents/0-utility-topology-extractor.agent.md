@@ -36,7 +36,7 @@ Invoke at start:
 
 ## Outputs
 
-- **Updated topology file:** `.github/local/system-actor-graph.yml` — complete
+- **Updated topology file:** `.github/local/system-actor-graph.yml` - complete
   actor list and edge list matching the schema from the `0-system-topology` skill
 - **Extraction summary:** From the tool's output; includes actor count, edge
   count, and any ambiguities encountered

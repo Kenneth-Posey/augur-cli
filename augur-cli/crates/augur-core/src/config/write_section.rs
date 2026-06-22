@@ -16,8 +16,8 @@ use std::path::Path;
 /// (e.g. `"last_endpoint: openrouter\nlast_model: ...\n"`). The helper
 /// prepends `section_key:\n` and indents each body line by two spaces.
 ///
-/// All lines outside the replaced block — including comments, blank lines,
-/// and other YAML keys — are preserved verbatim.
+/// All lines outside the replaced block - including comments, blank lines,
+/// and other YAML keys - are preserved verbatim.
 pub(crate) fn write_section_value(path: &Path, section_key: &str, yaml_lines: &str) {
     let content = match std::fs::read_to_string(path) {
         Ok(c) => c,
@@ -33,7 +33,7 @@ pub(crate) fn write_section_value(path: &Path, section_key: &str, yaml_lines: &s
         let after = &content[end..];
         let _ = std::fs::write(path, format!("{}{}{}", before, new_section, after));
     } else {
-        // Section not found — append a blank line then the new block.
+        // Section not found - append a blank line then the new block.
         let trimmed = content.trim_end();
         let _ = std::fs::write(path, format!("{}\n\n{}", trimmed, new_section));
     }
@@ -71,8 +71,8 @@ fn find_section_start(content: &str, pattern: &str) -> Option<usize> {
 ///
 /// The section body starts on the line after `start` (the section key line).
 /// Only indented lines (leading space or tab) are consumed as part of the
-/// body. The first non-indented line — blank, comment, or another root-level
-/// key — terminates the block. Returns the byte offset of that terminating
+/// body. The first non-indented line - blank, comment, or another root-level
+/// key - terminates the block. Returns the byte offset of that terminating
 /// line, or `content.len()` if the body runs to EOF.
 fn find_section_end(content: &str, start: usize) -> usize {
     let after_start = &content[start..];
@@ -90,7 +90,7 @@ fn find_section_end(content: &str, start: usize) -> usize {
         if line.starts_with(' ') || line.starts_with('\t') {
             offset += line.len() + 1;
         } else {
-            // Blank, comment, or root-level key — block ends here.
+            // Blank, comment, or root-level key - block ends here.
             break;
         }
     }

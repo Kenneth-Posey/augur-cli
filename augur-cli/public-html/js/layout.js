@@ -1,5 +1,5 @@
 /**
- * layout.js — Top-down dependency trie layout with taxi-safe routing
+ * layout.js - Top-down dependency trie layout with taxi-safe routing
  *
  * Uses a Sugiyama-inspired approach:
  *   1. Longest-path layer assignment from root nodes.

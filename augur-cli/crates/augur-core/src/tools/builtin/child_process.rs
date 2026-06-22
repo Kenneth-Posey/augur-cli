@@ -3,7 +3,7 @@
 //! The primary protection is **session isolation**: every subprocess is detached
 //! from the controlling terminal via `setsid()` in a `pre_exec` closure. This
 //! prevents interactive TUI commands (like `gh copilot config`) from hanging
-//! indefinitely — they fail fast with `ENXIO` when trying to open `/dev/tty`
+//! indefinitely - they fail fast with `ENXIO` when trying to open `/dev/tty`
 //! because the child no longer has a controlling terminal.
 //!
 //! All subprocess spawn points in this crate route through this module so that
@@ -39,7 +39,7 @@ pub fn isolate_session(cmd: &mut Command) -> &mut Command {
 
 /// Apply session isolation to a [`std::process::Command`] (synchronous variant).
 pub fn isolate_session_sync(cmd: &mut std::process::Command) -> &mut std::process::Command {
-    // SAFETY: Same rationale as `isolate_session` — `setsid()` is async-signal-safe.
+    // SAFETY: Same rationale as `isolate_session` - `setsid()` is async-signal-safe.
     unsafe {
         cmd.pre_exec(|| {
             let ret = libc::setsid();

@@ -17,7 +17,8 @@ Detailed agent-routing guidance: [`.github/routing.md`](routing.md)
 - Use `size-check` for broad `rg`/`grep`/`find`/recursive `ls` and large file
   reads when available so command scope can be filtered, paginated, or split
   before high-volume output is requested.
-- Never use em dash characters; use a regular hyphen (`-`) instead.
+- Never use em dash characters or long hyphens; use a regular hyphen (`-`) instead.
+- Never mention github copilot in the commit message or code comments.
 
 ## Orchestration Entry Guidance
 

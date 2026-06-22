@@ -1,5 +1,5 @@
 /**
- * sidebar.js — Sidebar panel management
+ * sidebar.js - Sidebar panel management
  *
  * Renders the right-side detail panel for a leaf module, showing:
  * documentation, dependency edges (inbound/outbound), symbols

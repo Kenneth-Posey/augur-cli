@@ -26,19 +26,19 @@ instead.
 The file has two top-level keys: `actors` and `edges`.
 
 **actors** entries record:
-- `name` — primary key; used in edge `from`/`to` references
-- `crate` — Rust package name (e.g. "my-app-core")
-- `module_path` — repo-relative path to the actor module directory
-- `layer` — one of `infrastructure`, `domain`, `planning`, `tui`
-- `handle_type` — the concrete Handle struct type callers hold
-- `spawn_fn` — the wiring call that constructs this actor
+- `name` - primary key; used in edge `from`/`to` references
+- `crate` - Rust package name (e.g. "my-app-core")
+- `module_path` - repo-relative path to the actor module directory
+- `layer` - one of `infrastructure`, `domain`, `planning`, `tui`
+- `handle_type` - the concrete Handle struct type callers hold
+- `spawn_fn` - the wiring call that constructs this actor
 
 **edges** entries record directed handle dependencies:
-- `from` — the dependent actor (holds the handle)
-- `to` — the dependency actor (whose handle is held)
-- `handle_type` — must match the `to` actor's `handle_type`
-- `via_field` — field name in the spawn config, or generic parameter description
-- `message_enum` — optional; the command enum for this channel
+- `from` - the dependent actor (holds the handle)
+- `to` - the dependency actor (whose handle is held)
+- `handle_type` - must match the `to` actor's `handle_type`
+- `via_field` - field name in the spawn config, or generic parameter description
+- `message_enum` - optional; the command enum for this channel
 
 ## Layer Mapping
 
@@ -64,7 +64,7 @@ takes handles from existing actors:
    actors whose spawn config it modifies.
 3. Include those existing actor nodes in the feature's `dependency-graph.md`
    as pre-existing nodes. Mark them with a comment such as
-   `# existing — not introduced by this feature`.
+   `# existing - not introduced by this feature`.
 4. Draw the new edges proposed by the feature on top of the existing nodes.
 5. Check that no new edge creates a cycle when combined with existing edges.
 

@@ -39,7 +39,7 @@ Invoke at start:
 - **Feature slug** - used to derive the output path
 - **Validation History:** Prior review attempts and diagnostic feedback (if this is a retry)
 - **System Actor Topology (optional):** `.github/local/system-actor-graph.yml`
-  — read when the feature adds, removes, or modifies actors or handle
+  - read when the feature adds, removes, or modifies actors or handle
   dependencies. Do not read `src/` to supplement this; this file is the only
   source of existing topology information permitted during Stage 2.
 

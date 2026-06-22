@@ -30,8 +30,8 @@ This setup isn't required if you want to use OpenRouter as your provider.
 
 ### Rust prerequisites
 
-- **Rust toolchain** (edition 2024 or later) — install via [rustup](https://rustup.rs/)
-- **Cargo** — included with the Rust toolchain
+- **Rust toolchain** (edition 2024 or later) - install via [rustup](https://rustup.rs/)
+- **Cargo** - included with the Rust toolchain
 
 Verify your toolchain:
 

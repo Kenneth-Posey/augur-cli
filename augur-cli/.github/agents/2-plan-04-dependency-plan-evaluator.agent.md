@@ -35,7 +35,7 @@ Invoke at start:
 - **Behavioral Specifications (GWT):** `plans/<feature-slug>/design/behaviors.md` - every actor-to-actor or module-to-module communication implied by the scenarios must appear as an edge in the graph
 - **Feature Specification:** `plans/<feature-slug>/design/features.md` - for coverage cross-check
 - **Validation History:** Prior review attempts and diagnostic feedback (if this is a retry)- **System Actor Topology (optional):** `.github/local/system-actor-graph.yml`
-  — read when the feature's dependency graph includes nodes marked as
+  - read when the feature's dependency graph includes nodes marked as
   `# existing`
 
 ## Outputs

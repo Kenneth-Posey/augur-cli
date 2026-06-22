@@ -1,5 +1,5 @@
 /**
- * cytoscape-styles.js — Cytoscape.js stylesheet
+ * cytoscape-styles.js - Cytoscape.js stylesheet
  *
  * Defines the visual style for all node types and edges in the
  * graph. Uses Cytoscape's JSON stylesheet syntax.

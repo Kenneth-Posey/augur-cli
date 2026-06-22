@@ -1,5 +1,5 @@
 /**
- * helpers.js — Shared utility functions
+ * helpers.js - Shared utility functions
  *
  * Provides escapeHtml, dashedId, layer color helpers, status display,
  * breadcrumb rendering, back button updates, and the layout config factory.

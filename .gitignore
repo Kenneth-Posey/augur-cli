@@ -37,3 +37,5 @@ sessions/
 temp_scripts/
 public-html-temp/
 scripts/__pycache__/
+# Secrets files - never commit populated credentials
+# State files - never commit populated state files

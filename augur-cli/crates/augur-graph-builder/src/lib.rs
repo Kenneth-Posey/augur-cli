@@ -1,4 +1,4 @@
-//! augur-graph-builder — Workspace dependency graph extraction tool.
+//! augur-graph-builder - Workspace dependency graph extraction tool.
 //!
 //! This crate analyzes a Cargo workspace to produce a structured JSON
 //! representation of the crate dependency graph and intra-crate module trees.

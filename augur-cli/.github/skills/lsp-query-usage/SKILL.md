@@ -170,21 +170,21 @@ the rename before committing to it.
 
 ## Error Handling
 
-**"no symbol at position"** — The coordinates do not point to a recognized
+**"no symbol at position"** - The coordinates do not point to a recognized
 symbol. Check whether you applied the round-trip correction (subtract 1 from
 one-based display values before submitting as input).
 
-**"rust-analyzer not found"** — rust-analyzer is not on PATH.
+**"rust-analyzer not found"** - rust-analyzer is not on PATH.
 Install with: `rustup component add rust-analyzer`
 
-**"request timed out"** — The tool waited 30 seconds and received no response.
+**"request timed out"** - The tool waited 30 seconds and received no response.
 This can happen during initial workspace indexing. Wait briefly and retry.
 
-**"process exited unexpectedly"** — The rust-analyzer child process crashed.
+**"process exited unexpectedly"** - The rust-analyzer child process crashed.
 The LspActor will attempt to surface this. Retry; if it persists, the rust-analyzer
 binary may need reinstalling.
 
-**"ambiguous symbol name"** — When using `symbol_name` and the name matches
+**"ambiguous symbol name"** - When using `symbol_name` and the name matches
 multiple symbols. Use coordinates instead, or narrow the `file_path` to the
 file containing the specific symbol you want.
 

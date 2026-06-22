@@ -1,5 +1,5 @@
 /**
- * navigation.js — Graph navigation (workspace / crate / submodule / leaf)
+ * navigation.js - Graph navigation (workspace / crate / submodule / leaf)
  *
  * Provides navigateTo(), navigateBack(), and renderGraph() which
  * handle the breadcrumb stack, Cytoscape element building, layout

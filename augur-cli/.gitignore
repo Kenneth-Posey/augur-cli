@@ -20,8 +20,10 @@ target
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# Secrets files — never commit populated credentials
+# Secrets files - never commit populated credentials
 *.secrets.yaml
+
+# State files - never commit populated state files
 state/token-history.json
 state/orchestrator-state.db
 

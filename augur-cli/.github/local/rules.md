@@ -17,9 +17,9 @@
 
 ## Branching and Merging
 
-- **Always stay on the current branch** — do not switch branches unless user requests
-- **User manages merges** — do not merge into `main` without explicit user instruction
-- **Only `global-git-operator` may run git** — all git inspection and mutation goes through that agent
+- **Always stay on the current branch** - do not switch branches unless user requests
+- **User manages merges** - do not merge into `main` without explicit user instruction
+- **Only `global-git-operator` may run git** - all git inspection and mutation goes through that agent
 - **Do not push without explicit user instruction** 
 
 ## Primary Context Delegation
@@ -54,7 +54,7 @@
 - Write failing tests first (Red)
 - Implement minimal code to pass (Green)
 - Refactor for clarity (Refactor)
-- **No exceptions** — always write tests before production code
+- **No exceptions** - always write tests before production code
 
 ### Bug Fixes
 - Add a regression test BEFORE fixing the code

@@ -1,4 +1,4 @@
-//! augur-graph-builder — CLI entrypoint.
+//! augur-graph-builder - CLI entrypoint.
 //!
 //! Parses CLI arguments, resolves the workspace, walks the module tree,
 //! and writes `graph-data.json` to the specified output path.

@@ -1,5 +1,5 @@
 /**
- * cytoscape-init.js — Cytoscape initialization and event wiring
+ * cytoscape-init.js - Cytoscape initialization and event wiring
  *
  * Creates the Cytoscape instance, applies the stylesheet, and wires
  * mouse hover (node/edge highlighting), click (navigation/sidebar),

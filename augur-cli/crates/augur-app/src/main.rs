@@ -10,7 +10,7 @@ use clap::Parser;
 #[derive(Parser)]
 #[command(
     name = "augur-cli",
-    about = "augur-cli — multi-provider LLM chat assistant"
+    about = "augur-cli - multi-provider LLM chat assistant"
 )]
 struct Cli {
     /// Path to application.yaml config file.

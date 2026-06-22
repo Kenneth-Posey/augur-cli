@@ -1,5 +1,5 @@
 /**
- * state.js — Application state and DOM references
+ * state.js - Application state and DOM references
  *
  * The single `state` object holds all mutable application state:
  * navigation stack, parsed graph data, the Cytoscape instance, and

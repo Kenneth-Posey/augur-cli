@@ -1,5 +1,5 @@
 /**
- * loader.js — Graph data loading and application bootstrap
+ * loader.js - Graph data loading and application bootstrap
  *
  * Fetches graph-data.json, validates its shape, initializes Cytoscape,
  * and starts at the workspace-level view. Also wires back button and

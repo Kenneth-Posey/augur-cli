@@ -1,5 +1,5 @@
 /**
- * elements.js — Cytoscape element builders
+ * elements.js - Cytoscape element builders
  *
  * Functions that produce Cytoscape element arrays from the graph data.
  * Each `build*` function constructs nodes and edges for a specific
