@@ -1,0 +1,61 @@
+---
+source: tests/r3_2_snapshot_testing.tests.rs
+assertion_line: 164
+expression: json_str
+---
+{
+  "metadata": {
+    "id": "report-collapse",
+    "analysis_id": "analysis-003",
+    "graph_id": "graph-003",
+    "generated_at": 1714746300000
+  },
+  "config": {
+    "format": "Json",
+    "sort_by": "LinesSaved",
+    "filter": {
+      "min_confidence": null,
+      "min_lines_saved": null,
+      "opportunity_types": null,
+      "exclude_layers": null
+    },
+    "output_options": {
+      "include_statistics": true,
+      "include_recommendations": true,
+      "max_opportunities": null
+    }
+  },
+  "opportunities": [
+    {
+      "opportunity_type": {
+        "ChainCollapse": {
+          "parent": "parent",
+          "intermediate": "intermediate",
+          "child": "child",
+          "merged_name": "parent_via_child"
+        }
+      },
+      "affected_nodes": [
+        "parent",
+        "intermediate",
+        "child"
+      ],
+      "rationale": "Linear chain can be simplified",
+      "layer": "Domain",
+      "metadata": {
+        "confidence": 0.88,
+        "estimated_lines_saved": 12
+      }
+    }
+  ],
+  "statistics": {
+    "total_opportunities": 0,
+    "total_lines_saved": 0,
+    "average_confidence": 0.0,
+    "confidence_range": {
+      "max_confidence": 0.0,
+      "min_confidence": 0.0
+    }
+  },
+  "recommendations": []
+}

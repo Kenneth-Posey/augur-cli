@@ -1,0 +1,70 @@
+endpoints:
+  - name: ollama-local
+    provider: Ollama
+    base_url: "http://localhost:11434"
+    model: llama3.2
+    api_key_env: ~
+
+  # OpenAI endpoint - set OPENAI_API_KEY in your environment or override
+  # api_key_env in application.secrets.yaml.
+  - name: openai
+    provider: OpenAi
+    base_url: "https://api.openai.com/v1"
+    model: gpt-4o
+    api_key_env: OPENAI_API_KEY
+
+  # Anthropic endpoint - set ANTHROPIC_API_KEY in your environment or override
+  # api_key_env in application.secrets.yaml.
+  - name: anthropic
+    provider: Anthropic
+    base_url: "https://api.anthropic.com/v1"
+    model: claude-sonnet-4-6
+    api_key_env: ANTHROPIC_API_KEY
+
+  # OpenRouter endpoint - routes to many upstream models via a single API gateway.
+  # Set OPENROUTER_API_KEY in your environment or override api_key_env in
+  # application.secrets.yaml.
+  - name: openrouter
+    provider: OpenRouter
+    base_url: "https://openrouter.ai/api/v1"
+    model: "deepseek/deepseek-v4-flash"
+    api_key_env: OPENROUTER_API_KEY
+
+default_endpoint: openrouter
+agent:
+  system_prompt: "You are a programming assistant. You can run shell commands, read, and write files to help the user with coding tasks."
+  max_tokens: 200000
+  temperature: 1.0
+  # Directories the file-read tools may access. Relative to the working directory at startup.
+  allowed_dirs:
+    - "./"
+
+# ---------------------------------------------------------------------------
+# Persistence paths
+# ---------------------------------------------------------------------------
+# Override these in ~/.augur-cli/config/application.yaml to use custom
+# directory locations for session logs and conversation session files.
+#
+# Supports ~ as a prefix for sessions_dir to reference the user's home directory.
+# log_dir is relative to the working directory unless an absolute path is given.
+# sessions_dir defaults to ~/.augur-cli/sessions when unset; log_dir defaults
+# to ./logs when unset.
+persistence:
+  log_dir: ./logs
+  sessions_dir: ./sessions
+
+# ── Program settings ─────────────────────────────────────────────────────────
+# Directories excluded from file-listing tools by default.
+program_settings:
+  excluded_directories:
+    - .git
+    - target
+    - changelogs
+
+# ── User settings ─────────────────────────────────────────────────────────────
+# Last-used provider, model, and reasoning effort. Updated automatically
+# when you switch providers or models during a session.
+user_settings:
+  last_endpoint: openrouter
+  last_model: "deepseek/deepseek-v4-flash"
+  last_reasoning_effort: high

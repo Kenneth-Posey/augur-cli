@@ -1,0 +1,19 @@
+/* ===================================================================
+ * status.css - Loading / error / empty status overlay
+ * =================================================================== */
+
+#status {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 10;
+    pointer-events: none;
+}
+#status.error { color: #e94560; }
+#status.loading { color: #8899aa; }
+#status.empty { color: #667788; }
+#status.hidden { display: none; }
+#status .status-icon { font-size: 36px; margin-bottom: 12px; }
+#status .status-text { font-size: 16px; }

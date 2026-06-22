@@ -1,0 +1,9 @@
+provider: anthropic
+models:
+  - id: claude-sonnet-4-6
+    display_name: claude-sonnet-4-6
+    cost_input_per_mtok: 0.0
+    cost_output_per_mtok: 0.0
+    supports_tools: true
+    compaction_target: 0
+    auto_compact_threshold: 0

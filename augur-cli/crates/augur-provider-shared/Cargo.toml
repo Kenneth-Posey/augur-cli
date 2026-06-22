@@ -1,0 +1,33 @@
+[package]
+name = "augur-provider-shared"
+version = "3.0.0"
+edition = "2024"
+autotests = false
+
+[[test]]
+name = "lib_tests"
+path = "tests/lib.tests.rs"
+
+[[test]]
+name = "request_context_tests"
+path = "tests/request_context.tests.rs"
+
+[[test]]
+name = "retry_tests"
+path = "tests/retry.tests.rs"
+
+[[test]]
+name = "streaming_tests"
+path = "tests/streaming.tests.rs"
+
+[dependencies]
+augur-domain = { path = "../augur-domain" }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+tokio = { version = "1", features = ["full"] }
+bon = "3.9.1"
+futures-util = "0.3"
+serde_json = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+mockito = "1"

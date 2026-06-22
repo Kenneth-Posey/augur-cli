@@ -1,0 +1,23 @@
+[package]
+name = "augur-provider-anthropic"
+version = "4.0.0"
+edition = "2024"
+autotests = false
+
+[[test]]
+name = "anthropic_tests"
+path = "tests/anthropic.tests.rs"
+
+[dependencies]
+augur-domain = { path = "../augur-domain" }
+augur-provider-shared = { path = "../augur-provider-shared" }
+bon = "3.9.1"
+futures-util = "0.3"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+
+[dev-dependencies]
+mockito = "1"

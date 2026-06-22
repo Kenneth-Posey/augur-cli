@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "crates/augur-app",
+    "crates/augur-core",
+    "crates/augur-domain",
+    "crates/augur-graph-builder",
+    "crates/augur-integration-tests",
+    "crates/augur-provider-anthropic",
+    "crates/augur-provider-copilot-sdk",
+    "crates/augur-provider-ollama",
+    "crates/augur-provider-openai",
+    "crates/augur-provider-openrouter",
+    "crates/augur-provider-shared",
+    "crates/augur-tui",
+]
+resolver = "3"

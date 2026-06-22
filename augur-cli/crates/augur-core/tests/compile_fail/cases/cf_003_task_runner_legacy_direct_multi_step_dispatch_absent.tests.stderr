@@ -1,0 +1,5 @@
+error[E0599]: no method named `direct_multi_step_dispatch` found for struct `OrchestratorContext` in the current scope
+ --> tests/compile_fail/cases/cf_003_task_runner_legacy_direct_multi_step_dispatch_absent.tests.rs:5:17
+  |
+5 |     let _ = ctx.direct_multi_step_dispatch();
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `OrchestratorContext`

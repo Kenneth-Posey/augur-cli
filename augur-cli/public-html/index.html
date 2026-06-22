@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Augur CLI - Workspace Graph</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/status.css">
+</head>
+<body>
+    <div id="header">
+        <h1>Augur Graph</h1>
+        <button id="back-btn" disabled>&larr; Back</button>
+    </div>
+    <div id="breadcrumb"></div>
+    <div id="main">
+        <div id="cy-container">
+            <div id="cy"></div>
+            <div id="status" class="loading">
+                <div class="status-icon">&#8987;</div>
+                <div class="status-text">Loading graph data...</div>
+            </div>
+        </div>
+        <div id="sidebar"></div>
+    </div>
+
+    <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/dagre/dist/dagre.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-dagre@4.0.0/dist/cytoscape-dagre.js"></script>
+
+    <!-- Application JS files (order matters) -->
+    <script src="js/state.js"></script>
+    <script src="js/helpers.js"></script>
+    <script src="js/cytoscape-styles.js"></script>
+    <script src="js/elements.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/cytoscape-init.js"></script>
+    <script src="js/loader.js"></script>
+</body>
+</html>

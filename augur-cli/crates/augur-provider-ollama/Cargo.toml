@@ -1,0 +1,20 @@
+[package]
+name = "augur-provider-ollama"
+version = "4.0.0"
+edition = "2024"
+autotests = false
+
+[[test]]
+name = "ollama_tests"
+path = "tests/ollama.tests.rs"
+
+[dependencies]
+augur-domain = { path = "../augur-domain" }
+augur-provider-shared = { path = "../augur-provider-shared" }
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+
+[dev-dependencies]
+mockito = "1"
+augur-domain = { path = "../augur-domain" }
+serde_json = "1"

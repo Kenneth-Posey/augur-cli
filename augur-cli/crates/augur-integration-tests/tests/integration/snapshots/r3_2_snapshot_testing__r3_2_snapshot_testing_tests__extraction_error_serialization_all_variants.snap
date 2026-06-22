@@ -1,0 +1,22 @@
+---
+source: tests/r3_2_snapshot_testing.tests.rs
+assertion_line: 335
+expression: all_errors_json
+---
+[
+  {
+    "CargoMetadataError": "manifest not found"
+  },
+  {
+    "IoError": "file read failed"
+  },
+  {
+    "ParseError": "unexpected token"
+  },
+  {
+    "InvalidMetadata": "missing field"
+  },
+  {
+    "SourceProcessingError": "symlink cycle"
+  }
+]

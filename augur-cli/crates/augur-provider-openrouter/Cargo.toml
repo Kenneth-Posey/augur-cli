@@ -1,0 +1,34 @@
+[package]
+name = "augur-provider-openrouter"
+version = "5.1.0"
+edition = "2024"
+autotests = false
+
+[[test]]
+name = "actors_tests"
+path = "tests/actors/mod.tests.rs"
+
+[[test]]
+name = "compaction_tests"
+path = "tests/compaction.tests.rs"
+
+[dependencies]
+augur-domain = { path = "../augur-domain" }
+augur-provider-shared = { path = "../augur-provider-shared" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tracing = "0.1"
+async-trait = "0.1"
+futures-util = "0.3"
+tokio-stream = "0.1"
+bon = "3.9.1"
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+augur-domain = { path = "../augur-domain" }
+tempfile = "3"
+mockito = "1"

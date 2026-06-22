@@ -1,0 +1,62 @@
+---
+source: tests/r3_2_snapshot_testing.tests.rs
+assertion_line: 119
+expression: json_str
+---
+{
+  "metadata": {
+    "id": "report-duplicates",
+    "analysis_id": "analysis-002",
+    "graph_id": "graph-002",
+    "generated_at": 1714746300000
+  },
+  "config": {
+    "format": "Json",
+    "sort_by": "LinesSaved",
+    "filter": {
+      "min_confidence": null,
+      "min_lines_saved": null,
+      "opportunity_types": null,
+      "exclude_layers": null
+    },
+    "output_options": {
+      "include_statistics": true,
+      "include_recommendations": true,
+      "max_opportunities": null
+    }
+  },
+  "opportunities": [
+    {
+      "opportunity_type": {
+        "ExactSignatureDuplicate": {
+          "canonical": "parse",
+          "duplicates": [
+            "parse_alt_1",
+            "parse_alt_2"
+          ]
+        }
+      },
+      "affected_nodes": [
+        "parse",
+        "parse_alt_1",
+        "parse_alt_2"
+      ],
+      "rationale": "Functions have identical signatures and behavior",
+      "layer": "Domain",
+      "metadata": {
+        "confidence": 0.92,
+        "estimated_lines_saved": 25
+      }
+    }
+  ],
+  "statistics": {
+    "total_opportunities": 0,
+    "total_lines_saved": 0,
+    "average_confidence": 0.0,
+    "confidence_range": {
+      "max_confidence": 0.0,
+      "min_confidence": 0.0
+    }
+  },
+  "recommendations": []
+}
