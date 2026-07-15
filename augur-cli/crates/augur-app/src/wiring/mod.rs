@@ -226,7 +226,6 @@ struct PrimaryDomainHandles {
     agent: actors::AgentHandle,
     session: actors::SessionHandle,
     file_scanner: actors::FileScannerHandle,
-    guided_plan: actors::GuidedPlanHandle,
     deterministic_orchestrator: actors::DeterministicOrchestratorHandle,
 }
 
@@ -280,7 +279,6 @@ pub struct SpawnedDomainActors {
 /// Test-visible bundle of planning layer actors.
 pub struct SpawnedPlanningActors {
     pub file_scanner: ActorRuntime<actors::FileScannerHandle>,
-    pub guided_plan: actors::GuidedPlanHandle,
 }
 
 /// Test-visible bundle of UI layer actors.
@@ -314,7 +312,6 @@ pub struct TuiServiceDeps {
     session: actors::SessionHandle,
     ask: actors::AskHandle,
     file_scanner: actors::FileScannerHandle,
-    guided_plan: actors::GuidedPlanHandle,
 }
 
 pub struct TuiChannelDeps {
@@ -398,6 +395,7 @@ pub struct SpawnedTuiDeps {
 
 mod app_runtime;
 mod chat_provider;
+mod dispatch_runtime;
 mod domain;
 mod infrastructure;
 mod lifecycle;
@@ -418,8 +416,7 @@ pub use lifecycle::{await_runtime, shutdown_runtime};
 // Test and internal wiring re-imports
 pub use app_runtime::{
     AppRuntimeConfigRef, actor_runtime, build_run_runtime, forward_reply_to_broadcast,
-    spawn_app_runtime, spawn_deterministic_orchestrator_runtime,
-    spawn_root_deterministic_orchestrator_runtime,
+    spawn_app_runtime,
 };
 pub use chat_provider::{EndpointRoutingChatProvider, spawn_chat_runtime};
 pub use domain::{

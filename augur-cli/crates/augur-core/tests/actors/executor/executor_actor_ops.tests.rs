@@ -17,7 +17,9 @@ fn executor_actor_ops_coverage_is_consolidated_under_executor_ops() {
             .exists()
     );
     assert!(
-        repo.join("crates/augur-provider-copilot-sdk/tests/actors/executor/executor_ops/core.tests.rs")
-            .exists()
+        repo.join(
+            "crates/augur-provider-copilot-sdk/tests/actors/executor/executor_ops/core.tests.rs"
+        )
+        .exists()
     );
 }

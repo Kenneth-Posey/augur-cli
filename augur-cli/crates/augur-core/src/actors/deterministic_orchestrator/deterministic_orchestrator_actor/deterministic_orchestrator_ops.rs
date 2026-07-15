@@ -1,8 +1,9 @@
 //! Infrastructure dispatch and artifact helpers for the deterministic orchestrator actor.
 
-use super::super::artifact_store::{ArtifactUpdate, StepArtifactResolver};
+use super::super::artifact_store::{ArtifactExistence, StepArtifactResolver};
 use super::super::background_dispatch::DeterministicAgentDispatcher;
 use super::super::commands::DeterministicOrchestratorCmd;
+use super::super::loader::AgentInstructionLibrary;
 use super::{
     AppliedDecision, CompletionForwarderArgs, DeterministicOrchestratorRunState,
     EvaluatorDispatchFailure, RuntimePorts,
@@ -20,8 +21,9 @@ pub async fn dispatch_request(
     ports: &RuntimePorts,
     artifact_store: StepArtifactResolver,
     request: WorkflowDispatchRequest,
+    agent_instructions: &AgentInstructionLibrary,
 ) {
-    let dispatcher = build_dispatcher(ports);
+    let dispatcher = build_dispatcher(ports, agent_instructions);
     let dispatch_kind = request.kind.clone();
     let dispatch_result = dispatch_to_agent(&dispatcher, &request, &dispatch_kind).await;
 
@@ -47,12 +49,20 @@ pub async fn dispatch_request(
     }
 }
 
-fn build_dispatcher(ports: &RuntimePorts) -> DeterministicAgentDispatcher {
+fn build_dispatcher(
+    ports: &RuntimePorts,
+    agent_instructions: &AgentInstructionLibrary,
+) -> DeterministicAgentDispatcher {
     match &ports.agent_feed_tx {
-        Some(tx) => {
-            DeterministicAgentDispatcher::new_with_feed(ports.dispatch_runtime.clone(), tx.clone())
-        }
-        None => DeterministicAgentDispatcher::new(ports.dispatch_runtime.clone()),
+        Some(tx) => DeterministicAgentDispatcher::new_with_feed(
+            ports.dispatch_runtime.clone(),
+            tx.clone(),
+            agent_instructions.clone(),
+        ),
+        None => DeterministicAgentDispatcher::new(
+            ports.dispatch_runtime.clone(),
+            agent_instructions.clone(),
+        ),
     }
 }
 
@@ -103,20 +113,21 @@ pub fn spawn_completion_forwarder(ports: &RuntimePorts, args: CompletionForwarde
                     return;
                 }
             };
-        let artifact_updates = args
+
+        let artifact_existence = args
             .artifact_store
-            .capture_artifact_updates(&args.request.artifacts.created_artifacts);
+            .capture_artifact_existence(&args.request.artifacts.created_artifacts);
 
         let command = match dispatch_kind {
             DispatchRequestKind::Worker => DeterministicOrchestratorCmd::WorkerCompleted {
                 step_id,
                 signal,
-                artifact_updates,
+                artifact_existence,
             },
             DispatchRequestKind::Evaluator => DeterministicOrchestratorCmd::EvaluatorCompleted {
                 step_id,
                 signal,
-                artifact_updates,
+                artifact_existence,
                 evaluator_output,
             },
         };
@@ -140,7 +151,7 @@ pub async fn handle_worker_dispatch_failure(
             execution,
             transition_signal: NormalizedSignal::Hold,
             failure_origin: FailureOrigin::Infrastructure,
-            artifact_updates: vec![],
+            artifact_existence: vec![],
         },
     )
     .await;
@@ -176,53 +187,31 @@ pub async fn handle_evaluator_dispatch_failure(
             execution,
             transition_signal: NormalizedSignal::Hold,
             failure_origin: FailureOrigin::Infrastructure,
-            artifact_updates: worker_execution.artifact_updates,
+            artifact_existence: worker_execution.artifact_existence,
         },
     )
     .await;
 }
 
-/// Deduplicates and merges two artifact update lists, with later updates overwriting earlier ones.
-pub fn merge_artifact_updates(
-    earlier_updates: Vec<ArtifactUpdate>,
-    later_updates: Vec<ArtifactUpdate>,
-) -> Vec<ArtifactUpdate> {
-    let mut merged = earlier_updates;
+/// Deduplicates and merges two artifact existence lists, with later entries overwriting earlier ones.
+pub fn merge_artifact_existence(
+    earlier_existence: Vec<ArtifactExistence>,
+    later_existence: Vec<ArtifactExistence>,
+) -> Vec<ArtifactExistence> {
+    let mut merged = earlier_existence;
 
-    for update in later_updates {
+    for entry in later_existence {
         if let Some(index) = merged
             .iter()
-            .position(|candidate| candidate.artifact == update.artifact)
+            .position(|candidate| candidate.artifact == entry.artifact)
         {
-            merged[index] = update;
+            merged[index] = entry;
         } else {
-            merged.push(update);
+            merged.push(entry);
         }
     }
 
     merged
-}
-
-/// Applies artifact updates to the step artifact store.
-pub fn apply_artifact_updates(
-    state: &DeterministicOrchestratorRunState,
-    execution: &StepExecutionRecord,
-    updates: &[ArtifactUpdate],
-) {
-    if updates.is_empty() {
-        return;
-    }
-
-    if let Err(error) = state
-        .artifact_store
-        .apply_in_place_artifact_updates(execution, updates)
-    {
-        tracing::warn!(
-            step_id = %execution.step_id,
-            error = %error,
-            "failed to apply deterministic artifact updates"
-        );
-    }
 }
 
 /// Annotates the failure decision on the last step execution record.

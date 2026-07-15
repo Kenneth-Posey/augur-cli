@@ -4,3 +4,5 @@ mod persistence_handle_tests;
 mod persistence_store_tests;
 #[path = "types.tests.rs"]
 mod persistence_types_tests;
+#[path = "session_wiring_test.rs"]
+mod session_wiring_tests;

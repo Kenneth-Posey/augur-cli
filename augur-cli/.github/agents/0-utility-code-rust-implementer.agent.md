@@ -15,7 +15,7 @@ Do not run git commands.
 
 ## Skills
 
-Invoke in order at start:
+Read in order at start:
 1. `0-utility-codebase-survey` - complete all 9 survey steps before writing any code.
 2. `0-global-tdd-workflow` - for TDD workflow, minimal-change discipline, and definition of done.
 3. Read [`.github/local/language-companions.md`](../local/language-companions.md) and use the language-specific `3-implement-behavior-wiring` companion for structure, composition, newtypes, tracing, error handling, and test rules.
@@ -44,8 +44,8 @@ Invoke in order at start:
 0. **Step 0 - Verify clean working tree**
    Before coding, require working-tree status. If prior uncommitted changes
    exist, stop and require them to be committed before continuing.
-1. Invoke `0-utility-codebase-survey`. Complete all 9 survey steps before coding.
-2. Invoke all skills listed in `## Skills` for the relevant scope.
+1. Read `0-utility-codebase-survey`. Complete all 9 survey steps before coding.
+2. Read all skills listed in `## Skills` for the relevant scope.
 3. Confirm the change will not introduce a wrong-direction import or cycle. If
    it would, stop and report the violation.
 4. Implement structural symbols first (structs, enums, constants, trait

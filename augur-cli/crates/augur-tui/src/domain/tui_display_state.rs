@@ -17,12 +17,11 @@
 //! render path travels via [`RenderFeedback`].
 
 use crate::domain::tui_state::{
-    AgentStatus, AppScreen, GuidedPlanUiState, OutputPane, PanelOverlayState, PlanModeState,
-    PromptPane, QueryState, StatusBarData,
+    AgentStatus, AppScreen, OutputPane, PanelOverlayState, PromptPane, QueryState, StatusBarData,
 };
 use augur_domain::domain::IsPredicate;
 use augur_domain::domain::newtypes::ScrollOffset;
-use augur_domain::domain::string_newtypes::{ChoiceText, EndpointName, PromptText};
+use augur_domain::domain::string_newtypes::{ChoiceText, EndpointName, OutputText, PromptText};
 
 /// Display-only projection of [`QueryState`]: identical to [`QueryState`] but
 /// without the `reply_tx` oneshot sender, making it safe to `Clone`.
@@ -76,10 +75,6 @@ pub enum DisplayConversationMode {
     Chat,
     /// Query overlay mode; display-only projection of the query state.
     Query(QueryDisplayState),
-    /// Plan mode: chat on the left 75%, plan tree panel on the right 25%.
-    Plan(PlanModeState),
-    /// Guided plan execution mode: chat + phase panel.
-    GuidedPlan(GuidedPlanUiState),
 }
 
 impl DisplayConversationMode {
@@ -97,8 +92,6 @@ impl DisplayConversationMode {
             ConversationMode::Query(q) => {
                 DisplayConversationMode::Query(QueryDisplayState::project_from(q))
             }
-            ConversationMode::Plan(p) => DisplayConversationMode::Plan(p.clone()),
-            ConversationMode::GuidedPlan(g) => DisplayConversationMode::GuidedPlan(g.clone()),
         }
     }
 }
@@ -112,6 +105,7 @@ impl DisplayConversationMode {
 /// - `screen`: current full-screen context.
 /// - `mode`: active conversation mode (display projection).
 /// - `panel`: secondary-panel overlay state.
+/// - `session_title`: first user prompt text for the session title header.
 #[derive(Clone, bon::Builder)]
 pub struct DisplayAppInteraction {
     /// Current full-screen context: session selector or conversation.
@@ -120,6 +114,9 @@ pub struct DisplayAppInteraction {
     pub mode: DisplayConversationMode,
     /// Secondary-panel overlay state and focus.
     pub panel: PanelOverlayState,
+    /// The text of the first user-entered prompt, used as the session title
+    /// displayed at the top of the conversation screen.
+    pub session_title: Option<OutputText>,
 }
 
 impl DisplayAppInteraction {
@@ -135,6 +132,7 @@ impl DisplayAppInteraction {
             .screen(interaction.screen.clone())
             .mode(DisplayConversationMode::project_from(&interaction.mode))
             .panel(interaction.panel.clone())
+            .maybe_session_title(interaction.session_title.clone())
             .build()
     }
 }
@@ -232,6 +230,7 @@ impl TuiDisplayState {
                             .input_focus(Default::default())
                             .build(),
                     )
+                    .maybe_session_title(None::<OutputText>)
                     .build(),
             )
             .build()

@@ -1,11 +1,11 @@
 //! Key dispatch helpers: chat key handling, submit, cancel, completions, and query dispatch.
 
 mod completion;
-mod panel;
+pub(crate) mod panel;
 mod submit;
 
 use super::clipboard::{copy_selection_if_c_pressed, paste_from_clipboard};
-use super::plan_view::handle_query_submit;
+use super::query_flow::handle_query_submit;
 use crate::actors::tui::tui_actor::TuiHandles;
 use crate::domain::tui_input::{
     KeyAction, QueryKeyAction, apply_key, apply_query_key, classify_key, classify_query_key,
@@ -15,12 +15,10 @@ use crate::domain::tui_state::{AppState, ConversationMode, InputFocus, Secondary
 use augur_domain::domain::string_newtypes::OutputText;
 use std::ops::ControlFlow;
 
-const FORCE_ADVANCE_FKEY: u8 = 10;
-
 pub(crate) use completion::refresh_completion_hints;
 pub(crate) use completion::refresh_file_hints;
 pub use completion::{apply_selected_completion, close_completions_if_open, refresh_model_hints};
-pub(crate) use panel::{dispatch_plan_esc, toggle_ask_focus};
+pub(crate) use panel::toggle_ask_focus;
 use panel::{handle_ask_submit, toggle_agent_feed_view, toggle_ask_view};
 pub(crate) use submit::handle_submit;
 
@@ -139,37 +137,6 @@ pub(crate) fn dispatch_query_key(
             }
             ControlFlow::Continue(())
         }
-    }
-}
-
-/// Handle a key event in guided plan mode. Returns `true` on quit.
-///
-/// Intercepts F10 to force-advance past a `NeedsRework` gate and Enter with an
-/// empty prompt buffer to confirm the current phase. All other keypresses delegate
-/// to `dispatch_chat_key` so the user retains full chat interaction during plan
-/// execution.
-///
-/// Consumers: `dispatch_key_for_mode` in `actor.rs` when in `ConversationMode::GuidedPlan`.
-pub(crate) async fn dispatch_guided_plan_key(
-    state: &mut AppState,
-    key: crossterm::event::KeyEvent,
-    handles: &TuiHandles<'_>,
-) -> ControlFlow<()> {
-    use crossterm::event::{KeyCode, KeyEventKind};
-    if key.kind != KeyEventKind::Press {
-        return ControlFlow::Continue(());
-    }
-    let buffer_empty = state.prompt.buffer.is_empty();
-    match (key.code, buffer_empty) {
-        (KeyCode::F(FORCE_ADVANCE_FKEY), _) => {
-            handles.tools.guided_plan.force_advance();
-            ControlFlow::Continue(())
-        }
-        (KeyCode::Enter, true) => {
-            handles.tools.guided_plan.confirm_phase();
-            ControlFlow::Continue(())
-        }
-        _ => dispatch_chat_key(state, key, handles).await,
     }
 }
 
@@ -304,3 +271,6 @@ fn next_turn_action(is_cancel: bool, is_thinking: bool, has_text: bool) -> TurnA
         (false, false, _) => TurnAction::Submit,
     }
 }
+#[cfg(test)]
+#[path = "../../../../tests/actors/tui/assistant/key_dispatch.tests.rs"]
+mod tests;

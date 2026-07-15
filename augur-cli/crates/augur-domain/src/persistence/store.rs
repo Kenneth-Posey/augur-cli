@@ -106,17 +106,28 @@ pub fn apply_repo_subdir(base: PathBuf, cwd: &Path) -> PathBuf {
     }
 }
 
-pub fn resolve_sessions_dir(configured: Option<&FilePath>) -> PathBuf {
+/// General-purpose path resolver that expands `~` to `$HOME`.
+///
+/// When `configured` is `None`, returns `$HOME / default_home_subdir`.
+/// When `configured` starts with `~/`, replaces the tilde with `$HOME`.
+/// When `configured` is exactly `~`, returns `$HOME` itself.
+/// Otherwise returns the path as-is (absolute or relative).
+///
+/// Panics if `$HOME` is not set and a tilde expansion or default is needed.
+pub fn resolve_path_with_home(configured: Option<&str>, default_home_subdir: &str) -> PathBuf {
     let home = std::env::var("HOME")
         .map(PathBuf::from)
         .expect("HOME environment variable must be set");
 
-    match configured.map(|path| path.as_str()) {
+    match configured {
         Some(path) if path.starts_with("~/") => home.join(&path[2..]),
-        Some("~") => home.clone(),
+        Some("~") => home,
         Some(path) => PathBuf::from(path),
-        None => home.join(".augur-cli/sessions"),
+        None => home.join(default_home_subdir),
     }
+}
+pub fn resolve_sessions_dir(configured: Option<&FilePath>) -> PathBuf {
+    resolve_path_with_home(configured.map(|p| p.as_str()), ".augur-cli/sessions")
 }
 
 #[tracing::instrument(level = "debug", skip(record))]
@@ -134,21 +145,79 @@ pub fn save_session(record: &SessionRecord, dir: &Path) -> anyhow::Result<()> {
 #[tracing::instrument(level = "debug")]
 pub fn load_session(dir: &Path, id: &SessionId) -> anyhow::Result<SessionRecord> {
     let id_str = &**id;
-    let path = dir.join(format!("{id_str}.json"));
-    let json = fs::read_to_string(&path)?;
-    let record = serde_json::from_str(&json)?;
-    Ok(record)
+    let filename = format!("{id_str}.json");
+
+    // Try the primary directory first.
+    let path = dir.join(&filename);
+    if let Ok(json) = fs::read_to_string(&path)
+        && let Ok(record) = serde_json::from_str(&json)
+    {
+        return Ok(record);
+    }
+
+    // Fallback: search immediate subdirectories for sessions that were saved
+    // under a repo-nested subdirectory (e.g. ~/.augur-cli/sessions/<repo>/).
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let entry_path = entry.path();
+            if entry_path.is_dir() {
+                let candidate = entry_path.join(&filename);
+                if let Ok(json) = fs::read_to_string(&candidate)
+                    && let Ok(record) = serde_json::from_str(&json)
+                {
+                    return Ok(record);
+                }
+            }
+        }
+    }
+
+    Err(std::io::Error::new(
+        std::io::ErrorKind::NotFound,
+        format!(
+            "session file {filename} not found in {} or its subdirectories",
+            dir.display()
+        ),
+    )
+    .into())
 }
 
 #[tracing::instrument(level = "debug")]
 pub fn delete_session(dir: &Path, id: &SessionId) -> anyhow::Result<()> {
     let id_str = &**id;
-    let path = dir.join(format!("{id_str}.json"));
-    match fs::remove_file(path) {
-        Ok(()) => Ok(()),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(error) => Err(error.into()),
+    let filename = format!("{id_str}.json");
+
+    // Try the primary directory first.
+    let path = dir.join(&filename);
+    match fs::remove_file(&path) {
+        Ok(()) => return Ok(()),
+        Err(e) => {
+            if e.kind() != std::io::ErrorKind::NotFound {
+                return Err(e.into());
+            }
+        }
     }
+
+    // Fallback: search immediate subdirectories for sessions saved under a
+    // repo-nested subdirectory.
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let entry_path = entry.path();
+            if entry_path.is_dir() {
+                let candidate = entry_path.join(&filename);
+                match fs::remove_file(&candidate) {
+                    Ok(()) => return Ok(()),
+                    Err(e) => {
+                        if e.kind() != std::io::ErrorKind::NotFound {
+                            return Err(e.into());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Not found in any location -- not an error.
+    Ok(())
 }
 
 #[tracing::instrument(level = "debug")]
@@ -157,6 +226,18 @@ pub fn list_sessions(dir: &Path) -> anyhow::Result<Vec<SessionSummary>> {
         return Ok(vec![]);
     }
     let mut summaries = collect_summaries(dir);
+
+    // Also collect sessions from immediate subdirectories (e.g. repo-nested
+    // paths like ~/.augur-cli/sessions/<repo>/).
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let entry_path = entry.path();
+            if entry_path.is_dir() {
+                summaries.extend(collect_summaries(&entry_path));
+            }
+        }
+    }
+
     summaries.sort_by(|a, b| b.identity.last_updated_at.cmp(&a.identity.last_updated_at));
     summaries.truncate(MAX_SESSION_LIST_SIZE);
     Ok(summaries)

@@ -16,7 +16,7 @@ to `review-orchestrator`. Enforce the max-3 non-self-parameter rule.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `4-review-function-sig-validation` - rules for function coverage, type correctness, ownership, error handling, bounds, and pass/fail criteria
 2. `4-review-function-sig-tools` - tool-running contract; use [`language-companions.md`](../local/language-companions.md) to find the deterministic sig-report and syn-analyzer commands
 

@@ -6,50 +6,68 @@ description: >
   full-report review handoffs.
 ---
 
-# 0-external-sig-report
+# sig-report
+
+## When to use
+
+Use this skill during architecture and API review when you need signature-level
+evidence from rustdoc JSON, including duplicate function detection, group-size
+analysis, and consolidation candidates.
 
 ## Purpose
 
-Use this skill to analyze rustdoc JSON for signature-review evidence. Default
-JSON output is findings-only, and the minimal preset is
-`--function-signatures`.
-
-## Development Build
-
-Only needed when modifying the tool source in this directory.
-
-```bash
-cd .github/skills/0-external-sig-report
-cargo build --release
-```
+Analyze rustdoc JSON for signature-review evidence. The minimal preset
+(`--function-signatures`) is the default. Use `--consolidation` for broader
+duplicate-signature and refactoring evidence, or `--all-reports` for every
+report family.
 
 ## Run
 
 ```bash
-.github/skills/0-external-sig-report/run.sh <rustdoc.json> \
-  --function-signatures \
-  --output-format json
+.github/skills/0-external-sig-report/run.sh [JSON_FILE] [options]
 ```
 
-## Presets
+## Arguments
 
-- `--function-signatures` - minimal default for signature review
-- `--consolidation` - broader consolidation evidence
-- `--all-reports` - every JSON-capable report family
-- `--reports <A-H>` - explicit report selection, overrides presets
+**Positional argument:**
 
-## Snapshot handling
+`[JSON_FILE]`
+: Path to the rustdoc JSON file. Alternatively, pass `--snapshot provided:<path>`,
+  `--snapshot cached:<path>`, or `--snapshot generated` to control the snapshot
+  source explicitly.
 
-- `--snapshot generated` - build rustdoc and write the snapshot to
-  `reports/rustdoc.json` unless `--snapshot-output` overrides the path
-- `--snapshot provided:<path>` - use an existing rustdoc JSON file
-- `--snapshot cached:<path>` - use a cached snapshot path
+**Report presets (mutually exclusive, overridden by `--reports`):**
 
-## When to request more detail
+- `--function-signatures` -- Use the function-signature review preset (the minimal default)
+- `--consolidation` -- Use the broader API-consolidation review preset
+- `--all-reports` -- Use every JSON-capable report family
+- `--reports <REPORTS>` -- Comma-separated list of reports to run (A-H). Overrides the presets above
 
-- Use `--consolidation` when the review handoff needs duplicate-signature and
-  related refactoring evidence.
-- Use `--all-reports` only when the caller explicitly needs every report family.
+**Snapshot control:**
+
+- `--snapshot <SNAPSHOT>` -- Explicit snapshot source: `generated`, `provided:<path>`, or `cached:<path>`. When set, overrides the positional `JSON_FILE` argument.
+- `--snapshot-output <SNAPSHOT_OUTPUT>` -- Output path for a generated rustdoc JSON snapshot. Used with `--snapshot generated`.
+
+**Other options:**
+
+- `--min-sig <MIN_SIG>` -- Override the minimum signature-group size (default: 3)
+- `--no-color` -- Disable ANSI color output
+- `--debug` -- Enable debug-level tracing output
+- `-h`, `--help` -- Print help (see a summary with `-h`)
+
+## Output
+
+The tool produces human-readable or machine-readable output depending on the
+`--output-format` flag:
+
+- `text` (default) -- Human-readable text output. Findings are printed to stdout
+  with ANSI color by default. Exit code is 0 on success, non-zero on error.
+- `json` -- Stable JSON output for downstream tools. Emitted to stdout as a
+  single JSON object. Exit code is 0 on success, non-zero on error.
+
+When `--snapshot generated` is used, a rustdoc JSON snapshot is written to the
+path specified by `--snapshot-output` (or a default location) before the report
+is produced.
 
 ## Examples
 
@@ -69,4 +87,14 @@ cargo build --release
   --snapshot generated \
   --snapshot-output reports/rustdoc.json \
   --function-signatures
+
+# Text output with custom minimum signature group size
+.github/skills/0-external-sig-report/run.sh <myapp>.json \
+  --function-signatures \
+  --min-sig 5
 ```
+
+## Key Files
+
+- `.github/skills/0-external-sig-report/run.sh` -- Thin wrapper script that invokes the compiled Rust binary
+- `.github/skills/0-external-sig-report/sig-report` -- Compiled Rust binary (built from source in this directory)

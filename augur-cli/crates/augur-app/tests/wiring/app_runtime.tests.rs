@@ -1,6 +1,4 @@
-use augur_cli::wiring::{
-    actor_runtime, forward_reply_to_broadcast, spawn_root_deterministic_orchestrator_runtime,
-};
+use augur_cli::wiring::{actor_runtime, forward_reply_to_broadcast};
 use augur_domain::domain::newtypes::{NumericNewtype, Temperature, TokenCount, WaitSecs};
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype, ToolCallId, ToolName};
 use augur_domain::domain::types::{AgentOutput, LlmTokenCounts, LlmUsage, StreamChunk};
@@ -11,8 +9,6 @@ fn mirrored_surface_smoke_app_runtime() {
     assert!(function_name.contains("forward_reply_to_broadcast"));
     let function_name = core::any::type_name_of_val(&actor_runtime::<()>);
     assert!(function_name.contains("actor_runtime"));
-    let function_name = core::any::type_name_of_val(&spawn_root_deterministic_orchestrator_runtime);
-    assert!(function_name.contains("spawn_root_deterministic_orchestrator_runtime"));
 }
 
 #[tokio::test]
@@ -20,16 +16,6 @@ async fn actor_runtime_wraps_join_and_handle_pair() {
     let join = tokio::spawn(async {});
     let runtime = actor_runtime((join, 7_u8));
     assert_eq!(runtime.handle, 7_u8);
-}
-
-#[tokio::test]
-async fn spawn_root_deterministic_orchestrator_runtime_produces_live_handle() {
-    let (feed_tx, _feed_rx) =
-        tokio::sync::mpsc::channel::<augur_domain::domain::types::FeedEntry>(8);
-    let runtime = spawn_root_deterministic_orchestrator_runtime(feed_tx);
-    let _events = runtime.handle.subscribe();
-    runtime.handle.shutdown();
-    let _ = runtime.join.await;
 }
 
 #[tokio::test]

@@ -17,7 +17,7 @@ branches, or language-specific stub markers in the requested production scope.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-functional-pseudocode` - pseudocode notation and algorithm
    decomposition standard for Stage 2 behavior plans
 2. `3-implement-behavior-wiring` - language-neutral Stage 3 behavior-wiring
@@ -48,7 +48,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-functional-pseudocode` and
+1. Read `0-global-functional-pseudocode` and
    `3-implement-behavior-wiring`. Read `../local/language-companions.md` for
    the behavior companion and `../local/directories.md` for layout rules.
 2. Parse the Stage 2 behavior plan into triggers, guards, delegated domain

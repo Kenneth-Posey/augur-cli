@@ -6,17 +6,11 @@
 //! handling shutdown coordination, error recovery, and inter-actor messaging.
 //! It acts as the system's central orchestrator for actor lifecycle management.
 
-/// Checkpoint heuristics for plan execution.
-pub mod checkpoint;
 /// Supervisor command types.
 pub mod commands;
 /// Public handle for supervisor commands and event subscription.
 pub mod handle;
-/// Meta-planning prompt construction and helpers.
-pub mod meta_planner;
-/// Pure gate evaluation for executor step outcomes.
-pub mod phase_gate;
-/// Supervisor actor loop and execution orchestration.
+/// Supervisor actor loop and event-channel lifecycle.
 pub mod supervisor_actor;
 
 pub use handle::SupervisorHandle;

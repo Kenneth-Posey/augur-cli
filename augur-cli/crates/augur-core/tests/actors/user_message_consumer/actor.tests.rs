@@ -1,8 +1,8 @@
 use augur_core::actors::user_message_consumer::user_message_consumer_actor::{
-    spawn, UserMessageOutputChannels,
+    UserMessageOutputChannels, spawn,
 };
 use tokio::sync::mpsc;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 #[tokio::test]
 async fn actor_spawn_and_shutdown_are_clean() {

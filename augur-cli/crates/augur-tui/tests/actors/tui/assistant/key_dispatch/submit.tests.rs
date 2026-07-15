@@ -1,14 +1,13 @@
-use crate::domain::newtypes::{NumericNewtype, ScrollOffset};
-use crate::domain::string_newtypes::{EndpointName, ModelId, PromptText, StringNewtype};
-use crate::domain::thinking_mode::ReasoningEffort;
-use crate::domain::traits::ChatProvider;
-use crate::domain::tui_state::{
-    AppScreen, AppState, ConversationMode, OutputSelection, SelectionPoint,
+use augur_tui::domain::newtypes::{NumericNewtype, ScrollOffset};
+use augur_tui::domain::string_newtypes::{EndpointName, ModelId, PromptText, StringNewtype};
+use augur_tui::domain::thinking_mode::ReasoningEffort;
+use augur_tui::domain::traits::ChatProvider;
+use augur_tui::domain::tui_state::{
+    AppScreen, AppState, OutputSelection, SelectionPoint,
 };
-use crate::domain::types::AgentOutput;
-use crate::persistence::types::MessageRecord;
-use crate::tests::helpers::fake_ask;
-use std::io::Write;
+use augur_tui::domain::types::AgentOutput;
+use augur_domain::domain::types::MessageRecord;
+use augur_core::helpers::fake_ask;
 use std::sync::{Arc, Mutex};
 
 /// `(model_id_str, Option<effort_str>)` pairs recorded by `set_model_with_options`.
@@ -108,16 +107,16 @@ impl ChatProvider for RecordingChatProvider {
 }
 
 struct SubmitHarnessCoreHandles {
-    session: crate::actors::SessionHandle,
-    persistence: crate::persistence::handle::PersistenceHandle,
+    session: augur_core::actors::SessionHandle,
+    persistence: augur_core::persistence::handle::PersistenceHandle,
 }
 
 struct SubmitHarnessToolHandles {
-    command: crate::actors::command::handle::CommandHandle,
-    scanner: crate::actors::file_scanner::FileScannerHandle,
-    guided_plan: crate::actors::guided_plan::GuidedPlanHandle,
-    ask: crate::actors::ask::AskHandle,
-    logger: crate::actors::LoggerHandle,
+    command: augur_core::actors::command::handle::CommandHandle,
+    scanner: augur_core::actors::file_scanner::FileScannerHandle,
+    ask: augur_core::actors::ask::AskHandle,
+    logger: augur_core::actors::LoggerHandle,
+    agent_feed_tx: tokio::sync::mpsc::Sender<augur_tui::domain::types::FeedEntry>,
 }
 
 struct SubmitHarnessResources {
@@ -125,6 +124,7 @@ struct SubmitHarnessResources {
     _scanner_join: tokio::task::JoinHandle<()>,
     _ask_dir: tempfile::TempDir,
     _logger_join: tokio::task::JoinHandle<()>,
+    _agent_feed_rx: tokio::sync::mpsc::Receiver<augur_tui::domain::types::FeedEntry>,
 }
 
 struct SubmitHarness {
@@ -135,18 +135,16 @@ struct SubmitHarness {
 }
 
 impl SubmitHarness {
-    async fn new(
-        provider: RecordingChatProvider,
-        guided_plan: crate::actors::guided_plan::GuidedPlanHandle,
-    ) -> Self {
-        let command = crate::actors::command::command_actor::build(&[]);
-        let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    async fn new(provider: RecordingChatProvider) -> Self {
+        let command = augur_core::actors::command::command_actor::build(&[]);
+        let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
         let persistence_dir = tempfile::tempdir().expect("tempdir");
         let persistence =
-            crate::persistence::handle::PersistenceHandle::new(persistence_dir.path().to_owned());
-        let (scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
+            augur_core::persistence::handle::PersistenceHandle::new(persistence_dir.path().to_owned());
+        let (scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
         let (ask, ask_dir) = fake_ask::make_ask_handle().await;
-        let (logger_join, logger) = crate::tests::helpers::fake_logger::fake_logger_handle();
+        let (logger_join, logger) = augur_core::helpers::fake_logger::fake_logger_handle();
+        let (agent_feed_tx, agent_feed_rx) = tokio::sync::mpsc::channel(16);
         Self {
             provider,
             core: SubmitHarnessCoreHandles {
@@ -156,42 +154,43 @@ impl SubmitHarness {
             tools: SubmitHarnessToolHandles {
                 command,
                 scanner,
-                guided_plan,
                 ask,
                 logger,
+                agent_feed_tx,
             },
             _resources: SubmitHarnessResources {
                 _persistence_dir: persistence_dir,
                 _scanner_join: scanner_join,
                 _ask_dir: ask_dir,
                 _logger_join: logger_join,
+                _agent_feed_rx: agent_feed_rx,
             },
         }
     }
 
-    fn handles(&self) -> crate::actors::tui::tui_actor::TuiHandles<'_> {
+    fn handles(&self) -> augur_tui::actors::tui::tui_actor::TuiHandles<'_> {
         let (_catalog_manager_join, catalog_manager) =
-            crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+            augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
         self.handles_with_catalog_manager(catalog_manager)
     }
 
     fn handles_with_catalog_manager(
         &self,
-        catalog_manager: crate::actors::catalog_manager::CatalogManagerHandle,
-    ) -> crate::actors::tui::tui_actor::TuiHandles<'_> {
-        crate::actors::tui::tui_actor::TuiHandles {
+        catalog_manager: augur_core::actors::catalog_manager::CatalogManagerHandle,
+    ) -> augur_tui::actors::tui::tui_actor::TuiHandles<'_> {
+        augur_tui::actors::tui::tui_actor::TuiHandles {
             agent: &self.provider,
             session: &self.core.session,
             persistence: &self.core.persistence,
-            tools: crate::actors::tui::tui_actor::TuiToolHandles {
+            tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
                 command: &self.tools.command,
                 file_scanner: &self.tools.scanner,
-                guided_plan: &self.tools.guided_plan,
                 ask: &self.tools.ask,
                 logger: &self.tools.logger,
+                agent_feed_tx: &self.tools.agent_feed_tx,
             },
-            work: crate::actors::tui::tui_actor::TuiWorkHandles {
-                orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+            work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+                orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
                 catalog_manager,
             },
         }
@@ -208,48 +207,10 @@ fn output_text(state: &AppState) -> String {
         .join("\n")
 }
 
-fn make_guided_plan_command_handle() -> (
-    crate::actors::guided_plan::GuidedPlanHandle,
-    tokio::sync::mpsc::Receiver<crate::actors::guided_plan::commands::GuidedPlanCmd>,
-) {
-    let (cmd_tx, cmd_rx) = tokio::sync::mpsc::channel(4);
-    let (event_tx, _) =
-        tokio::sync::broadcast::channel::<crate::domain::guided_plan::GuidedPlanEvent>(4);
-    (
-        crate::actors::guided_plan::GuidedPlanHandle { cmd_tx, event_tx },
-        cmd_rx,
-    )
-}
-
-fn write_guided_plan_file() -> tempfile::NamedTempFile {
-    let mut file = tempfile::NamedTempFile::new().expect("guided plan file");
-    file.write_all(
-        br#"---
-guided: true
-name: "Coverage Plan"
-phases:
-  - id: "phase-1"
-    name: "First Phase"
----
-# Coverage Plan
-"#,
-    )
-    .expect("write guided plan file");
-    file
-}
-
-fn write_invalid_guided_plan_file() -> tempfile::NamedTempFile {
-    let mut file = tempfile::NamedTempFile::new().expect("invalid guided plan file");
-    file.write_all(b"# missing guided frontmatter\n")
-        .expect("write invalid guided plan file");
-    file
-}
-
 /// Verifies that `/compact` routes directly to `ChatProvider::compact` without submitting chat text.
 #[tokio::test]
 async fn handle_submit_compact_routes_to_provider_compact() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/compact".to_owned();
 
@@ -269,11 +230,10 @@ async fn handle_submit_compact_routes_to_provider_compact() {
 /// Verifies that `/clear` starts a fresh local session view and does not submit chat text.
 #[tokio::test]
 async fn handle_submit_clear_resets_session_view_without_chat_submit() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/clear".to_owned();
-    state.status.token_totals.tokens_in = crate::domain::TokenCount::new(77);
+    state.status.token_totals.tokens_in = augur_tui::domain::newtypes::TokenCount::new(77);
     state.status.reset_usage_on_next_snapshot = false;
 
     let should_quit = super::handle_submit(&mut state, &harness.handles()).await;
@@ -288,7 +248,7 @@ async fn handle_submit_clear_resets_session_view_without_chat_submit() {
     );
     assert_eq!(
         state.status.token_totals,
-        crate::domain::types::ProjectTokenTotals::default(),
+        augur_tui::domain::types::ProjectTokenTotals::default(),
         "/clear must reset displayed token totals immediately"
     );
     assert!(
@@ -331,7 +291,7 @@ fn submit_routes_user_settings_persistence_through_session_handle() {
         "submit handlers must persist settings through SessionHandle facade"
     );
     assert!(
-        !source.contains("crate::config::user_settings::save_user_settings("),
+        !source.contains("augur_domain::config::user_settings::save_user_settings("),
         "submit handlers must not write user settings directly from the TUI layer"
     );
 }
@@ -339,8 +299,7 @@ fn submit_routes_user_settings_persistence_through_session_handle() {
 /// Verifies that `/stop` appends stop feedback and routes directly to `ChatProvider::interrupt`.
 #[tokio::test]
 async fn handle_submit_stop_routes_to_interrupt_with_feedback() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/stop".to_owned();
 
@@ -360,8 +319,7 @@ async fn handle_submit_stop_routes_to_interrupt_with_feedback() {
 /// Verifies that `/commit` echoes the command, enters the committing state, and submits the commit prompt.
 #[tokio::test]
 async fn handle_submit_commit_routes_to_special_agent_prompt() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/commit".to_owned();
 
@@ -383,8 +341,7 @@ async fn handle_submit_commit_routes_to_special_agent_prompt() {
 /// Verifies that `/push` echoes the command, enters the pushing state, and submits the push prompt.
 #[tokio::test]
 async fn handle_submit_push_routes_to_special_agent_prompt() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/push".to_owned();
 
@@ -407,8 +364,7 @@ async fn handle_submit_push_routes_to_special_agent_prompt() {
 /// before dispatching to the chat provider.
 #[tokio::test]
 async fn handle_submit_plain_prompt_echoes_user_line_to_main_feed() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "hello from user".to_owned();
 
@@ -433,8 +389,7 @@ async fn handle_submit_plain_prompt_echoes_user_line_to_main_feed() {
 /// user line is immediately visible.
 #[tokio::test]
 async fn handle_submit_plain_prompt_resets_stale_scroll_before_user_line_append() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.push_output_newline();
     state.push_output_newline();
@@ -472,11 +427,10 @@ async fn handle_submit_plain_prompt_resets_stale_scroll_before_user_line_append(
 /// submitting plain text must route through the main submit path.
 #[tokio::test]
 async fn handle_submit_hidden_ask_focus_still_routes_plain_prompt_to_main_feed() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "hello from main".to_owned();
-    state.interaction.panel.input_focus = crate::domain::tui_state::InputFocus::Ask;
+    state.interaction.panel.input_focus = augur_tui::domain::tui_state::InputFocus::Ask;
     state.interaction.panel.secondary_view = None;
     state.interaction.panel.ask_panel = None;
 
@@ -500,23 +454,27 @@ async fn handle_submit_hidden_ask_focus_still_routes_plain_prompt_to_main_feed()
 /// Verifies that `/switch <endpoint>` routes through the session handle and renders the endpoint switch confirmation.
 #[tokio::test]
 async fn handle_submit_switch_routes_to_session_endpoint_change() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.models.endpoint_catalog =
-        vec![crate::domain::tui_state::EndpointModelCatalog::builder()
+    state.prompt.models.endpoint_catalog = vec![
+        augur_tui::domain::tui_state::EndpointModelCatalog::builder()
             .endpoint_name(EndpointName::new("alt-endpoint"))
-            .models(vec![crate::domain::types::ModelOption::builder()
-                .id(ModelId::new("gpt-4.1"))
-                .display_name("gpt-4.1 (openrouter)".into())
-                .build()])
+            .models(vec![
+                augur_tui::domain::types::ModelOption::builder()
+                    .id(ModelId::new("gpt-4.1"))
+                    .display_name("gpt-4.1 (openrouter)".into())
+                    .build(),
+            ])
             .default_display("gpt-4.1 (high)".into())
             .supports_auto(false)
-            .build()];
-    state.prompt.models.available = vec![crate::domain::types::ModelOption::builder()
-        .id(ModelId::new("old-copilot-model"))
-        .display_name("old-copilot-model".into())
-        .build()];
+            .build(),
+    ];
+    state.prompt.models.available = vec![
+        augur_tui::domain::types::ModelOption::builder()
+            .id(ModelId::new("old-copilot-model"))
+            .display_name("old-copilot-model".into())
+            .build(),
+    ];
     state.prompt.buffer = "/switch alt-endpoint".to_owned();
 
     let should_quit = super::handle_submit(&mut state, &harness.handles()).await;
@@ -541,8 +499,7 @@ async fn handle_submit_switch_routes_to_session_endpoint_change() {
 
 #[tokio::test]
 async fn handle_submit_switch_reports_failure_when_session_queue_unavailable() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/switch alt-endpoint".to_owned();
     harness.core.session.shutdown();
@@ -568,16 +525,16 @@ async fn handle_submit_switch_reports_failure_when_session_queue_unavailable() {
 
 #[tokio::test]
 async fn handle_submit_switch_to_auto_provider_resets_model_to_auto() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.models.endpoint_catalog =
-        vec![crate::domain::tui_state::EndpointModelCatalog::builder()
+    state.prompt.models.endpoint_catalog = vec![
+        augur_tui::domain::tui_state::EndpointModelCatalog::builder()
             .endpoint_name(EndpointName::new("copilot"))
             .models(vec![])
             .default_display("copilot".into())
             .supports_auto(true)
-            .build()];
+            .build(),
+    ];
     state.prompt.buffer = "/switch copilot".to_owned();
 
     let _ = super::handle_submit(&mut state, &harness.handles()).await;
@@ -605,50 +562,54 @@ models:
     )
     .expect("write provider file");
 
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
-    assert!(harness
-        .core
-        .session
-        .set_endpoint(EndpointName::new("alt-endpoint"))
-        .await
-        .is_ok());
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
+    assert!(
+        harness
+            .core
+            .session
+            .set_endpoint(EndpointName::new("alt-endpoint"))
+            .await
+            .is_ok()
+    );
     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
     let mut state = AppState::new(EndpointName::new("alt-endpoint"), AppScreen::Conversation);
-    state.prompt.models.endpoint_catalog =
-        vec![crate::domain::tui_state::EndpointModelCatalog::builder()
+    state.prompt.models.endpoint_catalog = vec![
+        augur_tui::domain::tui_state::EndpointModelCatalog::builder()
             .endpoint_name(EndpointName::new("alt-endpoint"))
-            .models(vec![crate::domain::types::ModelOption::builder()
-                .id(ModelId::new("old/model"))
-                .display_name("old/model".into())
-                .build()])
+            .models(vec![
+                augur_tui::domain::types::ModelOption::builder()
+                    .id(ModelId::new("old/model"))
+                    .display_name("old/model".into())
+                    .build(),
+            ])
             .default_display("old/model (high)".into())
             .supports_auto(false)
-            .build()];
-    let config = crate::config::types::AppConfig {
-        endpoints: vec![crate::config::types::EndpointConfig {
+            .build(),
+    ];
+    let config = augur_domain::config::types::AppConfig {
+        endpoints: vec![augur_domain::config::types::EndpointConfig {
             name: EndpointName::new("alt-endpoint"),
-            provider: crate::config::types::Provider::OpenRouter,
-            base_url: crate::domain::string_newtypes::EndpointUrl::new(
+            provider: augur_domain::config::types::Provider::OpenRouter,
+            base_url: augur_tui::domain::string_newtypes::EndpointUrl::new(
                 "https://openrouter.ai/api/v1",
             ),
-            model: crate::domain::string_newtypes::ModelName::new("anthropic/claude-sonnet-4-5"),
-            credentials: crate::config::types::EndpointCredentials::default(),
+            model: augur_tui::domain::string_newtypes::ModelName::new("anthropic/claude-sonnet-4-5"),
+            credentials: augur_domain::config::types::EndpointCredentials::default(),
         }],
         default_endpoint: EndpointName::new("alt-endpoint"),
-        agent: crate::config::types::AgentConfig {
+        agent: augur_domain::config::types::AgentConfig {
             system_prompt: "sys".into(),
-            max_tokens: crate::domain::newtypes::TokenCount::new(1024),
-            temperature: crate::domain::newtypes::Temperature::new(0.7),
+            max_tokens: augur_tui::domain::newtypes::TokenCount::new(1024),
+            temperature: augur_tui::domain::newtypes::Temperature::new(0.7),
             allowed_dirs: vec![],
         },
-        copilot: crate::config::types::CopilotConfig::default(),
-        persistence: crate::config::types::PersistenceConfig {
-            log_dir: crate::domain::string_newtypes::FilePath::new("./logs"),
+        copilot: augur_domain::config::types::CopilotConfig::default(),
+        persistence: augur_domain::config::types::PersistenceConfig {
+            log_dir: augur_tui::domain::string_newtypes::FilePath::new("./logs"),
             sessions_dir: None,
         },
-            program_settings: Default::default(),
-            user_settings: Default::default(),
+        program_settings: Default::default(),
+        user_settings: Default::default(),
     };
     super::refresh_endpoint_catalog_from_provider_dir(
         &mut state,
@@ -729,13 +690,12 @@ log_dir: "./logs"
         config_path.to_string_lossy().as_ref(),
     );
 
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let (cmd_tx, mut cmd_rx) = tokio::sync::mpsc::channel(1);
-    let catalog_manager = crate::actors::catalog_manager::handle::CatalogManagerHandle::new(cmd_tx);
+    let catalog_manager = augur_core::actors::catalog_manager::handle::CatalogManagerHandle::new(cmd_tx);
     tokio::spawn(async move {
         if let Some(
-            crate::actors::catalog_manager::handle::CatalogManagerCommand::GenerateCatalog {
+            augur_core::actors::catalog_manager::handle::CatalogManagerCommand::GenerateCatalog {
                 tx,
                 ..
             },
@@ -753,17 +713,19 @@ models:
 "#,
             )
             .expect("write provider file");
-            let _ = tx.send(Ok(crate::domain::string_newtypes::OutputText::from(
+            let _ = tx.send(Ok(augur_tui::domain::string_newtypes::OutputText::from(
                 "generated",
             )));
         }
     });
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.models.available = vec![crate::domain::types::ModelOption::builder()
-        .id(ModelId::new("old/model"))
-        .display_name("old/model".into())
-        .build()];
+    state.prompt.models.available = vec![
+        augur_tui::domain::types::ModelOption::builder()
+            .id(ModelId::new("old/model"))
+            .display_name("old/model".into())
+            .build(),
+    ];
     state.prompt.buffer = "/generate-catalog --provider openrouter".to_owned();
 
     let should_quit = super::handle_submit(
@@ -794,13 +756,14 @@ models:
 /// before the model is applied.
 #[tokio::test]
 async fn handle_submit_model_id_opens_thinking_mode_picker() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.models.available = vec![crate::domain::types::ModelOption::builder()
-        .id(ModelId::new("gpt-5"))
-        .display_name("gpt-5".into())
-        .build()];
+    state.prompt.models.available = vec![
+        augur_tui::domain::types::ModelOption::builder()
+            .id(ModelId::new("gpt-5"))
+            .display_name("gpt-5".into())
+            .build(),
+    ];
     state.prompt.buffer = "/model gpt-5".to_owned();
 
     let should_quit = super::handle_submit(&mut state, &harness.handles()).await;
@@ -838,8 +801,7 @@ async fn handle_submit_model_id_opens_thinking_mode_picker() {
 /// the pending state.
 #[tokio::test]
 async fn handle_submit_thinking_mode_confirm_calls_set_model_with_options() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     // Simulate the state after `/model gpt-5` was submitted (thinking mode opened).
     state
@@ -880,8 +842,7 @@ async fn handle_submit_thinking_mode_confirm_calls_set_model_with_options() {
 /// Verifies that thinking mode confirm with None selection defaults to Auto.
 #[tokio::test]
 async fn handle_submit_thinking_mode_confirm_defaults_to_auto_when_no_selection() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state
         .prompt
@@ -959,16 +920,16 @@ fn thinking_mode_open_means_completions_not_empty() {
 /// Verifies that bare `/model` routes to auto-model selection and updates the visible model label.
 #[tokio::test]
 async fn handle_submit_model_without_id_routes_to_auto_model() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.models.endpoint_catalog =
-        vec![crate::domain::tui_state::EndpointModelCatalog::builder()
+    state.prompt.models.endpoint_catalog = vec![
+        augur_tui::domain::tui_state::EndpointModelCatalog::builder()
             .endpoint_name(EndpointName::new("ep"))
             .models(vec![])
             .default_display("copilot".into())
             .supports_auto(true)
-            .build()];
+            .build(),
+    ];
     state.status.model_display = "manual".into();
     state.prompt.buffer = "/model".to_owned();
 
@@ -988,16 +949,16 @@ async fn handle_submit_model_without_id_routes_to_auto_model() {
 
 #[tokio::test]
 async fn handle_submit_model_without_id_reports_unsupported_for_non_auto_endpoint() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.models.endpoint_catalog =
-        vec![crate::domain::tui_state::EndpointModelCatalog::builder()
+    state.prompt.models.endpoint_catalog = vec![
+        augur_tui::domain::tui_state::EndpointModelCatalog::builder()
             .endpoint_name(EndpointName::new("ep"))
             .models(vec![])
             .default_display("manual-model".into())
             .supports_auto(false)
-            .build()];
+            .build(),
+    ];
     state.prompt.buffer = "/model".to_owned();
 
     let should_quit = super::handle_submit(&mut state, &harness.handles()).await;
@@ -1015,23 +976,27 @@ async fn handle_submit_model_without_id_reports_unsupported_for_non_auto_endpoin
 
 #[tokio::test]
 async fn handle_submit_model_with_unknown_id_rejected_for_non_auto_endpoint() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.models.endpoint_catalog =
-        vec![crate::domain::tui_state::EndpointModelCatalog::builder()
+    state.prompt.models.endpoint_catalog = vec![
+        augur_tui::domain::tui_state::EndpointModelCatalog::builder()
             .endpoint_name(EndpointName::new("ep"))
-            .models(vec![crate::domain::types::ModelOption::builder()
-                .id(ModelId::new("known/model"))
-                .display_name("known/model".into())
-                .build()])
+            .models(vec![
+                augur_tui::domain::types::ModelOption::builder()
+                    .id(ModelId::new("known/model"))
+                    .display_name("known/model".into())
+                    .build(),
+            ])
             .default_display("known/model".into())
             .supports_auto(false)
-            .build()];
-    state.prompt.models.available = vec![crate::domain::types::ModelOption::builder()
-        .id(ModelId::new("known/model"))
-        .display_name("known/model".into())
-        .build()];
+            .build(),
+    ];
+    state.prompt.models.available = vec![
+        augur_tui::domain::types::ModelOption::builder()
+            .id(ModelId::new("known/model"))
+            .display_name("known/model".into())
+            .build(),
+    ];
     state.prompt.buffer = "/model unknown/model".to_owned();
 
     let should_quit = super::handle_submit(&mut state, &harness.handles()).await;
@@ -1053,87 +1018,10 @@ async fn handle_submit_model_with_unknown_id_rejected_for_non_auto_endpoint() {
     );
 }
 
-/// Verifies that `/run-plan <path>` enters guided-plan mode and forwards the parsed config to the guided-plan handle.
-#[tokio::test]
-async fn handle_submit_run_plan_enters_guided_plan_mode_and_starts_actor() {
-    let (guided_plan, mut cmd_rx) = make_guided_plan_command_handle();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
-    let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    let plan_file = write_guided_plan_file();
-    state.prompt.buffer = format!("/run-plan {}", plan_file.path().display());
-
-    let should_quit = super::handle_submit(&mut state, &harness.handles()).await;
-
-    assert!(
-        matches!(should_quit, std::ops::ControlFlow::Continue(())),
-        "/run-plan must not quit the TUI"
-    );
-    match &state.interaction.mode {
-        ConversationMode::GuidedPlan(ui) => {
-            assert_eq!(ui.plan_name.as_str(), "Coverage Plan");
-            assert_eq!(ui.phases.len(), 1);
-            assert_eq!(ui.phases[0].0, "First Phase");
-        }
-        _ => panic!("/run-plan must enter ConversationMode::GuidedPlan"),
-    }
-    match tokio::time::timeout(std::time::Duration::from_millis(50), cmd_rx.recv()).await {
-        Ok(Some(crate::actors::guided_plan::commands::GuidedPlanCmd::Start {
-            config,
-            plan_path,
-        })) => {
-            assert_eq!(config.name.as_str(), "Coverage Plan");
-            assert_eq!(
-                plan_path.as_str(),
-                plan_file.path().to_str().expect("utf-8 path")
-            );
-        }
-        other => panic!("expected GuidedPlanCmd::Start, got {other:?}"),
-    }
-    assert!(
-        output_text(&state).contains("[system] guided plan started:"),
-        "/run-plan must render the guided-plan start confirmation"
-    );
-}
-
-/// Verifies that `/run-plan <path>` surfaces loader failures without entering
-/// guided-plan mode or sending a start command to the guided-plan actor.
-#[tokio::test]
-async fn handle_submit_run_plan_load_failure_keeps_chat_mode_and_skips_start_command() {
-    let (guided_plan, mut cmd_rx) = make_guided_plan_command_handle();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
-    let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    let invalid_plan_file = write_invalid_guided_plan_file();
-    state.prompt.buffer = format!("/run-plan {}", invalid_plan_file.path().display());
-
-    let should_quit = super::handle_submit(&mut state, &harness.handles()).await;
-
-    assert!(
-        matches!(should_quit, std::ops::ControlFlow::Continue(())),
-        "/run-plan must not quit the TUI when loading fails"
-    );
-    assert!(
-        !matches!(state.interaction.mode, ConversationMode::GuidedPlan(_)),
-        "loader failure must leave the TUI out of guided-plan mode"
-    );
-    assert!(
-        output_text(&state).contains("[error] /run-plan:"),
-        "loader failure must render a user-visible error line"
-    );
-    assert!(
-        output_text(&state).contains("guided: true"),
-        "loader failure must surface the loader reason"
-    );
-    match tokio::time::timeout(std::time::Duration::from_millis(50), cmd_rx.recv()).await {
-        Err(_) => {}
-        other => panic!("expected no GuidedPlanCmd::Start on loader failure, got {other:?}"),
-    }
-}
-
 /// Verifies that an unknown slash command stays on the submit path and produces unknown-command feedback.
 #[tokio::test]
 async fn handle_submit_unknown_command_renders_unknown_command_feedback() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/not-a-real-command".to_owned();
 
@@ -1180,8 +1068,7 @@ fn start_pipeline_slug_flag_at_end() {
 /// must appear as a user-visible entry in the conversation panel.
 #[tokio::test]
 async fn handle_submit_compact_echoes_command_to_conversation_panel() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/compact".to_owned();
 
@@ -1197,8 +1084,7 @@ async fn handle_submit_compact_echoes_command_to_conversation_panel() {
 /// `[system] stopping current execution...` status line.
 #[tokio::test]
 async fn handle_submit_stop_echoes_command_before_system_status_line() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/stop".to_owned();
 
@@ -1228,8 +1114,7 @@ async fn handle_submit_stop_echoes_command_before_system_status_line() {
 /// ```
 #[tokio::test]
 async fn start_pipeline_echoes_command_before_system_status_line() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer =
         "/run-pipeline --slug my-feature build a slug derivation pipeline".to_owned();
@@ -1260,8 +1145,7 @@ async fn start_pipeline_echoes_command_before_system_status_line() {
 
 #[tokio::test]
 async fn test_handle_submit_ping_buffer_writes_pong_line_to_output_panel() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/ping".to_owned();
 
@@ -1292,8 +1176,7 @@ async fn test_handle_submit_ping_buffer_writes_pong_line_to_output_panel() {
 
 #[tokio::test]
 async fn test_handle_submit_ping_buffer_does_not_activate_agent_thinking() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/ping".to_owned();
     state.agent.thinking.is_active = false;
@@ -1316,8 +1199,7 @@ async fn test_handle_submit_ping_buffer_does_not_activate_agent_thinking() {
 
 #[tokio::test]
 async fn test_handle_submit_ping_buffer_clears_prompt_buffer() {
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-    let harness = SubmitHarness::new(RecordingChatProvider::new(), guided_plan).await;
+    let harness = SubmitHarness::new(RecordingChatProvider::new()).await;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.buffer = "/ping".to_owned();
 

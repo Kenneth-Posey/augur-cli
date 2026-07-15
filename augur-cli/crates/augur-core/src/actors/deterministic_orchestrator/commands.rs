@@ -1,6 +1,6 @@
 //! Commands sent to the deterministic orchestrator actor.
 
-use super::artifact_store::ArtifactUpdate;
+use super::artifact_store::ArtifactExistence;
 use crate::domain::deterministic_orchestrator::FailureDecision;
 use crate::domain::deterministic_orchestrator::NormalizedSignal;
 use crate::domain::deterministic_orchestrator_ops::DispatchRequestKind;
@@ -26,8 +26,8 @@ pub(crate) enum DeterministicOrchestratorCmd {
         step_id: WorkflowStepId,
         /// Fail-closed worker signal.
         signal: NormalizedSignal,
-        /// Concrete artifact updates observed when the worker pass completed.
-        artifact_updates: Vec<ArtifactUpdate>,
+        /// Concrete artifact paths confirmed to exist after the worker completed.
+        artifact_existence: Vec<ArtifactExistence>,
     },
     /// Record evaluator completion for the current workflow step.
     EvaluatorCompleted {
@@ -35,8 +35,8 @@ pub(crate) enum DeterministicOrchestratorCmd {
         step_id: WorkflowStepId,
         /// Fail-closed evaluator signal.
         signal: NormalizedSignal,
-        /// Concrete artifact updates observed when the evaluator pass completed.
-        artifact_updates: Vec<ArtifactUpdate>,
+        /// Concrete artifact paths confirmed to exist after the evaluator completed.
+        artifact_existence: Vec<ArtifactExistence>,
         /// Full evaluator response text, captured when the evaluator emitted Hold.
         /// `None` when the evaluator passed or used a test-double runtime.
         evaluator_output: Option<OutputText>,

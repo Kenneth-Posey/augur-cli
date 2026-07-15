@@ -19,7 +19,7 @@ commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `3-implement-test-suite-completion` - test suite completeness rules,
    coverage matrix validation, and Red-state confirmation criteria
 2. `0-global-tdd-workflow` - TDD discipline, Red-phase requirements, and
@@ -52,7 +52,7 @@ Invoke at start:
    correctness failures and the required correction for each. Do not invent
    additional corrections.
 2. Read the failing test files in full.
-3. Invoke `3-implement-test-suite-completion`, `0-global-tdd-workflow`,
+3. Read `3-implement-test-suite-completion`, `0-global-tdd-workflow`,
    `2-plan-test-planning`, and `0-global-critical-rules`.
 4. For each listed failure only, apply the minimal correction that directly
    resolves that failure - add the missing test case, correct the incorrect

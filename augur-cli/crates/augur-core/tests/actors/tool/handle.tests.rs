@@ -1,8 +1,8 @@
 use augur_core::actors::tool::handle::ToolExecutor;
 use augur_core::actors::tool::tool_actor::spawn;
 use augur_core::actors::tool::tool_ops::ToolCall;
-use augur_domain::domain::string_newtypes::{StringNewtype, ToolCallId, ToolName};
 use augur_core::tools::registry::ToolRegistry;
+use augur_domain::domain::string_newtypes::{StringNewtype, ToolCallId, ToolName};
 
 #[tokio::test]
 async fn handle_exposes_definitions_snapshot() {
@@ -19,7 +19,10 @@ async fn handle_execute_returns_not_found_for_unknown_tool() {
         name: ToolName::new("unknown"),
         arguments: serde_json::json!({}),
     };
-    let result = handle.execute(call).await.expect("tool execute should return");
+    let result = handle
+        .execute(call)
+        .await
+        .expect("tool execute should return");
     assert!(result.is_error);
     assert!(result.output.as_str().contains("not found"));
 }

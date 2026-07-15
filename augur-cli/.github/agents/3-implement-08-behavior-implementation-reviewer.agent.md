@@ -30,7 +30,7 @@ input or spec ambiguity prevents reliable validation.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `3-implement-behavior-wiring` - behavior traceability, flow correctness,
    dependency direction, and side-effect placement rules
 2. `3-implement-test-suite-completion` - Green-state and zero-production-stub
@@ -68,7 +68,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `3-implement-behavior-wiring` and
+1. Read `3-implement-behavior-wiring` and
    `3-implement-test-suite-completion`. Read `../local/language-companions.md`
    for the relevant companions and `../local/directories.md` for layout rules.
 2. Check plan coverage: for each algorithm, state transition, guard condition,
@@ -97,7 +97,7 @@ Invoke at start:
     language companion. Any remaining production compile-target stub,
     placeholder branch, fake-success path, or equivalent language-specific stub
     marker is a critical finding because Green is incomplete.
-11. Apply all additional language-specific checks from the invoked companions and
+11. Apply all additional language-specific checks from the read companions and
     incorporate their findings.
 12. Verify Green state using the language-specific test execution mechanics from
     the language companion. Confirm every planned test written for this scope

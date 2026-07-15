@@ -55,32 +55,28 @@ inference from plans, specs, or source, or unsupported semantic judgment.
    findings such as complexity, long functions, parameter/field counts, deep
    conditionals, magic literals, missing docs, bare primitive signatures,
    repeated trait bounds, and deep boolean formulas.
-8. Run deterministic dependency-direction, cycle, and architecture tooling where
+8. Run deterministic stub and deadcode detection tooling where available:
+   - `.github/skills/0-external-stub-detector/run.sh` for deferred pattern
+     detection (`todo!()`, `unimplemented!()`, `panic!()`, `unwrap()`, `expect()`)
+   - `.github/skills/0-external-src-deadcode-analysis/run.sh` for symbols
+     unreachable from crate entrypoints
+9. Run deterministic dependency-direction, cycle, and architecture tooling where
    available:
    - `.github/skills/0-external-module-graph/run.sh` for module dependencies,
      cycles, and layer-direction evidence
-   - `.github/skills/0-external-arch-linter/run.sh` only when present and
-     applicable for the scoped Rust surface
-9. Treat stub or placeholder detection as unsupported unless the scoped run has
-   explicit deterministic evidence from a documented repo-supported tool that
-   emits that category. Do not assume compiler output, normalized diagnostics,
-   or other audit artifacts provide dedicated placeholder/stub detection unless
-   that support is explicitly available for the current scope. Do not search
-   source manually for stubs.
-10. For dead, unused, or abandoned code, report only categories supported by
-   deterministic tool output already available for the scope, such as compiler
-   or clippy unused-code diagnostics. If broader abandoned/dead-code analysis
-   is not supported by repo tooling, mark it unsupported / not available rather
-   than infer it from source.
-11. Keep the audit limited to deterministic evidence the repository can
+   - `.github/skills/0-external-arch-linter/run.sh` for layer-rule and placement
+     violations
+   - `.github/skills/0-external-rustc-dependency-check/run.sh` for cargo-resolved
+     package-layer direction and forbidden-edge validation
+10. Keep the audit limited to deterministic evidence the repository can
     support. Do not claim universal coverage, direct the caller to inspect
     source files, or infer repository pattern conformance from plans, specs, or
     source reading.
-12. Consolidate results and clearly separate:
+11. Consolidate results and clearly separate:
     - supported deterministic findings
     - partially supported categories with explicit scope limits
     - unsupported or unavailable audit categories
-13. Do not auto-fix and do not expand this prompt into an orchestration or
+12. Do not auto-fix and do not expand this prompt into an orchestration or
     workflow-control surface. Return the audit results only.
 
 ## Output Format
@@ -93,7 +89,8 @@ inference from plans, specs, or source, or unsupported semantic judgment.
 2. **Supported deterministic findings**
    - category (`compiler`, `clippy`, `tests`, `coverage-gap`, `complexity`,
      `decomposition`, `dependency-direction`, `cycle`, `architecture`,
-     `unused-code`, or another category only when backed by documented
+     `layer-violation`, `unused-code`, `dead-code`, `stub-detection`,
+     `stub-placeholder`, or another category only when backed by documented
      deterministic tool output available for the scoped run)
    - severity
    - file, module, or symbol
@@ -107,8 +104,6 @@ inference from plans, specs, or source, or unsupported semantic judgment.
    - audit category
    - reason it is unsupported in current repo tooling or scope
    - explicit status: `not inferred`
-   - include `stub-placeholder` here when no documented deterministic tool in
-     the scoped run provides placeholder/stub evidence
 5. **Audit gate**
    - `pass`
    - `pass with deterministic findings`

@@ -16,5 +16,9 @@ fn executor_event_mapper_lives_in_provider_bucket() {
         repo.join("crates/augur-provider-copilot-sdk/src/actors/executor/event_mapper.rs")
             .exists()
     );
-    assert!(!repo.join("crates/augur-core/src/actors/executor/event_mapper.rs").exists());
+    assert!(
+        !repo
+            .join("crates/augur-core/src/actors/executor/event_mapper.rs")
+            .exists()
+    );
 }

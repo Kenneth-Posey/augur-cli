@@ -5,7 +5,9 @@ use std::sync::{Arc, Mutex};
 
 use crate::domain::IsPredicate;
 use crate::domain::newtypes::TimestampMs;
-use crate::domain::string_newtypes::{EndpointName, SdkSessionId, SessionId, StringNewtype};
+use crate::domain::string_newtypes::{
+    EndpointName, OutputText, SdkSessionId, SessionId, StringNewtype,
+};
 use crate::domain::types::Message;
 use crate::persistence::store;
 use crate::persistence::types::{
@@ -19,6 +21,7 @@ struct SessionIdentity {
     sdk_session_id: Option<SdkSessionId>,
     #[builder(default)]
     ask_session: IsPredicate,
+    title: Option<OutputText>,
 }
 
 #[derive(bon::Builder)]
@@ -73,6 +76,15 @@ impl PersistenceHandle {
         g.dir.clone()
     }
 
+    pub fn title(&self) -> Option<OutputText> {
+        let g = lock_or_recover(&self.inner);
+        g.identity.title.clone()
+    }
+
+    pub fn set_title(&self, title: Option<OutputText>) {
+        let mut g = lock_or_recover(&self.inner);
+        g.identity.title = title;
+    }
     pub fn sdk_session_id(&self) -> Option<SdkSessionId> {
         let g = lock_or_recover(&self.inner);
         g.identity.sdk_session_id.clone()
@@ -88,6 +100,7 @@ impl PersistenceHandle {
         g.identity.session_id = record.meta.id.clone();
         g.identity.created_at = record.meta.created_at;
         g.identity.sdk_session_id = record.meta.flags.sdk_session_id.clone();
+        g.identity.title = record.meta.title.clone();
         g.openrouter_context_history = record.state.openrouter_context_history.clone();
     }
 
@@ -97,7 +110,9 @@ impl PersistenceHandle {
         g.identity.created_at = TimestampMs::now();
         g.identity.sdk_session_id = None;
         g.identity.ask_session = false.into();
+        g.identity.title = None;
         g.openrouter_context_history = None;
+        g.queued_commands.clear();
     }
 
     pub fn queue_user_command(&self, record: MessageRecord) {
@@ -125,7 +140,34 @@ impl PersistenceHandle {
         g.openrouter_context_history.clone()
     }
 
-    pub async fn save_turn(&self, endpoint: EndpointName, messages: Vec<MessageRecord>) {
+    /// Persist the session title to disk without modifying any other session data.
+    ///
+    /// Loads the existing session record, updates only the `title` and
+    /// `last_updated_at` fields, and writes it back. This is a non-destructive
+    /// update that preserves all messages and other session state.
+    ///
+    /// If the load or save fails, a warning is logged and the error is silently
+    /// handled (no panic).
+    pub async fn persist_title(&self, title: OutputText) {
+        let (session_id, dir) = {
+            let g = lock_or_recover(&self.inner);
+            (g.identity.session_id.clone(), g.dir.clone())
+        };
+
+        let result =
+            tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
+                let mut record = store::load_session(&dir, &session_id)?;
+                record.meta.title = Some(title);
+                record.meta.last_updated_at = TimestampMs::now();
+                store::save_session(&record, &dir)?;
+                Ok(())
+            })
+            .await;
+
+        if let Ok(Err(e)) = result {
+            tracing::warn!(error = %e, "session title persist failed");
+        }
+    }pub async fn save_turn(&self, endpoint: EndpointName, messages: Vec<MessageRecord>) {
         let (record, dir) = self.build_record(endpoint, messages);
         let result = tokio::task::spawn_blocking(move || store::save_session(&record, &dir)).await;
         if let Ok(Err(e)) = result {
@@ -161,6 +203,7 @@ impl PersistenceHandle {
                     sdk_session_id: g.identity.sdk_session_id.clone(),
                     ask_session: g.identity.ask_session,
                 },
+                title: g.identity.title.clone(),
             },
             state: SessionState {
                 messages: merged,

@@ -6,7 +6,7 @@ use super::RunRuntime;
 ///
 /// **UI Layer** (optional): Shuts down chat provider and optional supervisor.
 ///
-/// **Domain Layer**: Shuts down agent, session, file scanner, guided plan,
+/// **Domain Layer**: Shuts down agent, session, file scanner,
 /// and optional ask actor.
 ///
 /// **Infrastructure Layer** (shutdown last): Shuts down tool, file read,
@@ -26,7 +26,6 @@ pub fn shutdown_runtime(runtime: &RunRuntime) {
     runtime.app.handles.primary.domain.agent.shutdown();
     runtime.app.handles.primary.domain.session.shutdown();
     runtime.app.handles.primary.domain.file_scanner.shutdown();
-    runtime.app.handles.primary.domain.guided_plan.shutdown();
     runtime
         .app
         .handles

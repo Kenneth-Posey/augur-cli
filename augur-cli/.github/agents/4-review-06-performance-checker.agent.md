@@ -16,7 +16,7 @@ long-logic, complexity, and performance-shape validation.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `4-review-performance-validation` - performance review rules: algorithmic complexity, data structure selection, allocation patterns, loop correctness, and pass/fail criteria
 2. `4-review-performance-tools` - tool-running rules; use [`language-companions.md`](../local/language-companions.md) for the language-specific syn-analyzer complexity, chain, length, and magic commands
 3. `0-global-line-count-check` - repository long-function and logic-density baseline for deciding when decomposition is mandatory
@@ -36,7 +36,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. **Initialize:** Load the Performance Plan for complexity targets and invoke `0-global-line-count-check`
+1. **Initialize:** Load the Performance Plan for complexity targets and Read `0-global-line-count-check`
    for the repository decomposition baseline; set a 300 s timeout and start the timer.
 
 2. **Run Analysis Tools:**

@@ -1,4 +1,5 @@
 use augur_core::actors::file_scanner::parse_file_attachments;
+use augur_domain::domain::StringNewtype;
 use augur_domain::domain::string_newtypes::PromptText;
 
 #[test]

@@ -1,7 +1,9 @@
 //! Phase 1 domain contracts for the deterministic orchestrator.
 
+use std::collections::BTreeMap;
+
 use augur_domain::domain::{
-    AgentName, FilePath, IsPredicate, ModelName, OutputText, PassCriterion, PromptText,
+    AgentName, FilePath, IsPredicate, IsPresent, ModelName, OutputText, PassCriterion, PromptText,
     StringNewtype, WorkflowSignalValue, WorkflowStageId, WorkflowStepId, WorkflowThinkingDepth,
 };
 use serde::de::Error as _;
@@ -12,6 +14,9 @@ use serde::{Deserialize, Deserializer};
 pub struct WorkflowDocument {
     /// Declared workflow stages in source order.
     pub stages: Vec<WorkflowStage>,
+    /// Agent registry mapping agent names to their `.agent.md` file paths.
+    #[serde(default)]
+    pub agent_registry: BTreeMap<AgentName, AgentRegistryEntry>,
 }
 
 impl WorkflowDocument {
@@ -19,6 +24,19 @@ impl WorkflowDocument {
     pub fn declared_stage_ids(&self) -> Vec<WorkflowStageId> {
         self.stages.iter().map(|stage| stage.id.clone()).collect()
     }
+
+    /// Looks up the file path for a named agent from the registry.
+    pub fn agent_file_path(&self, name: &AgentName) -> Option<&AgentRegistryEntry> {
+        self.agent_registry.get(name)
+    }
+}
+
+/// Entry in the YAML `agent_registry` mapping an agent name to its `.agent.md` path.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize)]
+#[serde(transparent)]
+pub struct AgentRegistryEntry {
+    /// Path to the `.agent.md` file relative to the repository root.
+    pub path: FilePath,
 }
 
 /// Ordered stage contract.
@@ -380,7 +398,7 @@ impl AgentDispatchSpec {
                 .step_id(step_id)
                 .step_kind(step_kind)
                 .field_name("model")
-                .is_present(self.model.is_some())
+                .is_present(IsPresent::from(self.model.is_some()))
                 .build(),
         )?;
         self.require_field(
@@ -388,7 +406,7 @@ impl AgentDispatchSpec {
                 .step_id(step_id)
                 .step_kind(step_kind)
                 .field_name("thinking_depth")
-                .is_present(self.thinking_depth.is_some())
+                .is_present(IsPresent::from(self.thinking_depth.is_some()))
                 .build(),
         )?;
         self.require_field(
@@ -396,7 +414,7 @@ impl AgentDispatchSpec {
                 .step_id(step_id)
                 .step_kind(step_kind)
                 .field_name("worker_agent")
-                .is_present(self.worker_agent.is_some())
+                .is_present(IsPresent::from(self.worker_agent.is_some()))
                 .build(),
         )?;
         self.require_field(
@@ -404,7 +422,7 @@ impl AgentDispatchSpec {
                 .step_id(step_id)
                 .step_kind(step_kind)
                 .field_name("gate_agent")
-                .is_present(self.evaluator_agent.is_some())
+                .is_present(IsPresent::from(self.evaluator_agent.is_some()))
                 .build(),
         )
     }
@@ -419,7 +437,7 @@ impl AgentDispatchSpec {
                 .step_id(step_id)
                 .step_kind(step_kind)
                 .field_name("model")
-                .is_present(self.model.is_some())
+                .is_present(IsPresent::from(self.model.is_some()))
                 .build(),
         )?;
         self.require_field(
@@ -427,7 +445,7 @@ impl AgentDispatchSpec {
                 .step_id(step_id)
                 .step_kind(step_kind)
                 .field_name("thinking_depth")
-                .is_present(self.thinking_depth.is_some())
+                .is_present(IsPresent::from(self.thinking_depth.is_some()))
                 .build(),
         )?;
         self.require_field(
@@ -435,13 +453,13 @@ impl AgentDispatchSpec {
                 .step_id(step_id)
                 .step_kind(step_kind)
                 .field_name("worker_agent")
-                .is_present(self.worker_agent.is_some())
+                .is_present(IsPresent::from(self.worker_agent.is_some()))
                 .build(),
         )
     }
 
     fn require_field(&self, required: RequiredField<'_>) -> Result<(), String> {
-        if required.is_present {
+        if bool::from(required.is_present) {
             return Ok(());
         }
 
@@ -459,7 +477,7 @@ struct RequiredField<'a> {
     step_id: &'a WorkflowStepId,
     step_kind: &'a WorkflowStepKind,
     field_name: &'a str,
-    is_present: bool,
+    is_present: IsPresent,
 }
 
 /// Dynamic failure choice returned by later policy and transition logic.

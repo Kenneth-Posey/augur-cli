@@ -53,14 +53,50 @@ fn render_session_list(f: &mut Frame, state: &PickerState, area: Rect) {
     f.render_stateful_widget(list, area, &mut list_state);
 }
 
+/// Maximum length of the preview text displayed in the session picker.
+///
+/// Longer previews are truncated to avoid horizontal overflow in the picker
+/// list. The value 120 provides enough context for identifying a session
+/// without taking too much terminal width.
+const MAX_PREVIEW_LEN: usize = 120;
+
 /// Build a display `ListItem` for one session summary.
+///
+/// When the session has a title, it is displayed as the description text.
+/// When the session has no title, the preview text (first user message) is used
+/// as a fallback. The preview text is sanitized: newlines are replaced with
+/// spaces so that each session occupies exactly one logical row in the picker
+/// list. The preview is also truncated to `MAX_PREVIEW_LEN` characters to
+/// prevent excessively long lines from overflowing the terminal width.
 fn session_list_item(s: &crate::domain::tui_state::PickerSessionSummary) -> ListItem<'static> {
+    let description = if let Some(title) = &s.identity.title {
+        title.as_str().to_owned()
+    } else {
+        let cleaned: String = s
+            .preview
+            .as_str()
+            .chars()
+            .map(|c| if c == '\n' || c == '\r' { ' ' } else { c })
+            .collect();
+        if cleaned.chars().count() > MAX_PREVIEW_LEN {
+            let truncated: String = cleaned.chars().take(MAX_PREVIEW_LEN).collect();
+            truncated + "..."
+        } else {
+            cleaned
+        }
+    };
+    // If the description is empty after all fallbacks, show a placeholder.
+    let description = if description.trim().is_empty() {
+        "<<no prompt>>".to_owned()
+    } else {
+        description
+    };
     let line = format!(
         "[{}] {} | {} msgs | {}",
         s.identity.endpoint_name.as_str(),
         format_elapsed(s.identity.created_at.inner()),
         s.message_count,
-        s.preview.as_str(),
+        description,
     );
     ListItem::new(line)
 }

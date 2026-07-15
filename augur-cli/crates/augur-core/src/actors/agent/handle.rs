@@ -119,7 +119,7 @@ impl AgentHandle {
     ///
     /// Returns the semantic cancellation signal value currently held by the
     /// internal watch channel.
-    pub(crate) fn is_cancelled(&self) -> CancelSignal {
+    pub fn is_cancelled(&self) -> CancelSignal {
         *self.cancel_tx.borrow()
     }
 

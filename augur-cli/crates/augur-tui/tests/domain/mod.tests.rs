@@ -28,5 +28,7 @@ mod selection_tests;
 #[path = "tui_state/output_messages.tests.rs"]
 mod output_messages_tests;
 
+#[path = "tui_state/mod.tests.rs"]
+mod tui_state_tests;
 #[path = "tui_status.tests.rs"]
 mod tui_status_tests;

@@ -6,7 +6,10 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 
-use crate::domain::deterministic_orchestrator::{NormalizedSignal, WorkflowArtifactRef};
+use super::loader::AgentInstructionLibrary;
+use crate::domain::deterministic_orchestrator::{
+    AgentRegistryEntry, NormalizedSignal, WorkflowArtifactRef,
+};
 use crate::domain::deterministic_orchestrator_ops::{
     DispatchRequestKind, WorkflowDispatchRequest, normalize_agent_signal,
 };
@@ -121,12 +124,13 @@ impl BackgroundAgentRuntime for MissingBackgroundAgentRuntime {
     }
 }
 
-/// Thin adapter around the background-agent runtime.
 #[derive(Clone)]
 pub(crate) struct DeterministicAgentDispatcher {
     runtime: Arc<dyn BackgroundAgentRuntime>,
     /// Optional channel to tee all agent feed events to the shared feed panel.
     feed_tx: Option<mpsc::Sender<FeedEntry>>,
+    /// Pre-loaded agent instruction text from `.agent.md` files.
+    agent_instructions: AgentInstructionLibrary,
 }
 
 impl fmt::Debug for DeterministicAgentDispatcher {
@@ -137,16 +141,23 @@ impl fmt::Debug for DeterministicAgentDispatcher {
 
 impl Default for DeterministicAgentDispatcher {
     fn default() -> Self {
-        Self::new(Arc::new(MissingBackgroundAgentRuntime {}))
+        Self::new(
+            Arc::new(MissingBackgroundAgentRuntime {}),
+            AgentInstructionLibrary::default(),
+        )
     }
 }
 
 impl DeterministicAgentDispatcher {
     /// Creates a new deterministic dispatcher backed by the background-agent runtime.
-    pub(crate) fn new(runtime: Arc<dyn BackgroundAgentRuntime>) -> Self {
+    pub(crate) fn new(
+        runtime: Arc<dyn BackgroundAgentRuntime>,
+        agent_instructions: AgentInstructionLibrary,
+    ) -> Self {
         Self {
             runtime,
             feed_tx: None,
+            agent_instructions,
         }
     }
 
@@ -161,10 +172,12 @@ impl DeterministicAgentDispatcher {
     pub(crate) fn new_with_feed(
         runtime: Arc<dyn BackgroundAgentRuntime>,
         feed_tx: mpsc::Sender<FeedEntry>,
+        agent_instructions: AgentInstructionLibrary,
     ) -> Self {
         Self {
             runtime,
             feed_tx: Some(feed_tx),
+            agent_instructions,
         }
     }
 
@@ -210,7 +223,7 @@ impl DeterministicAgentDispatcher {
         request: &WorkflowDispatchRequest,
         expected_kind: DispatchRequestKind,
     ) -> Result<AgentDispatchTicket, DispatchError> {
-        let prepared_dispatch = prepare_dispatch(request, expected_kind)?;
+        let prepared_dispatch = prepare_dispatch(request, expected_kind, &self.agent_instructions)?;
         let runtime = self.runtime.dispatch(prepared_dispatch.launch)?;
         Ok(AgentDispatchTicket {
             kind: prepared_dispatch.kind,
@@ -232,6 +245,7 @@ struct PreparedDispatch {
 fn prepare_dispatch(
     request: &WorkflowDispatchRequest,
     expected_kind: DispatchRequestKind,
+    agent_instructions: &AgentInstructionLibrary,
 ) -> Result<PreparedDispatch, DispatchError> {
     let request_kind_matches = request.kind == expected_kind;
     if !request_kind_matches {
@@ -243,7 +257,7 @@ fn prepare_dispatch(
     let agent = agent_for_kind(request, &expected_kind).ok_or(DispatchError::MissingAgent(
         "dispatch request did not define an agent for this path",
     ))?;
-    let prompt = prompt_for_request(request, &expected_kind);
+    let prompt = prompt_for_request(request, &expected_kind, agent_instructions);
     let model = request
         .dispatch
         .model
@@ -278,13 +292,14 @@ fn agent_for_kind(
 fn prompt_for_request(
     request: &WorkflowDispatchRequest,
     dispatch_kind: &DispatchRequestKind,
+    agent_instructions: &AgentInstructionLibrary,
 ) -> PromptText {
     if let Some(prompt) = request.dispatch.prompt.clone() {
         return prompt;
     }
     match dispatch_kind {
-        DispatchRequestKind::Worker => build_worker_prompt(request),
-        DispatchRequestKind::Evaluator => build_evaluator_prompt(request),
+        DispatchRequestKind::Worker => build_worker_prompt(request, agent_instructions),
+        DispatchRequestKind::Evaluator => build_evaluator_prompt(request, agent_instructions),
     }
 }
 
@@ -313,12 +328,16 @@ fn format_criteria_section(heading: &str, items: &[PassCriterion]) -> String {
 }
 
 /// Builds the worker prompt for a dispatch request.
-fn build_worker_prompt(request: &WorkflowDispatchRequest) -> PromptText {
-    let agent_name = request
-        .dispatch
-        .worker_agent
-        .as_ref()
-        .map(|a| a.to_string())
+fn build_worker_prompt(
+    request: &WorkflowDispatchRequest,
+    agent_instructions: &AgentInstructionLibrary,
+) -> PromptText {
+    let agent_name_ref = request.dispatch.worker_agent.as_ref();
+    let agent_name = agent_name_ref.map(|a| a.to_string()).unwrap_or_default();
+
+    let instructions_section = agent_name_ref
+        .and_then(|name| agent_instructions.get(name))
+        .map(|text| format!("## Your Agent Instructions\n\n{text}\n\n"))
         .unwrap_or_default();
 
     let feature_context_section = request
@@ -338,11 +357,14 @@ fn build_worker_prompt(request: &WorkflowDispatchRequest) -> PromptText {
         format_criteria_section("Pass criteria:", &request.artifacts.pass_criteria);
 
     PromptText::from(format!(
-        "{feature_context_section}You are the worker agent for workflow step `{step_id}`.\nAgent: {agent_name}\n\n\
+        "{feature_context_section}\
+         {instructions_section}\
+         You are the worker agent for workflow step `{step_id}`.\nAgent: {agent_name}\n\n\
+         You have access to file tools: `file_read`, `file_create`, `file_replace`, `file_append`, `file_insert`, `file_slice`, `file_remove`, `list_directory`, `shell_exec`, `lsp_query`. You must use these tools to read input artifacts and write output artifacts.\n\n\
          {inputs_section}\
          {artifacts_section}\
          {criteria_section}\
-         Complete your work then emit exactly \"pass\" or \"fail\" as your final signal.",
+         Read existing input artifacts with `file_read`, create or update output artifacts with `file_create`/`file_replace`, then emit exactly \"pass\" or \"fail\" as your final signal.",
         step_id = request.step_id,
     ))
 }
@@ -356,12 +378,16 @@ fn format_prior_signal(signal: &NormalizedSignal) -> &'static str {
 }
 
 /// Builds the evaluator prompt for a dispatch request.
-fn build_evaluator_prompt(request: &WorkflowDispatchRequest) -> PromptText {
-    let agent_name = request
-        .dispatch
-        .evaluator_agent
-        .as_ref()
-        .map(|a| a.to_string())
+fn build_evaluator_prompt(
+    request: &WorkflowDispatchRequest,
+    agent_instructions: &AgentInstructionLibrary,
+) -> PromptText {
+    let agent_name_ref = request.dispatch.evaluator_agent.as_ref();
+    let agent_name = agent_name_ref.map(|a| a.to_string()).unwrap_or_default();
+
+    let instructions_section = agent_name_ref
+        .and_then(|name| agent_instructions.get(name))
+        .map(|text| format!("## Your Agent Instructions\n\n{text}\n\n"))
         .unwrap_or_default();
 
     let prior_result_line = request
@@ -381,11 +407,13 @@ fn build_evaluator_prompt(request: &WorkflowDispatchRequest) -> PromptText {
         format_criteria_section("Pass criteria:", &request.artifacts.pass_criteria);
 
     PromptText::from(format!(
-        "You are the evaluator (gate) agent for workflow step `{step_id}`.\nAgent: {agent_name}\n\n\
+        "{instructions_section}\
+         You are the evaluator (gate) agent for workflow step `{step_id}`.\nAgent: {agent_name}\n\n\
+         You have access to file tools: `file_read`, `file_create`, `file_replace`, `file_append`, `file_insert`, `file_slice`, `file_remove`, `list_directory`, `shell_exec`, `lsp_query`. Use `file_read` to inspect input artifacts.\n\n\
          {prior_result_line}\
          {artifacts_section}\
          {criteria_section}\
-         Review the artifacts against the pass criteria then emit exactly \"pass\" or \"fail\".",
+         Review the artifacts against the pass criteria using `file_read` to inspect them, then emit exactly \"pass\" or \"fail\".",
         step_id = request.step_id,
     ))
 }
@@ -448,10 +476,9 @@ const SIGNAL_RECEIVE_TIMEOUT_MS: u64 = 100;
 /// 1. Reading the accumulated text from `signal_rx` (with a short timeout to avoid blocking).
 /// 2. Scanning for the last whole-word occurrence of "pass" or "fail" (case-insensitive, strips punctuation).
 /// 3. When the signal resolves to Hold and text is available, the full text is captured as `OutputText`.
-/// 4. When the signal resolves to Advance, `None` is returned for the output text.
-/// 5. When `signal_rx` is `Some` but no usable signal is found, returning fail-closed with no output text.
+/// 4. When `signal_rx` is `Some` but no usable signal is found, returning fail-closed with no output text.
 ///    Agents are required to emit "pass" or "fail"; absent signal implies a silent crash or empty exit.
-/// 6. When `signal_rx` is `None`, fail-closed as Hold with no output text.
+/// 5. When `signal_rx` is `None`, fail-closed as Hold with no output text.
 async fn resolve_signal(
     signal_rx: Option<tokio::sync::oneshot::Receiver<AccumulatedText>>,
 ) -> (NormalizedSignal, Option<OutputText>) {
@@ -541,5 +568,39 @@ async fn drain_events(
         if let Some(tx) = tee_tx {
             let _ = tx.try_send(output.clone());
         }
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::deterministic_orchestrator::NormalizedSignal;
+    use augur_domain::domain::AccumulatedText;
+
+    #[test]
+    fn signal_from_text_returns_output_only_on_hold() {
+        // Advance signal should return None for OutputText
+        let advance_text = AccumulatedText::from("some reasoning\npass");
+        let (signal, output) = signal_from_text(advance_text).unwrap();
+        assert_eq!(signal, NormalizedSignal::Advance);
+        assert!(
+            output.is_none(),
+            "Advance signal must not return OutputText"
+        );
+
+        // Hold signal should return Some(OutputText)
+        let hold_text = AccumulatedText::from("some reasoning\nfail");
+        let (signal, output) = signal_from_text(hold_text).unwrap();
+        assert_eq!(signal, NormalizedSignal::Hold);
+        assert!(output.is_some(), "Hold signal must return OutputText");
+        assert_eq!(
+            output.as_ref().map(|t| t.as_str()),
+            Some("some reasoning\nfail")
+        );
+    }
+
+    #[test]
+    fn signal_from_text_returns_none_for_no_signal() {
+        let text = AccumulatedText::from("just some random text with no signal word");
+        assert!(signal_from_text(text).is_none());
     }
 }

@@ -2,8 +2,25 @@
 
 //! Application crate that wires core services into the runtime entry point.
 
+extern crate self as augur_cli;
+
 /// Startup wiring and runtime assembly for the application crate.
 pub mod wiring;
+
+// ── Test discovery stubs (rust-analyzer visibility) ────────────────────────
+// Makes VS Code / rust-analyzer discover tests in the external tests/
+// directory.  Without these, tests declared only through [[test]] in
+// Cargo.toml are invisible to the IDE test explorer.
+#[cfg(test)]
+#[path = "../tests/provider.tests.rs"]
+mod provider_tests;
+#[cfg(test)]
+#[path = "../tests/wiring.tests.rs"]
+mod wiring_tests;
+
+#[cfg(test)]
+#[path = "../tests/wiring/infrastructure.tests.rs"]
+mod wiring_infrastructure_tests;
 
 use std::sync::OnceLock;
 
@@ -71,7 +88,10 @@ pub async fn run(config_path: Option<FilePath>, log_filter: Option<String>) -> a
     // the message logger and session files).
     let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
     let log_dir = augur_domain::persistence::store::apply_repo_subdir(
-        std::path::PathBuf::from(&*config.persistence.log_dir),
+        augur_domain::persistence::store::resolve_path_with_home(
+            Some(&*config.persistence.log_dir),
+            ".augur-cli/logs",
+        ),
         &cwd,
     );
     init_tracing(&log_dir, *session_secs, log_filter.as_deref());

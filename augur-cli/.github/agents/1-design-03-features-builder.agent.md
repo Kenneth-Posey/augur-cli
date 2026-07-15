@@ -14,7 +14,7 @@ Verify every requirement maps to at least one feature and every feature traces b
 
 ## Skills
 
-Invoke at start:
+Read at start:
 - `1-design-feature-decomposition` - feature specification structure, granularity rules, implementability markers, and requirement traceability matrix format
 
 ## Inputs
@@ -28,7 +28,9 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `1-design-feature-decomposition`.
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. Read `1-design-feature-decomposition`.
 
 2. Load the validated requirements document.
 

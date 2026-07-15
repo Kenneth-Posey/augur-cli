@@ -17,7 +17,7 @@ If the request is a standards review, diff review, plan review, dependency audit
 
 ## Skills
 
-Invoke only the minimal skills needed for the question:
+Read only the minimal skills needed for the question:
 
 - Read [`.github/local/language-companions.md`](../local/language-companions.md) and use the language-specific 4-review-architecture-validation companion for module placement, dependency direction, and ownership questions
 - `0-global-interface-design` - actor structure, handles, wiring, assistant modules
@@ -28,7 +28,7 @@ Invoke only the minimal skills needed for the question:
 - `0-global-line-count-check` - file-size or plan-size threshold questions
 - `0-global-plan-implementation` - plan-format, plan-quality, or phased-planning questions
 
-Do not invoke unrelated skills.
+Do not read unrelated skills.
 
 ## Inputs
 
@@ -44,7 +44,7 @@ Do not invoke unrelated skills.
 ## Step-by-Step Behavior
 
 1. If the request is a review, audit, or code change task, stop and return the question type for routing.
-2. Invoke only the minimal skills required for the question.
+2. Read only the minimal skills required for the question.
 3. Search targeted files first. Prefer local docs, repo guidance, and known module paths before broad scans.
 4. Read only the files needed to answer the question.
 5. If commands are needed, run only minimal non-git commands.

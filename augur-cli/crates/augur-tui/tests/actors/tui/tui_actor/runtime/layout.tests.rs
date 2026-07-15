@@ -1,34 +1,34 @@
 //! Tests for TUI layout module: snapshot collection and render correctness.
 
-use crate::actors::tui::tui_actor::runtime::layout::{
+use augur_tui::actors::tui::tui_actor::runtime::layout::{
     TuiOverlayHandles, TuiSubActorHandles, collect_render_snapshot, render_layout,
 };
-use crate::actors::tui_chat_menu::tui_chat_menu_ops::ChatMenuState;
-use crate::actors::tui_dynamic_controls::tui_dynamic_controls_ops::DynamicControlsState;
-use crate::actors::tui_spinner::tui_spinner_ops::{SpinnerState, SpinnerTarget};
-use crate::domain::string_newtypes::{EndpointName, OutputText, StatusLabel, StringNewtype};
-use crate::domain::tui_display_state::TuiDisplayState;
-use crate::domain::tui_render::AppRenderer;
-use crate::domain::tui_state::{AppScreen, AppState};
+use augur_tui::actors::tui_chat_menu::tui_chat_menu_ops::ChatMenuState;
+use augur_tui::actors::tui_dynamic_controls::tui_dynamic_controls_ops::DynamicControlsState;
+use augur_tui::actors::tui_spinner::tui_spinner_ops::{SpinnerState, SpinnerTarget};
+use augur_tui::domain::string_newtypes::{EndpointName, OutputText, StatusLabel, StringNewtype};
+use augur_tui::domain::tui_display_state::TuiDisplayState;
+use augur_tui::domain::tui_render::AppRenderer;
+use augur_tui::domain::tui_state::{AppScreen, AppState};
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
 fn noop_renderer_for_display(_: &mut ratatui::Frame<'_>, _: &TuiDisplayState) {}
 
 fn make_sub_actor_handles() -> TuiSubActorHandles {
-    use crate::actors::tui_agent_panel::tui_agent_panel_actor::{
+    use augur_tui::actors::tui_agent_panel::tui_agent_panel_actor::{
         TuiAgentPanelConfig, spawn as spawn_agent_panel,
     };
-    use crate::actors::tui_ask_panel::tui_ask_panel_actor::spawn as spawn_ask_panel;
-    use crate::actors::tui_chat_menu::tui_chat_menu_actor::spawn as spawn_chat_menu;
-    use crate::actors::tui_dynamic_controls::tui_dynamic_controls_actor::spawn as spawn_controls;
-    use crate::actors::tui_main_feed_panel::tui_main_feed_panel_actor::{
+    use augur_tui::actors::tui_ask_panel::tui_ask_panel_actor::spawn as spawn_ask_panel;
+    use augur_tui::actors::tui_chat_menu::tui_chat_menu_actor::spawn as spawn_chat_menu;
+    use augur_tui::actors::tui_dynamic_controls::tui_dynamic_controls_actor::spawn as spawn_controls;
+    use augur_tui::actors::tui_main_feed_panel::tui_main_feed_panel_actor::{
         TuiMainFeedConfig, spawn as spawn_main_feed,
     };
-    use crate::actors::tui_main_feed_panel::tui_main_feed_panel_ops::MainFeedItem;
-    use crate::actors::tui_spinner::tui_spinner_actor::spawn as spawn_spinner;
-    use crate::domain::newtypes::Count;
-    use crate::domain::types::AgentFeedOutput;
+    use augur_tui::actors::tui_main_feed_panel::tui_main_feed_panel_ops::MainFeedItem;
+    use augur_tui::actors::tui_spinner::tui_spinner_actor::spawn as spawn_spinner;
+    use augur_tui::domain::newtypes::Count;
+    use augur_tui::domain::types::AgentFeedOutput;
 
     let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel::<AgentFeedOutput>(8);
     let (main_feed_tx, _main_feed_rx) = tokio::sync::mpsc::channel::<MainFeedItem>(8);
@@ -60,8 +60,8 @@ fn make_sub_actor_handles() -> TuiSubActorHandles {
         .build()
 }
 
-fn empty_snapshot() -> crate::actors::tui::tui_actor::runtime::layout::TuiRenderSnapshot {
-    use crate::actors::tui::tui_actor::runtime::layout::TuiRenderSnapshot;
+fn empty_snapshot() -> augur_tui::actors::tui::tui_actor::runtime::layout::TuiRenderSnapshot {
+    use augur_tui::actors::tui::tui_actor::runtime::layout::TuiRenderSnapshot;
     TuiRenderSnapshot::builder()
         .chat_menu(ChatMenuState::default())
         .spinner(
@@ -128,7 +128,7 @@ async fn test_render_layout_does_not_panic_on_empty_snapshot() {
 
     let snapshot = empty_snapshot();
     let app_state = conversation_app_state();
-    let display = crate::domain::tui_display_state::TuiDisplayState::project_from(&app_state);
+    let display = augur_tui::domain::tui_display_state::TuiDisplayState::project_from(&app_state);
 
     let backend = TestBackend::new(80, 24);
     let mut terminal = Terminal::new(backend).unwrap();

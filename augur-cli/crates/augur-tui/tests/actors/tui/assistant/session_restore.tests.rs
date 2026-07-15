@@ -1,15 +1,16 @@
-use crate::domain::newtypes::ScrollOffset;
-use crate::domain::string_newtypes::{
+use augur_domain::domain::types::{MessageRecord, MessageType};
+use augur_domain::persistence::types::SessionRecord;
+use augur_tui::domain::newtypes::ScrollOffset;
+use augur_tui::domain::string_newtypes::{
     EndpointName, ModelLabel, OutputText, PromptText, StringNewtype, TaskName, ToolCallId, ToolName,
 };
-use crate::domain::tui_state::{AppScreen, AppState, LineKind, SecondaryView};
-use crate::domain::types::{Message, ToolCall};
-use crate::persistence::types::{MessageRecord, MessageType, SessionRecord};
+use augur_tui::domain::tui_state::{AppScreen, AppState, LineKind, SecondaryView};
+use augur_tui::domain::types::{Message, ToolCall};
+use ratatui::Terminal;
 use ratatui::backend::TestBackend;
 use ratatui::layout::Rect;
-use ratatui::Terminal;
 
-use crate::tests::helpers::fake_ask;
+use augur_core::helpers::fake_ask;
 
 /// Verifies that hydrate_output_from_messages skips tool messages so only
 /// user-visible content (user, assistant, error) appears in the output pane.
@@ -17,11 +18,21 @@ use crate::tests::helpers::fake_ask;
 fn hydrate_output_skips_tool_messages() {
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     let tool = ToolName::new("t");
-    let mut record = SessionRecord::new(EndpointName::new("ep"));
+    let mut record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     record.state.messages = vec![MessageRecord {
         message_type: MessageType::Tool(ToolName::new("t")),
         message: Message::tool_result(
-            crate::domain::string_newtypes::ToolCallId::new("call_stub"),
+            augur_tui::domain::string_newtypes::ToolCallId::new("call_stub"),
             &tool,
             OutputText::new("tool output"),
         ),
@@ -46,7 +57,17 @@ fn hydrate_output_skips_tool_messages() {
 #[test]
 fn hydrate_output_renders_system_messages() {
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    let mut record = SessionRecord::new(EndpointName::new("ep"));
+    let mut record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     record.state.messages = vec![MessageRecord {
         message_type: MessageType::System,
         message: Message::system(OutputText::new("model switched to gpt-4o")),
@@ -70,7 +91,17 @@ fn hydrate_output_renders_system_messages() {
 #[test]
 fn hydrate_output_restores_user_slash_commands_as_user_input() {
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    let mut record = SessionRecord::new(EndpointName::new("ep"));
+    let mut record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     record.state.messages = vec![MessageRecord {
         message_type: MessageType::User,
         message: Message::user(PromptText::new("/model gpt-5")),
@@ -91,7 +122,17 @@ fn hydrate_output_restores_user_slash_commands_as_user_input() {
 #[test]
 fn hydrate_output_restores_assistant_tool_calls() {
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    let mut record = SessionRecord::new(EndpointName::new("ep"));
+    let mut record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     let tool_call = ToolCall {
         id: ToolCallId::new("call_file_read"),
         name: ToolName::new("file_read"),
@@ -148,9 +189,10 @@ fn hydrate_output_restores_assistant_tool_calls() {
 
 /// Test double for `ChatProvider` that records `replace_session` calls.
 struct SpyChatProvider {
-    replace_calls:
-        std::sync::Arc<std::sync::Mutex<Vec<Option<crate::domain::string_newtypes::SdkSessionId>>>>,
-    output_tx: tokio::sync::broadcast::Sender<crate::domain::types::AgentOutput>,
+    replace_calls: std::sync::Arc<
+        std::sync::Mutex<Vec<Option<augur_tui::domain::string_newtypes::SdkSessionId>>>,
+    >,
+    output_tx: tokio::sync::broadcast::Sender<augur_tui::domain::types::AgentOutput>,
 }
 
 impl SpyChatProvider {
@@ -162,29 +204,29 @@ impl SpyChatProvider {
         }
     }
 
-    fn take_replace_calls(&self) -> Vec<Option<crate::domain::string_newtypes::SdkSessionId>> {
+    fn take_replace_calls(&self) -> Vec<Option<augur_tui::domain::string_newtypes::SdkSessionId>> {
         self.replace_calls.lock().unwrap().drain(..).collect()
     }
 }
 
-impl crate::domain::traits::ChatProvider for SpyChatProvider {
+impl augur_tui::domain::traits::ChatProvider for SpyChatProvider {
     fn submit(
         &self,
-        _prompt: crate::domain::string_newtypes::PromptText,
-        _endpoint: Option<crate::domain::string_newtypes::EndpointName>,
+        _prompt: augur_tui::domain::string_newtypes::PromptText,
+        _endpoint: Option<augur_tui::domain::string_newtypes::EndpointName>,
     ) {
     }
     fn interrupt(&self) {}
     fn shutdown(&self) {}
-    fn restore(&self, _records: Vec<crate::persistence::types::MessageRecord>) {}
+    fn restore(&self, _records: Vec<augur_domain::domain::types::MessageRecord>) {}
     fn subscribe_output(
         &self,
-    ) -> tokio::sync::broadcast::Receiver<crate::domain::types::AgentOutput> {
+    ) -> tokio::sync::broadcast::Receiver<augur_tui::domain::types::AgentOutput> {
         self.output_tx.subscribe()
     }
     fn replace_session(
         &self,
-        sdk_session_id: Option<crate::domain::string_newtypes::SdkSessionId>,
+        sdk_session_id: Option<augur_tui::domain::string_newtypes::SdkSessionId>,
     ) {
         self.replace_calls.lock().unwrap().push(sdk_session_id);
     }
@@ -195,38 +237,49 @@ impl crate::domain::traits::ChatProvider for SpyChatProvider {
 /// original session rather than the one created at startup.
 #[tokio::test]
 async fn apply_restored_session_calls_replace_session_when_sdk_id_present() {
-    use crate::domain::string_newtypes::{SdkSessionId, StringNewtype};
-    use crate::persistence::types::SessionRecord;
+    use augur_domain::persistence::types::SessionRecord;
+    use augur_tui::domain::string_newtypes::{SdkSessionId, StringNewtype};
 
     let provider = SpyChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
     let sdk_id = SdkSessionId::new("expected-sdk-session-id");
-    let mut record = SessionRecord::new(EndpointName::new("ep"));
+    let mut record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     record.meta.flags.sdk_session_id = Some(sdk_id.clone());
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
@@ -250,36 +303,47 @@ async fn apply_restored_session_calls_replace_session_when_sdk_id_present() {
 /// session rather than resuming a non-existent one.
 #[tokio::test]
 async fn apply_restored_session_calls_replace_session_with_none_when_no_sdk_id() {
-    use crate::persistence::types::SessionRecord;
+    use augur_domain::persistence::types::SessionRecord;
 
     let provider = SpyChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
-    let record = SessionRecord::new(EndpointName::new("ep"));
+    let record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     // sdk_session_id defaults to None
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     super::apply_restored_session(&mut state, record, &handles).await;
@@ -301,36 +365,47 @@ async fn apply_restored_session_calls_replace_session_with_none_when_no_sdk_id()
 /// when a session is restored.
 #[tokio::test]
 async fn apply_restored_session_resets_scroll_offset() {
-    use crate::persistence::types::SessionRecord;
+    use augur_domain::persistence::types::SessionRecord;
 
     let provider = SpyChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
-    let record = SessionRecord::new(EndpointName::new("ep"));
+    let record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
 
     // Simulate a state where scroll_offset is non-zero (scrolled up)
@@ -352,42 +427,53 @@ async fn apply_restored_session_resets_scroll_offset() {
 /// message, the open-panel render would drop the later user/assistant messages.
 #[tokio::test]
 async fn apply_restored_session_renders_messages_after_mixed_system_and_error_entries() {
-    use crate::domain::string_newtypes::SdkSessionId;
+    use augur_tui::domain::string_newtypes::SdkSessionId;
 
     let provider = SpyChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
-    let mut record = SessionRecord::new(EndpointName::new("ep"));
+    let mut record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     record.meta.flags.sdk_session_id = Some(SdkSessionId::new("sdk-id"));
     let long_assistant = "assistant one ".repeat(140);
     record.state.messages = vec![
         MessageRecord {
             message_type: MessageType::User,
-            message: Message::user(crate::domain::string_newtypes::PromptText::new(
+            message: Message::user(augur_tui::domain::string_newtypes::PromptText::new(
                 "first user",
             )),
         },
@@ -402,16 +488,16 @@ async fn apply_restored_session_renders_messages_after_mixed_system_and_error_en
         MessageRecord {
             message_type: MessageType::Error,
             message: Message {
-                role: crate::domain::types::Role::System,
+                role: augur_tui::domain::types::Role::System,
                 content: OutputText::new("[error] restore issue"),
-                timestamp: crate::domain::TimestampMs::now(),
+                timestamp: augur_tui::domain::newtypes::TimestampMs::now(),
                 tool_call_id: None,
                 tool_calls: None,
             },
         },
         MessageRecord {
             message_type: MessageType::User,
-            message: Message::user(crate::domain::string_newtypes::PromptText::new(
+            message: Message::user(augur_tui::domain::string_newtypes::PromptText::new(
                 "second user",
             )),
         },
@@ -452,41 +538,52 @@ async fn apply_restored_session_renders_messages_after_mixed_system_and_error_en
 /// Verifies restoring a session does not hydrate token totals from message history.
 #[tokio::test]
 async fn apply_restored_session_does_not_hydrate_token_totals() {
-    use crate::domain::types::ProjectTokenTotals;
-    use crate::persistence::types::SessionRecord;
+    use augur_domain::persistence::types::SessionRecord;
+    use augur_tui::domain::types::ProjectTokenTotals;
 
     let provider = SpyChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
 
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask,
             logger: &logger,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    let mut record = SessionRecord::new(EndpointName::new("ep"));
+    let mut record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     record.state.messages.push(MessageRecord {
-        message_type: crate::persistence::types::MessageType::Assistant,
+        message_type: augur_domain::persistence::types::MessageType::Assistant,
         message: Message::assistant(OutputText::new("hello")),
     });
 
@@ -504,36 +601,47 @@ async fn apply_restored_session_does_not_hydrate_token_totals() {
 async fn apply_restored_session_reports_endpoint_switch_failure() {
     let provider = SpyChatProvider::new();
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
     let (session_join, session) =
-        crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+        augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     session_join.abort();
     let _ = session_join.await;
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask,
             logger: &logger,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    let mut record = SessionRecord::new(EndpointName::new("other"));
+    let mut record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("other"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     record.state.messages.push(MessageRecord {
         message_type: MessageType::User,
         message: Message::user(PromptText::new("should not leak")),
@@ -575,14 +683,14 @@ fn render_main_panel_text(state: &mut AppState, secondary_view: Option<Secondary
         state.interaction.panel.agent_feed.current_agent_model = None;
     }
 
-    let display = crate::domain::tui_display_state::TuiDisplayState::project_from(state);
+    let display = augur_tui::domain::tui_display_state::TuiDisplayState::project_from(state);
     let mut terminal = Terminal::new(TestBackend::new(80, 12)).expect("terminal");
     terminal
         .draw(|frame| {
-            crate::tui::components::conversation_container::render_conversation_container(
+            augur_tui::tui::components::conversation_container::render_conversation_container(
                 frame,
                 &display,
-                crate::tui::layout::ConversationArea::full(Rect {
+                augur_tui::tui::layout::ConversationArea::full(Rect {
                     x: 0,
                     y: 0,
                     width: 80,

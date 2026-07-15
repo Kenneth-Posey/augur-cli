@@ -26,8 +26,9 @@ use augur_core::tools::builtin::{
 };
 use augur_core::tools::registry::ToolRegistry;
 use augur_domain::config::install_path::{effective_repo_root, resolve_install_path};
+use augur_domain::config::provider_catalog::openrouter_tool_to_definition;
 use augur_domain::config::provider_catalog::{default_provider_catalog_dir, load_provider_catalog};
-use augur_domain::config::types::{AppConfig, ProgramSettings};
+use augur_domain::config::types::{AppConfig, ProgramSettings, Provider, find_endpoint};
 use augur_domain::domain::StringNewtype;
 use augur_domain::domain::channels::{
     AGENT_FEED_CAPACITY, AGENT_OUTPUT_CAPACITY, HISTORY_FEED_CAPACITY, QUERY_USER_CHANNEL_CAPACITY,
@@ -35,6 +36,7 @@ use augur_domain::domain::channels::{
 };
 use augur_domain::domain::feeds::HistoryFeedMessage;
 use augur_domain::domain::newtypes::TimestampSecs;
+use augur_domain::domain::string_newtypes::ModelId;
 use augur_domain::domain::task_types::{
     AgentSpecName, InstructionPrefix, RepoRoot, SpawnAgentRequest,
 };
@@ -44,6 +46,7 @@ use augur_provider_openrouter::actors::openrouter_orchestrator::openrouter_orche
     OpenRouterOrchestratorArgs, OrchestratorIoChannels, OrchestratorRuntimeHandles,
     OrchestratorTaskConfig,
 };
+use augur_provider_openrouter::model_config::resolve_model_config;
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -250,6 +253,24 @@ pub fn build_registry(args: BuildRegistryArgs) -> ToolRegistry {
         );
         registry.register(TaskStatusTool::builder().orchestrator(orchestrator).build());
     }
+    // Load provider-declared tools from the OpenRouter provider catalog and
+    // register them as definition-only tools. These have no local handler;
+    // they are advertised so the LLM knows it can call them and OpenRouter
+    // will handle them server-side.
+    if let Some(ref or_config) = load_provider_catalog(
+        &default_provider_catalog_dir(),
+        augur_domain::config::types::Provider::OpenRouter,
+    )
+    .ok()
+    .flatten()
+    .and_then(|catalog| catalog.openrouter)
+    {
+        for tool_cfg in &or_config.tools {
+            let definition = openrouter_tool_to_definition(tool_cfg);
+            registry.register_definition_only(definition);
+        }
+    }
+
     if let Some(lsp_handle) = optional.lsp {
         registry.register(LspQueryTool::new(lsp_handle));
     }
@@ -542,6 +563,7 @@ fn spawn_openrouter_runtime(input: OpenRouterRuntimeInput) -> OpenRouterRuntimeW
             .tool_executor(tool_executor)
             .feed_tx(openrouter_feed_tx)
             .repo_root(repo_root)
+            .default_model_config(resolve_default_model_config(&config))
             .build(),
     );
     spawn_openrouter_spawn_agent_bridge(spawn_agent_rx, openrouter_orchestrator_handle.clone());
@@ -576,6 +598,7 @@ struct SpawnOpenRouterOrchestratorArgs<'a> {
     tool_executor: InlineToolExecutor,
     feed_tx: mpsc::Sender<augur_domain::domain::types::FeedEntry>,
     repo_root: RepoRoot,
+    default_model_config: augur_provider_openrouter::model_config::ResolvedModelConfig,
 }
 
 fn spawn_openrouter_orchestrator(
@@ -589,8 +612,15 @@ fn spawn_openrouter_orchestrator(
         tool_executor,
         feed_tx,
         repo_root,
+        default_model_config,
     } = args;
-    let instruction_prefix = load_openrouter_background_instruction_prefix(repo_root.as_ref());
+    let instruction_prefix = {
+        let provider = find_endpoint(config, &config.default_endpoint).map(|ep| &ep.provider);
+        match provider {
+            Some(p) => load_background_instruction_prefix_for_provider(p, repo_root.as_ref()),
+            None => load_openrouter_background_instruction_prefix(repo_root.as_ref()),
+        }
+    };
     let (_join, handle) =
         augur_provider_openrouter::actors::openrouter_orchestrator::openrouter_orchestrator_actor::spawn(
             OpenRouterOrchestratorArgs::builder()
@@ -608,6 +638,7 @@ fn spawn_openrouter_orchestrator(
                         .instruction_prefix(std::sync::Arc::new(instruction_prefix))
                         .repo_root(repo_root)
                         .max_parallel_workers(4)
+                        .default_model_config(default_model_config)
                         .build(),
                 )
                 .build(),
@@ -615,8 +646,18 @@ fn spawn_openrouter_orchestrator(
     handle
 }
 
-fn load_openrouter_background_instruction_prefix(repo_root: &str) -> InstructionPrefix {
-    let files = match load_background_instruction_file_list() {
+/// Load the background instruction prefix for any provider from the provider catalog.
+///
+/// Pulls the top-level `background_instruction_files` (falling back to
+/// `instruction_files` if the background list is empty) from the provider's
+/// catalog YAML and loads each file as a `Message` wrapped in an
+/// `InstructionPrefix`. Returns an empty `InstructionPrefix` when the catalog
+/// does not exist or no files are configured.
+pub fn load_background_instruction_prefix_for_provider(
+    provider: &Provider,
+    repo_root: &str,
+) -> InstructionPrefix {
+    let files = match load_background_instruction_file_list_for_provider(provider) {
         Some(files) => files,
         None => return InstructionPrefix(vec![]),
     };
@@ -626,20 +667,40 @@ fn load_openrouter_background_instruction_prefix(repo_root: &str) -> Instruction
     InstructionPrefix(load_background_instruction_messages(&files, repo_root))
 }
 
-fn load_background_instruction_file_list() -> Option<Vec<String>> {
+/// Load the list of background instruction files for any provider from the
+/// provider catalog.
+///
+/// Uses the top-level `background_instruction_files` field, falling back to
+/// `instruction_files` if the background list is empty. Returns `None` when
+/// the catalog file does not exist or cannot be parsed.
+pub fn load_background_instruction_file_list_for_provider(
+    provider: &Provider,
+) -> Option<Vec<String>> {
     let catalog_dir = default_provider_catalog_dir();
-    let catalog = load_provider_catalog(
-        &catalog_dir,
-        augur_domain::config::types::Provider::OpenRouter,
-    )
-    .ok()
-    .flatten()?;
-    let openrouter = catalog.openrouter?;
-    if openrouter.background_instruction_files.is_empty() {
-        Some(openrouter.instruction_files)
+    let catalog = load_provider_catalog(&catalog_dir, (*provider).clone())
+        .ok()
+        .flatten()?;
+    if catalog.background_instruction_files.is_empty() {
+        if catalog.instruction_files.is_empty() {
+            None
+        } else {
+            Some(catalog.instruction_files)
+        }
     } else {
-        Some(openrouter.background_instruction_files)
+        Some(catalog.background_instruction_files)
     }
+}
+
+/// Load the OpenRouter background instruction prefix from the provider catalog.
+///
+/// Delegates to [`load_background_instruction_prefix_for_provider`] with
+/// [`Provider::OpenRouter`].
+#[allow(dead_code)]
+fn load_openrouter_background_instruction_prefix(repo_root: &str) -> InstructionPrefix {
+    load_background_instruction_prefix_for_provider(
+        &augur_domain::config::types::Provider::OpenRouter,
+        repo_root,
+    )
 }
 
 fn load_background_instruction_messages(files: &[String], repo_root: &str) -> Vec<Message> {
@@ -745,6 +806,24 @@ fn spawn_history_logging_pipeline(logger_handle: &actors::LoggerHandle) -> Histo
     history_adapter_handle
 }
 
+/// Resolve the pre-resolved model config for the default endpoint from the
+/// provider catalog config files.
+///
+/// This mirrors the identical logic in `domain.rs::spawn_agent_runtime` to
+/// ensure background agents use the same configured limits as the main
+/// conversation. The resolved config is injected into `OrchestratorTaskConfig`
+/// at wiring time so every spawned background task inherits the provider-catalog
+/// values instead of falling back to hardcoded defaults.
+fn resolve_default_model_config(
+    config: &AppConfig,
+) -> augur_provider_openrouter::model_config::ResolvedModelConfig {
+    let default_endpoint_config = find_endpoint(config, &config.default_endpoint);
+    let default_model_id = default_endpoint_config.map(|ep| {
+        let model_name: &str = &ep.model;
+        ModelId::new(model_name)
+    });
+    resolve_model_config(default_model_id.as_ref())
+}
 fn allowed_dirs(config: &AppConfig) -> Vec<std::path::PathBuf> {
     config
         .agent
@@ -789,7 +868,8 @@ fn spawn_token_tracker() -> (TaskJoin, actors::TokenTrackerHandle) {
 }
 
 fn log_dir(config: &AppConfig) -> std::path::PathBuf {
-    let base = std::path::PathBuf::from(config.persistence.log_dir.as_str());
+    let base =
+        store::resolve_path_with_home(Some(config.persistence.log_dir.as_str()), ".augur-cli/logs");
     let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
     store::apply_repo_subdir(base, &cwd)
 }

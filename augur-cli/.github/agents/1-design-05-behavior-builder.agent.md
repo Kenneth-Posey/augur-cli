@@ -14,7 +14,7 @@ Document each externally observable behavior in Given/When/Then form with tracea
 
 ## Skills
 
-Invoke at start:
+Read at start:
 - `0-global-behavioral-specification` - Given/When/Then structure rules, atomicity requirements, completeness criteria, and worked examples
 
 ## Inputs
@@ -28,6 +28,8 @@ Invoke at start:
 - **Signal Tuple:** `(status, behavior_count, coverage_summary)` - status is `"complete"`
 
 ## Step-by-Step Behavior
+
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
 
 1. Load validated feature specification
 

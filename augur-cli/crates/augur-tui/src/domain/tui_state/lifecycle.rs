@@ -40,23 +40,10 @@ impl AppState {
                             .input_focus(InputFocus::Main)
                             .build(),
                     )
+                    .maybe_session_title(None::<OutputText>)
                     .build(),
             )
             .build()
-    }
-
-    /// Set the `guided_awaiting_compact` flag when entering guided-plan compact wait.
-    pub fn set_guided_plan_compact_flag(&mut self) {
-        if let ConversationMode::GuidedPlan(ref mut ui) = self.interaction.mode {
-            ui.guided_awaiting_compact = true.into();
-        }
-    }
-
-    /// Clear the `guided_awaiting_compact` flag after compaction completes.
-    pub fn clear_guided_plan_compact_flag(&mut self) {
-        if let ConversationMode::GuidedPlan(ref mut ui) = self.interaction.mode {
-            ui.guided_awaiting_compact = false.into();
-        }
     }
 
     /// Return `true` when any tracked agent feed is still active.
@@ -147,17 +134,6 @@ impl AppState {
         self.interaction.panel.agent_feed.buffers = buffers;
     }
 
-    /// Transition from plan mode to chat mode and return the plan state.
-    pub fn take_plan_state(&mut self) -> Option<PlanModeState> {
-        match std::mem::replace(&mut self.interaction.mode, ConversationMode::Chat) {
-            ConversationMode::Plan(ps) => Some(ps),
-            other => {
-                self.interaction.mode = other;
-                None
-            }
-        }
-    }
-
     /// Transition from session selector to conversation screen and return the picker state.
     pub fn take_picker_state(&mut self) -> Option<PickerState> {
         match std::mem::replace(&mut self.interaction.screen, AppScreen::Conversation) {
@@ -195,15 +171,6 @@ impl AppState {
         IsPredicate::from(matches!(self.interaction.mode, ConversationMode::Query(_)))
     }
 
-    /// Return `true` when guided-plan mode is currently waiting for compaction.
-    #[allow(dead_code)]
-    pub fn is_guided_plan_awaiting_compact(&self) -> IsPredicate {
-        IsPredicate::from(matches!(
-            &self.interaction.mode,
-            ConversationMode::GuidedPlan(ui) if ui.guided_awaiting_compact.into()
-        ))
-    }
-
     /// Reset visible state when starting a new conversation session.
     pub fn reset_for_new_session(&mut self) {
         self.output.lines.clear();
@@ -224,6 +191,7 @@ impl AppState {
         self.interaction.mode = ConversationMode::Chat;
         self.interaction.panel.ask_panel = None;
         self.interaction.panel.input_focus = InputFocus::Main;
+        self.interaction.session_title = None;
     }
 
     /// Drain the prompt buffer and return it as a `PromptText`.
@@ -275,20 +243,6 @@ impl AppState {
                 .inner()
                 .saturating_sub(rows.inner()),
         ));
-    }
-
-    /// Scroll the plan tree panel up by `lines` when in plan mode.
-    pub fn plan_scroll_up(&mut self, lines: Count) {
-        if let ConversationMode::Plan(ref mut ps) = self.interaction.mode {
-            ps.tree_scroll = ScrollOffset::of(ps.tree_scroll.inner().saturating_add(lines.inner()));
-        }
-    }
-
-    /// Scroll the plan tree panel down by `lines` when in plan mode, clamped to zero.
-    pub fn plan_scroll_down(&mut self, lines: Count) {
-        if let ConversationMode::Plan(ref mut ps) = self.interaction.mode {
-            ps.tree_scroll = ScrollOffset::of(ps.tree_scroll.inner().saturating_sub(lines.inner()));
-        }
     }
 
     /// Clamp `agent_feed.scroll` to valid bounds: [0, max_offset] where max_offset is

@@ -13,7 +13,7 @@ use crossterm::event::KeyEvent;
 /// is unavailable or returns an error (e.g., no X11 display, empty clipboard).
 ///
 /// Consumers: `handle_mouse_event` (right-click path), `dispatch_chat_key`
-/// (RequestPaste action), `handle_plan_mouse_scroll`.
+/// (RequestPaste action), and right-click handling.
 pub(crate) fn paste_from_clipboard(state: &mut AppState) {
     let text = arboard::Clipboard::new()
         .ok()
@@ -69,3 +69,6 @@ pub(crate) fn copy_selection_if_c_pressed(state: &mut AppState, key: KeyEvent) -
     state.output.selection = None;
     Some(())
 }
+#[cfg(test)]
+#[path = "../../../../tests/actors/tui/assistant/clipboard.tests.rs"]
+mod tests;

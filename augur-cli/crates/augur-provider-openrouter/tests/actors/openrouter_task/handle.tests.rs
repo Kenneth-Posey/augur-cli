@@ -79,6 +79,9 @@ async fn spawn_returns_cloneable_task_handle() {
                 .spec_base_path(RepoRoot::new(temp.path().display().to_string()))
                 .maybe_token_tracker(None)
                 .maybe_orchestrator(None)
+                .default_model_config(
+                    augur_provider_openrouter::model_config::fallback_default_model_config(),
+                )
                 .build(),
         )
         .build();

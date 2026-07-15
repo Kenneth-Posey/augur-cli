@@ -21,7 +21,10 @@ fn load_provider_catalog_parses_valid_yaml() {
             max_tool_iterations: Default::default(),
             compaction_target: Default::default(),
             auto_compact_threshold: Default::default(),
+            tool_response_cap: Default::default(),
         }],
+        instruction_files: Vec::new(),
+        background_instruction_files: Vec::new(),
         openrouter: None,
     };
     write_provider_catalog(dir.path(), &file).expect("write");

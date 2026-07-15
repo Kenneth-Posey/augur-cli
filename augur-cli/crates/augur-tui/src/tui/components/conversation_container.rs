@@ -13,7 +13,7 @@ use crate::tui::layout::{
 use augur_domain::domain::newtypes::Count;
 use ratatui::Frame;
 use ratatui::layout::Rect;
-use ratatui::style::Style;
+use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
 
@@ -27,14 +27,11 @@ const MIN_SECONDARY_PANE_COLS: u16 = 10;
 /// `conv_area.reference_width` is `Some`), then renders the primary column on the left,
 /// a 1-column gutter, and the secondary container on the right.
 ///
-/// Use [`ConversationArea::full`] in chat and query modes where `area` already spans
-/// the full terminal width.  Use [`ConversationArea::plan`] in plan mode after carving
-/// off the plan panel, so the secondary pane is sized as a percentage of the whole
-/// terminal rather than the already-reduced conversation zone.
+/// Use [`ConversationArea::full`] when `area` already spans the full terminal width.
 ///
 /// The thinking indicator row is rendered as part of the primary column (last row
 /// of the primary area).
-pub(crate) fn render_conversation_container(
+pub fn render_conversation_container(
     frame: &mut Frame,
     state: &TuiDisplayState,
     conv_area: ConversationArea,
@@ -79,14 +76,41 @@ pub(crate) fn render_primary_feed_only(frame: &mut Frame, state: &TuiDisplayStat
     render_primary_column(frame, state, area);
 }
 
-/// Render the primary feed column: scrollable output above the thinking row.
+/// Render the primary feed column: session title header, scrollable output above the thinking row.
 ///
-/// The last row of `area` is reserved for the thinking spinner. The second-to-last
-/// row is a blank spacing row. All rows above are the scrollable output pane.
+/// When `state.interaction.session_title` is `Some`, the first row of `area` is reserved for
+/// the session title header (dimmed, centered text). The last row of `area` is reserved for the
+/// thinking spinner, and the second-to-last row is a blank spacing row. All remaining rows
+/// between the title and the blank spacer are the scrollable output pane.
 fn render_primary_column(frame: &mut Frame, state: &TuiDisplayState, area: Rect) {
-    let (output_area, thinking_area) = split_output_thinking(area);
+    let (title_area, remaining) = split_title_area(state, area);
+    if let Some(title) = &state.interaction.session_title {
+        let dimmed = Paragraph::new(ratatui::text::Text::from(title.to_string()))
+            .style(Style::default().add_modifier(Modifier::DIM));
+        frame.render_widget(dimmed, title_area);
+    }
+    let (output_area, thinking_area) = split_output_thinking(remaining);
     render_output(frame, state, output_area);
     render_thinking(frame, state, thinking_area);
+}
+
+/// Split `area` into an optional one-row title area and the remaining space.
+///
+/// When `session_title` is `None`, the title area has zero height and `remaining` is `area`
+/// unchanged. When `session_title` is `Some`, the top row of `area` is the title row and
+/// `remaining` starts one row below.
+fn split_title_area(state: &TuiDisplayState, area: Rect) -> (Rect, Rect) {
+    if state.interaction.session_title.is_some() && area.height > 0 {
+        let title_rect = Rect { height: 1, ..area };
+        let remaining = Rect {
+            y: area.y + 1,
+            height: area.height.saturating_sub(1),
+            ..area
+        };
+        (title_rect, remaining)
+    } else {
+        (Rect { height: 0, ..area }, area)
+    }
 }
 
 /// Render the vertical gutter separator between the primary and secondary panes.

@@ -18,8 +18,7 @@ fn llm_ops_are_owned_by_provider_shared_request_context() {
             .exists()
     );
     assert!(
-        root
-            .join("crates/augur-provider-shared/src/request_context.rs")
+        root.join("crates/augur-provider-shared/src/request_context.rs")
             .exists()
     );
 }

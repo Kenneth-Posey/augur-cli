@@ -6,6 +6,7 @@ Source tree, test layout, path rules: [`.github/local/directories.md`](local/dir
 Commit policy, TDD rules, definition of done: [`.github/local/rules.md`](local/rules.md)
 Language-specific skill routing: [`.github/local/language-companions.md`](local/language-companions.md)
 Detailed agent-routing guidance: [`.github/routing.md`](routing.md)
+Workflow prompts catalog and trigger guide: [`.github/local/prompts-guide.md`](local/prompts-guide.md)
 
 ## Always-On Rules
 
@@ -14,11 +15,11 @@ Detailed agent-routing guidance: [`.github/routing.md`](routing.md)
   `logs/`. Summarize before carrying findings forward. See
   `.github/local/rules.md` `## Tool Output and Context Discipline` for the
   full rules.
-- Use `size-check` for broad `rg`/`grep`/`find`/recursive `ls` and large file
+- Use `size-check` before all broad `rg`/`grep`/`find`/recursive `ls` and large file
   reads when available so command scope can be filtered, paginated, or split
   before high-volume output is requested.
 - Never use em dash characters or long hyphens; use a regular hyphen (`-`) instead.
-- Never mention github copilot in the commit message or code comments.
+- Never mention github copilot or other agents in the commit message or code comments.
 
 ## Orchestration Entry Guidance
 

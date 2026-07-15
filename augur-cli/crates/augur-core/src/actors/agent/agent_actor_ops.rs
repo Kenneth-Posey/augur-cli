@@ -115,6 +115,20 @@ fn compact_history(
     ))));
 }
 
+/// Seed conversation history with the instruction prefix (seed files) at
+/// agent startup or after `/new-session`. Pushes each prefix message into
+/// both the conversation and OpenRouter context histories so the seed files
+/// (PROMPT.md, MAIN_PROMPT.md, etc.) are visible in the conversation,
+/// persisted, and independent of the LLM request injection path.
+fn seed_history_from_prefix(
+    history: &mut ConversationHistory,
+    prefix: Option<&augur_domain::domain::task_types::InstructionPrefix>,
+) {
+    let Some(p) = prefix else { return };
+    for msg in &p.0 {
+        history.push(msg.clone());
+    }
+}
 /// Main actor receive loop.
 pub(super) async fn run_loop<L: LlmClient, T: ToolExecutor>(
     pipes: &mut RunPipes,
@@ -128,6 +142,13 @@ pub(super) async fn run_loop<L: LlmClient, T: ToolExecutor>(
         selected_model: None,
         last_endpoint: None,
     };
+    // Seed the conversation with the instruction prefix (PROMPT.md,
+    // MAIN_PROMPT.md) so seed files are in the conversation history,
+    // visible to the user, persisted, and not LLM-request-dependent.
+    seed_history_from_prefix(
+        &mut run_state.history,
+        args.runtime.extensions.instruction_prefix.as_deref(),
+    );
 
     while let Some(cmd) = pipes.cmd_rx.recv().await {
         match cmd {
@@ -155,6 +176,11 @@ pub(super) async fn run_loop<L: LlmClient, T: ToolExecutor>(
                     &mut run_state.history,
                     &mut run_state.error_annotations,
                     &extended_prompt,
+                );
+                // Re-seed the fresh history with the instruction prefix.
+                seed_history_from_prefix(
+                    &mut run_state.history,
+                    args.runtime.extensions.instruction_prefix.as_deref(),
                 );
             }
             AgentCommand::Compact => {
@@ -246,6 +272,7 @@ pub(super) async fn run_submit_turn<L: LlmClient, T: ToolExecutor>(
         app_config: actor_args.runtime.app_config.clone(),
         max_context_length: actor_args.runtime.max_context_length,
         request_cap_threshold: actor_args.runtime.request_cap_threshold,
+        tool_response_cap: actor_args.runtime.tool_response_cap,
     };
     let actors_cache = actor_args
         .runtime
@@ -253,10 +280,9 @@ pub(super) async fn run_submit_turn<L: LlmClient, T: ToolExecutor>(
         .cache
         .as_ref()
         .and_then(|h| h.0.downcast_ref::<CacheHandle>());
-    let prefix = actor_args.runtime.extensions.instruction_prefix.as_deref();
     let ext = super::assistant_core::TurnExtensions {
         cache: actors_cache,
-        instruction_prefix: prefix,
+        compactor: actor_args.runtime.extensions.message_compactor.as_ref(),
     };
     let ctx = super::assistant_core::TurnContext::builder()
         .llm(&actor_args.llm)
@@ -307,7 +333,21 @@ pub(super) async fn finalize_turn<L: LlmClient, T: ToolExecutor>(args: FinalizeT
         .persistence
         .save_turn(endpoint.clone(), records)
         .await;
-    let new_messages = history.messages()[len_before..].to_vec();
+    // Clamp len_before to the current message count so compaction during the
+    // turn does not cause an out-of-bounds panic on the history slice.
+    let msg_count = history.messages().len();
+    let safe_before = if len_before > msg_count {
+        tracing::warn!(
+            event = "finalize_turn_len_before_clamped",
+            len_before,
+            msg_count,
+            action = "compaction_reduced_history",
+        );
+        msg_count
+    } else {
+        len_before
+    };
+    let new_messages = history.messages()[safe_before..].to_vec();
     for msg in &new_messages {
         match msg.role {
             augur_domain::domain::types::Role::User | augur_domain::domain::types::Role::Tool => {

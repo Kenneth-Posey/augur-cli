@@ -2,9 +2,11 @@
 
 use crate::tools::handler::{ToolCallResult, ToolHandler};
 use crate::tools::ports::is_within_allowed_dirs;
-use augur_domain::domain::newtypes::{IsPredicate, NumericNewtype};
+use augur_domain::domain::TokenCount;
+use augur_domain::domain::newtypes::{
+    ByteCount, CurrentDepth, FileCount, IsPredicate, MaxDepth, NumericNewtype,
+};
 use augur_domain::domain::string_newtypes::{FilePath, OutputText, StringNewtype, ToolName};
-use augur_domain::domain::{ByteCount, TokenCount};
 use augur_domain::tools::definition::ToolDefinition;
 use serde::{Deserialize, Serialize};
 use std::ffi::OsString;
@@ -265,11 +267,11 @@ pub fn check_size_with_scope(
     let estimated_tokens = estimate_tokens(probe.byte_count);
     Ok(SizeCheckResponse::builder()
         .path(FilePath::new(canonical_path.to_string_lossy().to_string()))
-        .byte_count(ByteCount::from(probe.byte_count))
+        .byte_count(probe.byte_count)
         .counts(
             SizeCheckCounts::builder()
                 .maybe_line_count(probe.line_count)
-                .maybe_file_count(probe.file_count)
+                .maybe_file_count(probe.file_count.map(|c| c.inner()))
                 .build(),
         )
         .estimated_tokens(estimated_tokens)
@@ -279,9 +281,9 @@ pub fn check_size_with_scope(
 
 #[derive(Clone, Copy, Debug, bon::Builder)]
 struct ProbeResult {
-    byte_count: u64,
+    byte_count: ByteCount,
     line_count: Option<u64>,
-    file_count: Option<u64>,
+    file_count: Option<FileCount>,
 }
 
 #[derive(Clone, Copy, Debug, bon::Builder)]
@@ -302,7 +304,7 @@ fn size_probe(
             let (byte_count, line_count) =
                 execute_read_only_command(command, canonical_path, options.filter_pattern)?;
             Ok(ProbeResult::builder()
-                .byte_count(byte_count)
+                .byte_count(ByteCount::from(byte_count))
                 .maybe_line_count(Some(line_count))
                 .build())
         }
@@ -310,7 +312,7 @@ fn size_probe(
             if canonical_path.is_file() {
                 let (byte_count, line_count) = check_file_size(canonical_path)?;
                 return Ok(ProbeResult::builder()
-                    .byte_count(byte_count)
+                    .byte_count(ByteCount::from(byte_count))
                     .maybe_line_count(line_count)
                     .build());
             }
@@ -372,27 +374,27 @@ fn check_dir_size(
     path: &Path,
     max_depth: Option<u32>,
     exclusions: ExclusionConfig<'_>,
-) -> Result<(u64, u64), SizeCheckError> {
+) -> Result<(ByteCount, FileCount), SizeCheckError> {
     let mut totals = DirectoryTotals::default();
     let mut traversal = DirectoryTraversal::builder()
-        .max_depth(max_depth.unwrap_or(DEFAULT_MAX_DEPTH))
+        .max_depth(MaxDepth::of(max_depth.unwrap_or(DEFAULT_MAX_DEPTH)))
         .totals(&mut totals)
         .excluded_dirs(exclusions.excluded_dirs)
         .excluded_dir_names(exclusions.excluded_dir_names)
         .build();
-    walk_dir_recursive(path, 0, &mut traversal)?;
+    walk_dir_recursive(path, CurrentDepth::of(0), &mut traversal)?;
     Ok((totals.total_bytes, totals.file_count))
 }
 
 #[derive(Default)]
 struct DirectoryTotals {
-    total_bytes: u64,
-    file_count: u64,
+    total_bytes: ByteCount,
+    file_count: FileCount,
 }
 
 #[derive(bon::Builder)]
 struct DirectoryTraversal<'a> {
-    max_depth: u32,
+    max_depth: MaxDepth,
     totals: &'a mut DirectoryTotals,
     excluded_dirs: &'a [PathBuf],
     excluded_dir_names: &'a [OsString],
@@ -400,10 +402,10 @@ struct DirectoryTraversal<'a> {
 
 fn walk_dir_recursive(
     dir: &Path,
-    current_depth: u32,
+    current_depth: CurrentDepth,
     traversal: &mut DirectoryTraversal<'_>,
 ) -> Result<(), SizeCheckError> {
-    if current_depth >= traversal.max_depth {
+    if *current_depth >= *traversal.max_depth {
         return Ok(());
     }
     for entry_result in std::fs::read_dir(dir).map_err(SizeCheckError::from)? {
@@ -418,13 +420,15 @@ fn walk_dir_recursive(
         }
         if path.is_file() {
             if let Ok(metadata) = std::fs::metadata(&path) {
-                traversal.totals.total_bytes += metadata.len();
-                traversal.totals.file_count += 1;
+                traversal.totals.total_bytes =
+                    ByteCount::new(traversal.totals.total_bytes.inner() + metadata.len());
+                traversal.totals.file_count =
+                    FileCount::new(traversal.totals.file_count.inner() + 1);
             }
             continue;
         }
         if path.is_dir() {
-            let _ = walk_dir_recursive(&path, current_depth + 1, traversal);
+            let _ = walk_dir_recursive(&path, current_depth + CurrentDepth::of(1), traversal);
         }
     }
     Ok(())
@@ -537,8 +541,8 @@ fn sanitize_command_arg(arg: &str) -> Result<(), SizeCheckError> {
     Ok(())
 }
 
-fn estimate_tokens(byte_count: u64) -> TokenCount {
-    TokenCount::from(byte_count / 4)
+fn estimate_tokens(byte_count: ByteCount) -> TokenCount {
+    TokenCount::from(*byte_count / 4)
 }
 
 fn recommendation_for_tokens(estimated_tokens: u64) -> RecommendationType {

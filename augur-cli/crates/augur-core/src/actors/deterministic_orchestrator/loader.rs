@@ -4,10 +4,11 @@ use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::domain::deterministic_orchestrator::WorkflowDocument;
+use crate::domain::deterministic_orchestrator::{AgentRegistryEntry, WorkflowDocument};
 use crate::domain::deterministic_orchestrator_ops::{
     LocalWorkflowPresence, LocalWorkflowSourceAction, decide_local_workflow_source_action,
 };
+use augur_domain::domain::{AgentName, FilePath as DomainFilePath};
 
 /// Canonical workflow seed source copied only when the local file is missing.
 pub const CANONICAL_PLAN_EXECUTION_PATH: &str = ".github/plan_execution.yml";
@@ -143,4 +144,78 @@ fn nearest_existing_ancestor(candidate_path: &Path) -> Option<&Path> {
     }
 
     None
+}
+use std::collections::BTreeMap;
+
+/// In-memory library of pre-loaded agent instruction text from `.agent.md` files.
+///
+/// Built once during pipeline start by reading each file path declared in the
+/// workflow document's `agent_registry`. If a file cannot be read, that agent
+/// is silently omitted from the library (the prompt will not include instructions
+/// for that agent, but dispatch will still proceed).
+#[derive(Clone, Debug, Default)]
+pub struct AgentInstructionLibrary {
+    instructions: BTreeMap<AgentName, String>,
+}
+
+impl AgentInstructionLibrary {
+    /// Returns the instruction text for a named agent, if present.
+    pub fn get(&self, name: &AgentName) -> Option<&str> {
+        self.instructions.get(name).map(String::as_str)
+    }
+
+    /// Returns `true` if the library contains instructions for the given agent.
+    pub fn contains(&self, name: &AgentName) -> bool {
+        self.instructions.contains_key(name)
+    }
+}
+
+/// Loads agent instruction files from the workflow document's `agent_registry`.
+///
+/// Inputs:
+/// - `repo_root`: repository root used to resolve relative agent file paths.
+/// - `document`: parsed workflow document containing the `agent_registry`.
+///
+/// Returns:
+/// - `AgentInstructionLibrary` populated with instruction text for each agent
+///   whose `.agent.md` file could be read. Agents whose files are unreadable
+///   are silently skipped.
+///
+/// Side effects:
+/// - Reads each `.agent.md` file declared in the registry from disk.
+pub fn load_agent_instructions(
+    repo_root: &Path,
+    document: &WorkflowDocument,
+) -> AgentInstructionLibrary {
+    let mut instructions = BTreeMap::new();
+
+    for (agent_name, entry) in &document.agent_registry {
+        let agent_path = contained_agent_path(repo_root, &entry.path);
+        match agent_path.and_then(|p| fs::read_to_string(p).ok()) {
+            Some(content) => {
+                instructions.insert(agent_name.clone(), content);
+            }
+            None => {
+                tracing::warn!(
+                    agent = %agent_name,
+                    path = %entry.path,
+                    "failed to load agent instruction file - continuing without instructions",
+                );
+            }
+        }
+    }
+
+    AgentInstructionLibrary { instructions }
+}
+
+/// Resolves an agent file path relative to the repo root, verifying containment.
+fn contained_agent_path(repo_root: &Path, agent_path: &DomainFilePath) -> Option<PathBuf> {
+    let canonical_root = fs::canonicalize(repo_root).ok()?;
+    let candidate = canonical_root.join(agent_path.to_string());
+    let canonical_candidate = fs::canonicalize(&candidate).ok()?;
+    if canonical_candidate.starts_with(&canonical_root) {
+        Some(canonical_candidate)
+    } else {
+        None
+    }
 }

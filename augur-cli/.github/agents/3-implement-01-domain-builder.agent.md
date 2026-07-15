@@ -19,7 +19,7 @@ transport, or infrastructure concerns.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-typestate` - lifecycle and state-transition encoding guidance
 2. `3-implement-domain-implementation` - language-neutral Stage 3 domain
    implementation patterns
@@ -46,7 +46,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-typestate` and `3-implement-domain-implementation`. Read
+1. Read `0-global-typestate` and `3-implement-domain-implementation`. Read
    `../local/language-companions.md` for the language companion and
    `../local/directories.md` for output placement rules.
 2. Parse the domain specification into entities, value objects, aggregates,

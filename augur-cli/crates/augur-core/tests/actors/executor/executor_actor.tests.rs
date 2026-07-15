@@ -17,7 +17,9 @@ fn executor_actor_coverage_is_hosted_in_provider_bucket() {
             .exists()
     );
     assert!(
-        repo.join("crates/augur-provider-copilot-sdk/tests/actors/executor/executor_actor.tests.rs")
-            .exists()
+        repo.join(
+            "crates/augur-provider-copilot-sdk/tests/actors/executor/executor_actor.tests.rs"
+        )
+        .exists()
     );
 }

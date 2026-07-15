@@ -14,9 +14,9 @@ Read-only: generate a report only. Do not apply fixes or run git commands. If gi
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-tdd-workflow` - for the rule set and mapping logic.
-2. Read [`.github/local/language-companions.md`](../local/language-companions.md) and invoke the language-specific `4-review-type-validation` companion for standards and diagnostics mapping.
+2. Read [`.github/local/language-companions.md`](../local/language-companions.md) and read the language-specific `4-review-type-validation` companion for standards and diagnostics mapping.
 3. `0-global-documentation-standards` - when findings touch Rustdoc or `docs/` structure.
 4. `0-global-dependency-adoption` - when findings touch dependency selection or
     dependency placement.
@@ -42,7 +42,7 @@ Example mappings:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-tdd-workflow`. Read [`.github/local/language-companions.md`](../local/language-companions.md) and invoke the language-specific `4-review-type-validation` companion. Also invoke `0-global-documentation-standards` for Rustdoc or `docs/` findings and `0-global-dependency-adoption` for dependency-selection or placement findings.
+1. Read `0-global-tdd-workflow`. Read [`.github/local/language-companions.md`](../local/language-companions.md) and read the language-specific `4-review-type-validation` companion. Also read `0-global-documentation-standards` for Rustdoc or `docs/` findings and `0-global-dependency-adoption` for dependency-selection or placement findings.
 2. Run the **cargo-diagnostics pipeline** to collect structured findings:
    ```sh
    mkdir -p reports

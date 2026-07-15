@@ -31,9 +31,6 @@ mod layout_tests;
 #[path = "picker.tests.rs"]
 mod picker_tests;
 
-#[path = "plan_panel.tests.rs"]
-mod plan_panel_tests;
-
 #[path = "query.tests.rs"]
 mod query_tests;
 

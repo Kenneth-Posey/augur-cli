@@ -6,58 +6,76 @@ description: >
   report layer-ordering violations against a policy file.
 ---
 
-# run.sh
+# module-graph
+
+## When to use
+
+Use this skill when you need to analyze module-level import dependencies,
+detect cycles, verify layer-ordering policy compliance, or produce a directed
+dependency graph for architecture review.
 
 ## Purpose
 
-Analyze Rust module dependencies by parsing imports, building a directed graph,
-detecting cycles, and checking layer-ordering violations against a policy file.
-
-## Development Build
-
-Only needed when modifying the tool source in this directory.
-
-```bash
-cd .github/skills/0-external-module-graph
-cargo build --release
-```
+Analyze Rust module dependencies by parsing `use crate::X` imports, building a
+directed module dependency graph, detecting cycles, and checking layer-ordering
+violations against a policy file. The tool supports layered policy enforcement
+with optional baseline comparison for tracking graph changes over time.
 
 ## Run
 
 ```bash
-.github/skills/0-external-module-graph/run.sh [<repo-relative-rust-path>] [--format <format>] [--output <file>] [--layers] [--no-violations] [--config <yaml>] [--baseline-json <file>]
+.github/skills/0-external-module-graph/run.sh [<src>] [--format <format>] [--output <file>] [--layers] [--no-violations] [--config <yaml>] [--baseline-json <file>]
 ```
 
-## Usage
+## Arguments
 
-- `[<repo-relative-rust-path>]` - Repository-relative Rust path to analyze (default: repository Rust source root)
-- `--format <format>` - Output format: `text` | `dot` | `json` (default: `text`)
-- `--output <file>` - Write output to file instead of stdout (optional)
-- `--layers` - Include layer assignment table in text output (optional)
-- `--no-violations` - Skip violation checks; emit graph structure only (optional)
+- `<src>` - Path to the Rust `src/` directory to analyze (default: `src`)
+- `--format <format>` - Output format (default: `text`). Supported values: `text`, `dot`, `json`
+- `--output <file>` - Write output to this file instead of stdout
+- `--layers` - Include the layer assignment table in text output
+- `--no-violations` - Skip violation checks; emit graph structure only
 - `--config <yaml>` - Path to YAML layer-policy override file (default: `config/layers.yaml`)
-- `--baseline-json <file>` - Path to baseline JSON from previous run for edge-diff output (optional)
+- `--baseline-json <file>` - Path to baseline JSON from previous run. When supplied, the JSON output includes an added/removed edge diff section
 
-Prefer `--format json` for model-facing or summary-driven runs. Use `text`
-or `dot` only when those specific representations are needed.
+## Output
+
+The tool emits its result in one of three formats depending on `--format`:
+- **text** - Human-readable directed graph representation with optional layer
+  assignment table (when `--layers` is given) and violation report (when
+  `--no-violations` is not set).
+- **dot** - Graphviz DOT format suitable for rendering with `dot` or other
+  graph visualization tools.
+- **json** - Structured JSON with nodes, edges, cycles, violations, and an
+  optional edge diff section (when `--baseline-json` is supplied).
+
+Exit code `0` indicates success (no errors during analysis). A non-zero exit
+code indicates a tool-level error.
 
 ## Examples
 
 ```bash
-# Generate graph in text format with violations check
-.github/skills/0-external-module-graph/run.sh <repo-relative-rust-path> --format text
+# Analyze default src/ directory with text output and violation checks
+.github/skills/0-external-module-graph/run.sh
 
-# Generate graph as Graphviz DOT for visualization
-.github/skills/0-external-module-graph/run.sh <repo-relative-rust-path> --format dot --output graph.dot
+# Analyze specific source tree in text format
+.github/skills/0-external-module-graph/run.sh src --format text
+
+# Generate Graphviz DOT output for visualization
+.github/skills/0-external-module-graph/run.sh src --format dot --output graph.dot
 
 # Generate JSON output with layer assignments
-.github/skills/0-external-module-graph/run.sh <repo-relative-rust-path> --format json --layers
+.github/skills/0-external-module-graph/run.sh src --format json --layers
 
-# Generate with custom policy and compare to baseline
-.github/skills/0-external-module-graph/run.sh <repo-relative-rust-path> --config custom-layers.yaml --baseline-json previous-graph.json
+# Skip violation checks; emit graph structure only
+.github/skills/0-external-module-graph/run.sh src --no-violations
+
+# Use custom layer policy and compare against a baseline
+.github/skills/0-external-module-graph/run.sh src --config custom-layers.yaml --baseline-json previous-graph.json
 ```
 
 ## Key Files
 
-- `run.sh` - Canonical wrapper for graph analysis runs
-- `config/layers.yaml` - Default layer policy configuration
+- `.github/skills/0-external-module-graph/SKILL.md` - This documentation file
+- `.github/skills/0-external-module-graph/run.sh` - Canonical wrapper for graph analysis runs
+- `.github/skills/0-external-module-graph/config/layers.yaml` - Default layer policy configuration
+- `.github/skills/0-external-module-graph/README.md` - Brief entry-point README

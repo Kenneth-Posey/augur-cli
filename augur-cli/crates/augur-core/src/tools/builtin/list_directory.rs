@@ -6,7 +6,7 @@
 
 use crate::tools::handler::{ToolCallResult, ToolHandler};
 use crate::tools::ports::is_within_allowed_dirs;
-use augur_domain::domain::string_newtypes::{OutputText, StringNewtype, ToolName};
+use augur_domain::domain::string_newtypes::{FilePath, OutputText, StringNewtype, ToolName};
 use augur_domain::tools::definition::ToolDefinition;
 use std::path::{Path, PathBuf};
 
@@ -75,7 +75,7 @@ struct CollectEnvironment<'a> {
 
 #[derive(Clone)]
 struct ExecuteRequest {
-    path: String,
+    path: FilePath,
     recursive: bool,
 }
 
@@ -116,7 +116,7 @@ fn execute_listing(
     args: serde_json::Value,
 ) -> Result<String, OutputText> {
     let request = parse_execute_request(args)?;
-    let canonical = resolve_allowed_path(Path::new(&request.path), &tool.allowed_dirs)?;
+    let canonical = resolve_allowed_path(Path::new(request.path.as_str()), &tool.allowed_dirs)?;
     build_listing(
         &canonical,
         request.recursive,
@@ -131,7 +131,10 @@ fn execute_listing(
 fn parse_execute_request(args: serde_json::Value) -> Result<ExecuteRequest, OutputText> {
     let path = parse_path_argument(&args)?;
     let recursive = args["recursive"].as_bool().unwrap_or(false);
-    Ok(ExecuteRequest { path, recursive })
+    Ok(ExecuteRequest {
+        path: FilePath::new(path),
+        recursive,
+    })
 }
 
 fn parse_path_argument(args: &serde_json::Value) -> Result<String, OutputText> {

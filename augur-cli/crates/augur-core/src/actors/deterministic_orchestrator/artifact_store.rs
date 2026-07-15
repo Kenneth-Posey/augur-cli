@@ -1,33 +1,29 @@
 //! Artifact storage helpers for the deterministic orchestrator.
+//!
+//! The background agent is solely responsible for reading and writing artifact
+//! files via file tool calls (`file_read`, `file_create`, `file_replace`, etc.)
+//! in its own LLM conversation. The orchestrator only tracks whether declared
+//! artifact paths exist on disk -- it never reads or writes file content itself.
 
 use std::fmt;
-use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::fs;
 use std::path::{Component, Path, PathBuf};
 
-use crate::domain::deterministic_orchestrator::{
-    StepExecutionRecord, WorkflowArtifactRef, WorkflowStep,
-};
+use crate::domain::deterministic_orchestrator::WorkflowArtifactRef;
+use crate::domain::deterministic_orchestrator::WorkflowStep;
 use crate::domain::deterministic_orchestrator_ops::StepIndex;
 use augur_domain::domain::WorkflowStepId;
 use augur_domain::domain::string_newtypes::StringNewtype;
 
-/// Concrete artifact content resolved for a workflow step input.
+/// Existence marker for a workflow artifact.
+///
+/// Carried through the pipeline command channel solely to confirm that the
+/// background agent created the file. No file content is loaded into pipeline
+/// state -- the evaluator/reviewer agent reads content itself via `file_read`.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct ResolvedArtifact {
-    /// Typed workflow artifact reference.
+pub(crate) struct ArtifactExistence {
+    /// Typed workflow artifact reference that was confirmed to exist.
     pub(crate) artifact: WorkflowArtifactRef,
-    /// Resolved artifact contents.
-    pub(crate) content: String,
-}
-
-/// In-place artifact update payload for a workflow execution attempt.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct ArtifactUpdate {
-    /// Typed workflow artifact reference that should be updated.
-    pub(crate) artifact: WorkflowArtifactRef,
-    /// Replacement content that should be written in place.
-    pub(crate) content: String,
 }
 
 /// Errors produced by the deterministic orchestrator artifact store.
@@ -70,7 +66,7 @@ impl std::error::Error for ArtifactStoreError {
 /// contains no `/` at all (config-key references such as
 /// `"changelog_path_pattern"` or `"no-output"` never carry a directory
 /// separator). Real file paths always contain at least one `/`. Prose paths are
-/// skipped silently by `resolve_step_inputs`.
+/// skipped silently by methods that check artifact existence.
 fn is_prose_path(path: &str) -> bool {
     path.contains(' ') || (path.contains('<') && path.contains('>')) || !path.contains('/')
 }
@@ -235,107 +231,72 @@ impl StepArtifactResolver {
         }
     }
 
-    /// Resolves expected-input artifacts for a workflow step.
+    /// Checks that expected-input artifacts for a workflow step exist on disk.
     ///
-    /// Inputs that look like prose descriptions - strings containing a space, an
+    /// Inputs that look like prose descriptions -- strings containing a space, an
     /// unresolved `<…>` placeholder, or no `/` at all (e.g. bare config-key
-    /// references like `"changelog_path_pattern"`) - are silently skipped. Only
-    /// entries that look like real file paths are read from disk. Returns `Err`
-    /// only when a real-looking path fails to load.
-    pub(crate) fn resolve_step_inputs(
+    /// references like `"changelog_path_pattern"`) -- are silently skipped. Only
+    /// entries that look like real file paths are checked. Returns `Err` only
+    /// when a real-looking path fails to resolve (path traversal).
+    ///
+    /// The background agent reads the actual content via its own `file_read`
+    /// tool calls. The orchestrator only verifies the files exist.
+    pub(crate) fn verify_step_inputs_exist(
         &self,
         step: &WorkflowStep,
-    ) -> Result<Vec<ResolvedArtifact>, ArtifactStoreError> {
-        step.execution
-            .expected_inputs
-            .iter()
-            .filter(|artifact| !is_prose_path(artifact.path.as_str()))
-            .cloned()
-            .map(|artifact| self.resolve_artifact(artifact))
-            .collect()
-    }
-
-    /// Applies artifact updates without replacing file identity.
-    pub(crate) fn apply_in_place_artifact_updates(
-        &self,
-        execution: &StepExecutionRecord,
-        updates: &[ArtifactUpdate],
     ) -> Result<(), ArtifactStoreError> {
-        for update in updates {
-            let is_expected_update = execution
-                .updated_artifacts
-                .iter()
-                .any(|artifact| artifact == &update.artifact);
-
-            if !is_expected_update {
+        for artifact in &step.execution.expected_inputs {
+            if is_prose_path(artifact.path.as_str()) {
                 continue;
             }
-
-            self.write_update_in_place(update)?;
+            let path = self.artifact_path(artifact)?;
+            if !path.exists() {
+                tracing::warn!(
+                    step_id = %step.id,
+                    artifact = %artifact.path.as_str(),
+                    "declared input artifact does not exist on disk"
+                );
+            }
         }
-
         Ok(())
     }
 
-    /// Captures current artifact contents for the created-artifact set.
-    pub(crate) fn capture_artifact_updates(
+    /// Existence check for the created-artifact set.
+    ///
+    /// Returns an `ArtifactExistence` marker for each declared artifact that
+    /// exists on disk. The background agent writes artifacts via tool calls;
+    /// capture only confirms the file was created -- it never reads file content
+    /// into pipeline context. The reviewer/evaluator step reads content itself
+    /// via `file_read`. Absent files produce `None` entries which are filtered
+    /// out of the returned list.
+    pub(crate) fn capture_artifact_existence(
         &self,
         created_artifacts: &[WorkflowArtifactRef],
-    ) -> Vec<ArtifactUpdate> {
+    ) -> Vec<ArtifactExistence> {
         created_artifacts
             .iter()
-            .filter_map(|artifact| match self.capture_artifact_update(artifact) {
-                Ok(update) => update,
+            .filter_map(|artifact| match self.check_artifact_existence(artifact) {
+                Ok(Some(exists)) => Some(exists),
+                Ok(None) => None,
                 Err(error) => {
-                    tracing::warn!(error = %error, "failed to capture deterministic artifact update");
+                    tracing::warn!(error = %error, "failed to check artifact existence");
                     None
                 }
             })
             .collect()
     }
 
-    /// Resolves a single artifact reference into typed content.
-    fn resolve_artifact(
-        &self,
-        artifact: WorkflowArtifactRef,
-    ) -> Result<ResolvedArtifact, ArtifactStoreError> {
-        let path = self.artifact_path(&artifact)?;
-        let content = fs::read_to_string(path).map_err(ArtifactStoreError::Io)?;
-
-        Ok(ResolvedArtifact { artifact, content })
-    }
-
-    /// Writes one artifact update while preserving file identity when the file exists.
-    fn write_update_in_place(&self, update: &ArtifactUpdate) -> Result<(), ArtifactStoreError> {
-        let path = self.artifact_path(&update.artifact)?;
-
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).map_err(ArtifactStoreError::Io)?;
-        }
-
-        let mut file = OpenOptions::new()
-            .create(true)
-            .write(true)
-            .truncate(true)
-            .open(path)
-            .map_err(ArtifactStoreError::Io)?;
-
-        file.write_all(update.content.as_bytes())
-            .map_err(ArtifactStoreError::Io)
-    }
-
-    fn capture_artifact_update(
+    fn check_artifact_existence(
         &self,
         artifact: &WorkflowArtifactRef,
-    ) -> Result<Option<ArtifactUpdate>, ArtifactStoreError> {
+    ) -> Result<Option<ArtifactExistence>, ArtifactStoreError> {
         let artifact_path = self.artifact_path(artifact)?;
 
-        match fs::read_to_string(&artifact_path) {
-            Ok(content) => Ok(Some(ArtifactUpdate {
+        match artifact_path.try_exists() {
+            Ok(true) => Ok(Some(ArtifactExistence {
                 artifact: artifact.clone(),
-                content,
             })),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Ok(false) => Ok(None),
             Err(error) => Err(ArtifactStoreError::Io(error)),
         }
     }
@@ -378,10 +339,8 @@ impl StepArtifactResolver {
             if path.exists() {
                 return Some(path);
             }
-
             current = path.parent();
         }
-
         None
     }
 }

@@ -19,7 +19,7 @@ or other implementation code paths.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-orchestration-pipeline` - stage sequencing, agent firing contract,
    failure routing, and hard-stop conditions for Stage 1 (Design)
 
@@ -39,7 +39,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke the `0-global-orchestration-pipeline` skill.
+1. Read the `0-global-orchestration-pipeline` skill.
 2. Run the Pre-flight Checks from the skill. If any fail, halt and report to
    the caller.
 3. Follow **Stage 1: Design** from the skill exactly:

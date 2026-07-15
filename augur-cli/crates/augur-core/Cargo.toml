@@ -160,14 +160,6 @@ name = "nkc_actors__file_scanner__handle_tests"
 path = "tests/actors/file_scanner/handle.tests.rs"
 
 [[test]]
-name = "nkc_actors__guided_plan__guided_plan_actor_tests"
-path = "tests/actors/guided_plan/guided_plan_actor.tests.rs"
-
-[[test]]
-name = "nkc_actors__guided_plan__loader_tests"
-path = "tests/actors/guided_plan/loader.tests.rs"
-
-[[test]]
 name = "nkc_actors__history_adapter__history_adapter_actor_tests"
 path = "tests/actors/history_adapter/history_adapter_actor.tests.rs"
 
@@ -214,10 +206,6 @@ path = "tests/actors/session/session_actor.tests.rs"
 [[test]]
 name = "nkc_actors__session__session_actor_ops_tests"
 path = "tests/actors/session/session_actor_ops.tests.rs"
-
-[[test]]
-name = "nkc_actors__supervisor__phase_gate_tests"
-path = "tests/actors/supervisor/phase_gate.tests.rs"
 
 [[test]]
 name = "nkc_actors__token_tracker__handle_tests"
@@ -336,10 +324,6 @@ name = "nkc_domain__plan_state_tests"
 path = "tests/domain/plan_state.tests.rs"
 
 [[test]]
-name = "nkc_domain__plan_tree_tests"
-path = "tests/domain/plan_tree.tests.rs"
-
-[[test]]
 name = "nkc_domain__scheduler_tests"
 path = "tests/domain/scheduler.tests.rs"
 
@@ -386,10 +370,6 @@ path = "tests/persistence/store.tests.rs"
 [[test]]
 name = "nkc_persistence__types_tests"
 path = "tests/persistence/types.tests.rs"
-
-[[test]]
-name = "nkc_plan_store__mod_tests"
-path = "tests/plan_store/mod.tests.rs"
 
 [[test]]
 name = "nkc_token_history_tests"
@@ -489,5 +469,228 @@ path = "tests/tools/definition.tests.rs"
 [[test]]
 name = "nkc_tools__registry_tests"
 path = "tests/tools/registry.tests.rs"
+
+# ── actors/agent ────────────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__agent__assistant_core_tests"
+path = "tests/actors/agent/assistant_core.tests.rs"
+
+[[test]]
+name = "nkc_actors__agent__assistant_core_refactored_tests"
+path = "tests/actors/agent/assistant_core_refactored.tests.rs"
+
+# ── actors/cache ────────────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__cache__tiers_tests"
+path = "tests/actors/cache/tiers.tests.rs"
+
+# ── actors/catalog_manager ──────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__catalog_manager__actor_ops_tests"
+path = "tests/actors/catalog_manager/actor_ops.tests.rs"
+
+# ── actors/catalog_manager/models ───────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__catalog_manager__models__filter_tests"
+path = "tests/actors/catalog_manager/models/filter.tests.rs"
+
+[[test]]
+name = "nkc_actors__catalog_manager__models__formatter_tests"
+path = "tests/actors/catalog_manager/models/formatter.tests.rs"
+
+# ── actors/command ──────────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__command__actor_tests"
+path = "tests/actors/command/actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__command__mod_tests"
+path = "tests/actors/command/mod.tests.rs"
+
+[[test]]
+name = "nkc_actors__command__registry_tests"
+path = "tests/actors/command/registry.tests.rs"
+
+[[test]]
+name = "nkc_actors__command__types_tests"
+path = "tests/actors/command/types.tests.rs"
+
+# ── actors/deterministic_orchestrator ───────────────────────────────────────────
+[[test]]
+name = "nkc_actors__deterministic_orchestrator__artifact_store_tests"
+path = "tests/actors/deterministic_orchestrator/artifact_store.tests.rs"
+
+[[test]]
+name = "nkc_actors__deterministic_orchestrator__background_dispatch_tests"
+path = "tests/actors/deterministic_orchestrator/background_dispatch.tests.rs"
+
+[[test]]
+name = "nkc_actors__deterministic_orchestrator__commands_tests"
+path = "tests/actors/deterministic_orchestrator/commands.tests.rs"
+
+[[test]]
+name = "nkc_actors__deterministic_orchestrator__decision_tests"
+path = "tests/actors/deterministic_orchestrator/decision.tests.rs"
+
+[[test]]
+name = "nkc_actors__deterministic_orchestrator__handle_tests"
+path = "tests/actors/deterministic_orchestrator/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__deterministic_orchestrator__loader_tests"
+path = "tests/actors/deterministic_orchestrator/loader.tests.rs"
+
+# ── actors/deterministic_orchestrator/deterministic_orchestrator_actor ──────────
+[[test]]
+name = "nkc_actors__deterministic_orchestrator__deterministic_orchestrator_actor__deterministic_orchestrator_actor_tests"
+path = "tests/actors/deterministic_orchestrator/deterministic_orchestrator_actor/deterministic_orchestrator_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__deterministic_orchestrator__deterministic_orchestrator_actor__deterministic_orchestrator_ops_tests"
+path = "tests/actors/deterministic_orchestrator/deterministic_orchestrator_actor/deterministic_orchestrator_ops.tests.rs"
+
+# ── actors/executor ─────────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__executor__commands_tests"
+path = "tests/actors/executor/commands.tests.rs"
+
+[[test]]
+name = "nkc_actors__executor__event_mapper_tests"
+path = "tests/actors/executor/event_mapper.tests.rs"
+
+[[test]]
+name = "nkc_actors__executor__executor_actor_tests"
+path = "tests/actors/executor/executor_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__executor__executor_actor_ops_tests"
+path = "tests/actors/executor/executor_actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__executor__executor_ops_tests"
+path = "tests/actors/executor/executor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__executor__executor_ops__integration_tests"
+path = "tests/actors/executor/executor_ops/integration.tests.rs"
+
+[[test]]
+name = "nkc_actors__executor__handle_tests"
+path = "tests/actors/executor/handle.tests.rs"
+
+# ── actors/file_scanner ─────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__file_scanner__commands_tests"
+path = "tests/actors/file_scanner/commands.tests.rs"
+
+[[test]]
+name = "nkc_actors__file_scanner__file_scanner_actor_tests"
+path = "tests/actors/file_scanner/file_scanner_actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__file_scanner__mod_tests"
+path = "tests/actors/file_scanner/mod.tests.rs"
+
+# ── actors/history_adapter ──────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__history_adapter__handle_tests"
+path = "tests/actors/history_adapter/handle.tests.rs"
+
+# ── actors/llm ──────────────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__llm__actor_tests"
+path = "tests/actors/llm/actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__llm__actor_ops_tests"
+path = "tests/actors/llm/actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__llm__discovery_tests"
+path = "tests/actors/llm/discovery.tests.rs"
+
+[[test]]
+name = "nkc_actors__llm__handle_tests"
+path = "tests/actors/llm/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__llm__ops_tests"
+path = "tests/actors/llm/ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__llm__providers__shared_tests"
+path = "tests/actors/llm/providers/shared.tests.rs"
+
+# ── actors/llm_feed_consumer ────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__llm_feed_consumer__handle_tests"
+path = "tests/actors/llm_feed_consumer/handle.tests.rs"
+
+# ── actors/lsp ──────────────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__lsp__actor_tests"
+path = "tests/actors/lsp/actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__lsp__actor_ops_tests"
+path = "tests/actors/lsp/actor_ops.tests.rs"
+
+[[test]]
+name = "nkc_actors__lsp__handle_tests"
+path = "tests/actors/lsp/handle.tests.rs"
+
+# ── actors/mod ──────────────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__mod_tests"
+path = "tests/actors/mod.tests.rs"
+
+# ── actors/orchestrator ─────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__orchestrator__ingestion_tests"
+path = "tests/actors/orchestrator/ingestion.tests.rs"
+
+[[test]]
+name = "nkc_actors__orchestrator__timeout_tests"
+path = "tests/actors/orchestrator/timeout.tests.rs"
+
+# ── actors/session ──────────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__session__handle_tests"
+path = "tests/actors/session/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__session__mod_tests"
+path = "tests/actors/session/mod.tests.rs"
+
+[[test]]
+name = "nkc_actors__session__ops_tests"
+path = "tests/actors/session/ops.tests.rs"
+
+# ── actors/supervisor ───────────────────────────────────────────────────────────
+# ── actors/tool ─────────────────────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__tool__handle_tests"
+path = "tests/actors/tool/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__tool__inline_executor_tests"
+path = "tests/actors/tool/inline_executor.tests.rs"
+
+[[test]]
+name = "nkc_actors__tool__mod_tests"
+path = "tests/actors/tool/mod.tests.rs"
+
+# ── actors/user_message_consumer ────────────────────────────────────────────────
+[[test]]
+name = "nkc_actors__user_message_consumer__actor_tests"
+path = "tests/actors/user_message_consumer/actor.tests.rs"
+
+[[test]]
+name = "nkc_actors__user_message_consumer__handle_tests"
+path = "tests/actors/user_message_consumer/handle.tests.rs"
+
+[[test]]
+name = "nkc_actors__user_message_consumer__ops_tests"
+path = "tests/actors/user_message_consumer/ops.tests.rs"
 
 # END generated integration tests (source-mirrored)

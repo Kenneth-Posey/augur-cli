@@ -78,6 +78,7 @@ Background tasks cannot block on user input.
 
 - ✅ **OK**: Use files, environment, and arguments
 - ❌ **NOT OK**: Ask the user to choose mid-task or wait for a reply
+- ❌ **NOT OK**: Start a process that requires user input
 
 If a decision is required:
 
@@ -126,6 +127,8 @@ If the task encounters errors:
 
 ## Resource Limits and Best Practices
 
+- Use the size-check tool as often as possible
+- Avoid large/unfocused grep requests
 - Use `file_read_range` for large files
 - Use `file_line_count` before reading unknown-size files
 - Keep `shell_exec` output narrow
@@ -135,13 +138,3 @@ If the task encounters errors:
 ## Repository Guidance
 
 Consult the repository's guidance documents and skill files for standards, workflows, and decision trees. Use them as the authoritative source for how the repository expects work to be done.
-
-## Summary: Background Task Checklist
-
-- [ ] Scope is clear and completed
-- [ ] No nested tasks were launched
-- [ ] Independent operations were batched
-- [ ] Output was summarized, not dumped
-- [ ] Findings are actionable
-- [ ] Errors and blockers are documented
-- [ ] No side work was added

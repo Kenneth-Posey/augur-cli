@@ -2,9 +2,9 @@ use super::*;
 
 /// Dispatch the current workflow step's worker agent.
 ///
-/// Validates that the step is executable, resolves its input artifacts, and
+/// Validates that the step is executable, verifies its input artifacts exist, and
 /// sends the worker dispatch request. Falls back to a `Hold` evaluation when
-/// input resolution fails.
+/// input verification fails.
 pub(super) async fn start_current_step(
     state: &mut DeterministicOrchestratorRunState,
     ports: &RuntimePorts,
@@ -23,7 +23,7 @@ pub(super) async fn start_current_step(
         return;
     }
 
-    if let Err(error) = state.artifact_store.resolve_step_inputs(&step) {
+    if let Err(error) = state.artifact_store.verify_step_inputs_exist(&step) {
         tracing::warn!(step_id = %step.id, error = %error, "failed to resolve step inputs - applying failure policy");
         let execution = super::worker_execution_record(&step, NormalizedSignal::Hold);
         super::handle_step_evaluation(
@@ -34,7 +34,7 @@ pub(super) async fn start_current_step(
                 execution,
                 transition_signal: NormalizedSignal::Hold,
                 failure_origin: FailureOrigin::Step,
-                artifact_updates: vec![],
+                artifact_existence: vec![],
             },
         )
         .await;
@@ -47,13 +47,14 @@ pub(super) async fn start_current_step(
         ports,
         state.artifact_store.clone(),
         build_worker_dispatch_request(&step, state.progress.feature_context.clone()),
+        &state.agent_instructions,
     )
     .await;
 }
 
 /// Dispatch the evaluator agent for a step whose worker has already completed.
 ///
-/// Stores the pending worker execution record and artifact updates, then
+/// Stores the pending worker execution record and artifact existence markers, then
 /// sends the evaluator dispatch request.
 pub(super) async fn dispatch_evaluator_for_step(
     state: &mut DeterministicOrchestratorRunState,
@@ -62,7 +63,7 @@ pub(super) async fn dispatch_evaluator_for_step(
 ) {
     state.pending_worker = Some(PendingStepExecution {
         execution: dispatchable.pending.execution.clone(),
-        artifact_updates: dispatchable.pending.artifact_updates,
+        artifact_existence: dispatchable.pending.artifact_existence,
     });
     dispatch_request(
         ports,
@@ -72,6 +73,7 @@ pub(super) async fn dispatch_evaluator_for_step(
             &dispatchable.pending.execution,
             state.progress.feature_context.clone(),
         ),
+        &state.agent_instructions,
     )
     .await;
 }
@@ -80,11 +82,20 @@ pub(super) async fn dispatch_evaluator_for_step(
 ///
 /// Emits step progress, then either hands off to `dispatch_evaluator_for_step`
 /// when the step requires evaluation, or calls `handle_step_evaluation` directly.
+///
+/// For parallel group members, bypasses the normal current_step_id guard since
+/// parallel members are dispatched simultaneously.
 pub(super) async fn handle_worker_completion(
     state: &mut DeterministicOrchestratorRunState,
     ports: &RuntimePorts,
     completion: StepOutcome,
 ) {
+    // Parallel member completions bypass the current_step_id guard
+    if super::parallel_groups::is_pending_parallel_member(state, &completion.step_id) {
+        handle_parallel_member_worker_completion(state, ports, completion).await;
+        return;
+    }
+
     let Some(current_step_id) = state.run_state.current_step_id.as_ref() else {
         return;
     };
@@ -111,7 +122,7 @@ pub(super) async fn handle_worker_completion(
             step,
             pending: PendingStepExecution {
                 execution: worker_execution,
-                artifact_updates: completion.artifact_updates,
+                artifact_existence: completion.artifact_existence,
             },
         };
         dispatch_evaluator_for_step(state, ports, dispatchable).await;
@@ -126,7 +137,44 @@ pub(super) async fn handle_worker_completion(
             execution: worker_execution,
             transition_signal: completion.signal,
             failure_origin: FailureOrigin::Step,
-            artifact_updates: completion.artifact_updates,
+            artifact_existence: completion.artifact_existence,
+        },
+    )
+    .await;
+}
+
+/// Process a worker completion for a parallel group member.
+///
+/// Parallel members use `single_pass` semantics, so no evaluator dispatch
+/// is needed. The completion is routed directly to step evaluation.
+async fn handle_parallel_member_worker_completion(
+    state: &mut DeterministicOrchestratorRunState,
+    ports: &RuntimePorts,
+    completion: StepOutcome,
+) {
+    let Some(step) = super::workflow_step(state, &completion.step_id).cloned() else {
+        return;
+    };
+
+    emit_step_progress(
+        ports,
+        StepProgressArgs {
+            step_id: completion.step_id.clone(),
+            signal: completion.signal.clone(),
+            agent_name: step.dispatch.worker_agent.as_ref().map(|a| a.to_string()),
+        },
+    );
+
+    let worker_execution = super::worker_execution_record(&step, completion.signal.clone());
+    super::handle_step_evaluation(
+        state,
+        ports,
+        EvaluatedStep {
+            step,
+            execution: worker_execution,
+            transition_signal: completion.signal,
+            failure_origin: FailureOrigin::Step,
+            artifact_existence: completion.artifact_existence,
         },
     )
     .await;
@@ -135,7 +183,7 @@ pub(super) async fn handle_worker_completion(
 /// Process an evaluator completion signal and finalize step evaluation.
 ///
 /// Validates the completion matches the current step and pending worker,
-/// merges artifact updates, computes the transition signal, and calls
+/// merges artifact existence markers, computes the transition signal, and calls
 /// `handle_step_evaluation`.
 pub(super) async fn handle_evaluator_completion(
     state: &mut DeterministicOrchestratorRunState,
@@ -155,9 +203,9 @@ pub(super) async fn handle_evaluator_completion(
         completion.evaluator_output.clone(),
     );
     let transition_signal = evaluator_transition_signal(&execution);
-    let artifact_updates = merge_artifact_updates(
-        context.worker_execution.artifact_updates,
-        completion.artifact_updates,
+    let artifact_existence = merge_artifact_existence(
+        context.worker_execution.artifact_existence,
+        completion.artifact_existence,
     );
     super::handle_step_evaluation(
         state,
@@ -167,7 +215,7 @@ pub(super) async fn handle_evaluator_completion(
             execution,
             transition_signal,
             failure_origin: FailureOrigin::Step,
-            artifact_updates,
+            artifact_existence,
         },
     )
     .await;

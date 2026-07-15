@@ -49,9 +49,9 @@ agent:
 # log_dir is relative to the working directory unless an absolute path is given.
 # sessions_dir defaults to ~/.augur-cli/sessions when unset; log_dir defaults
 # to ./logs when unset.
-persistence:
-  log_dir: ./logs
-  sessions_dir: ./sessions
+persistence: 
+  log_dir: ~/.augur-cli/logs
+  sessions_dir: ~/.augur-cli/sessions
 
 # ── Program settings ─────────────────────────────────────────────────────────
 # Directories excluded from file-listing tools by default.

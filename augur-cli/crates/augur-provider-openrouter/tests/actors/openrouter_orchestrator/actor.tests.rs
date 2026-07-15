@@ -81,6 +81,9 @@ async fn spawn_uses_configured_parallel_worker_count() {
                 .instruction_prefix(Arc::new(InstructionPrefix(vec![])))
                 .repo_root(RepoRoot::new("."))
                 .max_parallel_workers(2)
+                .default_model_config(
+                    augur_provider_openrouter::model_config::fallback_default_model_config(),
+                )
                 .build(),
         )
         .build();

@@ -5,7 +5,13 @@ description: >
   chain-collapse opportunities in a Rust source tree.
 ---
 
-# run.sh
+# consolidator
+
+## When to use
+
+Use this skill when you need to identify dead code, duplicate functions, or
+collapsible call chains in a Rust project during architecture review or
+technical-debt assessment.
 
 ## Purpose
 
@@ -14,27 +20,62 @@ Analyze a Rust source tree's call graph to detect consolidation opportunities:
 - **Duplicate functions**: functions with identical normalized signatures in the same layer
 - **Chain-collapse**: linear call chains that could be collapsed without behavioral change
 
-## Development Build
+## Run
 
-Only needed when modifying the tool source in this directory.
+```bash
+.github/skills/0-external-consolidator/run.sh [SOURCE_PATH] [OPTIONS]
+```
+
+To build the tool from source after modifying it:
 
 ```bash
 cd .github/skills/0-external-consolidator
 cargo build --release
 ```
 
-## Run
+## Arguments
 
-```bash
-.github/skills/0-external-consolidator/run.sh [source-path] [--output-format <format>] [--min-confidence <f64>] [--no-color]
+| Argument | Description | Default |
+|---|---|---|
+| `SOURCE_PATH` | Path to the directory containing the `Cargo.toml` to analyze | `.` |
+| `--output-format <OUTPUT_FORMAT>` | Output format for the report. Possible values: `text`, `json` | `text` |
+| `--min-confidence <MIN_CONFIDENCE>` | Minimum confidence threshold (0.0–1.0) for reported opportunities | `0` |
+| `--no-color` | Disable color output (currently unused; reserved for future formatting) | — |
+| `-h`, `--help` | Print help | — |
+| `-V`, `--version` | Print version | — |
+
+## Output
+
+The tool analyzes the Rust source tree and produces a report identifying
+consolidation opportunities across three categories:
+
+- **Dead code** — functions with no callers, each with a confidence score
+- **Duplicates** — functions with identical normalized signatures in the same layer
+- **Chain-collapses** — linear call chains that could be collapsed without behavioral change
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Analysis completed successfully |
+
+### Text format (default)
+
+Human-readable report with sections for dead code, duplicates, and
+chain-collapse candidates. Each finding includes function ID, module path,
+confidence score, and explanation.
+
+### JSON format
+
+Machine-readable JSON suitable for downstream processing:
+
+```json
+{
+  "dead_code": [...],
+  "duplicates": [...],
+  "chain_collapses": [...]
+}
 ```
-
-## Usage
-
-- `[source-path]` - Directory containing the `Cargo.toml` to analyze (default: `.`)
-- `--output-format <format>` - Output format: `text` | `json` (default: `text`)
-- `--min-confidence <f64>` - Minimum confidence score 0.0–1.0 for reported opportunities (default: `0.0`)
-- `--no-color` - Disable color output (reserved for future use)
 
 ## Examples
 
@@ -52,25 +93,6 @@ cargo build --release
 .github/skills/0-external-consolidator/run.sh . --output-format json --min-confidence 0.7
 ```
 
-## Output Format
-
-### Text (default)
-
-Human-readable report with sections for dead code, duplicates, and chain-collapse candidates.
-Each finding includes function ID, module path, confidence score, and explanation.
-
-### JSON
-
-Machine-readable JSON with the same findings, suitable for downstream processing:
-
-```json
-{
-  "dead_code": [...],
-  "duplicates": [...],
-  "chain_collapses": [...]
-}
-```
-
 ## Key Files
 
-- `run.sh` - Canonical wrapper for consolidator
+- `.github/skills/0-external-consolidator/run.sh` — Canonical wrapper

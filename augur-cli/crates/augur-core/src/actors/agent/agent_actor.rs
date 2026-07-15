@@ -135,6 +135,11 @@ pub struct AgentRuntime {
     /// provider catalog (e.g. 300K for deepseek/deepseek-v4-flash).
     #[builder(default)]
     pub request_cap_threshold: augur_domain::domain::newtypes::TokenCount,
+    /// Maximum tool response tokens before the output is replaced with a
+    /// warning asking the LLM to use a more targeted call.
+    /// Uses [`TOOL_RESPONSE_CONTEXT_LIMIT_TOKENS`] (50_000) when set to zero.
+    #[builder(default)]
+    pub tool_response_cap: augur_domain::domain::newtypes::TokenCount,
 }
 
 /// Arguments for spawning the agent actor.

@@ -188,14 +188,6 @@ newtype_string!(
 );
 
 newtype_string!(
-    /// Name of a branch or child node within a persisted strategy tree.
-    ///
-    /// Used as the `HashMap` key for both `StrategyTree::root` and nested
-    /// `StrategyNodeKind::Branch` children.
-    StrategyNodeName
-);
-
-newtype_string!(
     /// Filesystem path used by file-read/file-write tools and `@`-attachment tokens.
     ///
     /// Holds a relative or absolute path string. Used by `FileScannerActor` for
@@ -288,13 +280,6 @@ newtype_string!(
 );
 
 newtype_string!(
-    /// Unique identifier for a phase within a guided plan file.
-    ///
-    /// Maps directly to the `id` field in the YAML frontmatter of a plan file.
-    PlanPhaseId
-);
-
-newtype_string!(
     /// Unique identifier for a deterministic orchestrator stage.
     WorkflowStageId
 );
@@ -324,6 +309,14 @@ newtype_string!(
     AgentName
 );
 
+impl AgentName {
+    /// Fallback agent name used when no specific agent identity is set
+    /// (e.g., for pipeline dispatch where the prompt drives behavior).
+    pub fn pipeline() -> Self {
+        Self::new("pipeline")
+    }
+}
+
 newtype_string!(
     /// SDK-assigned identifier correlating tool execution events.
     ToolCallId
@@ -337,6 +330,11 @@ newtype_string!(
 newtype_string!(
     /// High-level user goal text submitted to the supervisor meta-planner.
     GoalText
+);
+
+newtype_string!(
+    /// Human-readable plan display name used as the plan tree title.
+    PlanName
 );
 
 newtype_string!(
@@ -357,16 +355,6 @@ newtype_string!(
 newtype_string!(
     /// Bearer token value sent in an Authorization header.
     BearerToken
-);
-
-newtype_string!(
-    /// Human-readable phase display name in a guided plan.
-    PhaseName
-);
-
-newtype_string!(
-    /// Human-readable plan display name in a guided plan.
-    PlanName
 );
 
 newtype_string!(
@@ -767,3 +755,38 @@ impl Default for WorkingDir {
         Self::new("")
     }
 }
+// --- String newtypes for file and crate/module naming ---
+
+newtype_string!(
+    /// File name (basename) of a source or output file.
+    ///
+    /// Distinguishes file names from file paths or other string identifiers.
+    /// Used in file scanning, catalog operations, and tool execution contexts
+    /// where only the name (not the full path) is needed.
+    FileName
+);
+
+newtype_string!(
+    /// Rust crate name as used in Cargo manifests and import paths.
+    ///
+    /// Wraps a crate name string (e.g. "augur-core", "serde") to distinguish
+    /// it from other string identifiers like module names or file names.
+    CrateName
+);
+
+newtype_string!(
+    /// Module name within a Rust crate's module tree.
+    ///
+    /// Wraps a module name string (e.g. "domain", "config") to distinguish
+    /// it from other string identifiers like crate names or file names.
+    ModuleName
+);
+
+newtype_string!(
+    /// Unique name key for a node within a `StrategyTree`.
+    ///
+    /// Used as the map key in `StrategyTree::nodes` and `StrategyNodeKind::Branch`
+    /// children maps. Serializes transparently as a plain string so serde_json
+    /// can use it as a JSON object key.
+    StrategyNodeName
+);

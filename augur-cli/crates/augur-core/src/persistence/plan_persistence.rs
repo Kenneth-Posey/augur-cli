@@ -2,8 +2,8 @@
 
 use augur_domain::StringNewtype;
 use augur_domain::domain::{
-    ArtifactData, ArtifactName, ExecutionStepId, PlanState, PlanStateReconstructionError, RunId,
-    StepArtifact, StepKey, StepSpecJson, StepStatus, ValidatedPlan,
+    ArtifactData, ArtifactName, ExecutionStepId, PlanState, PlanStateReconstructionError, RowCount,
+    RunId, StepArtifact, StepKey, StepSpecJson, StepStatus, ValidatedPlan,
 };
 use std::sync::{Mutex, OnceLock};
 
@@ -50,8 +50,8 @@ pub enum PlanPersistenceError {
     },
     UnexpectedRowCount {
         key: StepKey,
-        expected: u64,
-        actual: u64,
+        expected: RowCount,
+        actual: RowCount,
     },
 }
 

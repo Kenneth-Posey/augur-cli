@@ -228,14 +228,6 @@ newtype_uint!(
     ScrollOffset, usize
 );
 newtype_uint!(
-    /// Zero-based index of a phase within a guided plan.
-    PhaseIndex, usize
-);
-newtype_uint!(
-    /// Zero-based index of a hook within a phase's hook list.
-    HookIndex, usize
-);
-newtype_uint!(
     /// Zero-based index of a user-selectable choice within a `query_user` overlay.
     ///
     /// Wraps a raw `usize` so that choice positions are not accidentally
@@ -1184,56 +1176,6 @@ impl std::ops::Not for IsEnabled {
     }
 }
 
-/// Review-active state for guided plan UI.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct IsReviewActive(pub bool);
-
-impl IsReviewActive {
-    pub fn yes() -> Self {
-        IsReviewActive(true)
-    }
-    pub fn no() -> Self {
-        IsReviewActive(false)
-    }
-}
-
-impl From<bool> for IsReviewActive {
-    fn from(b: bool) -> Self {
-        IsReviewActive(b)
-    }
-}
-
-impl From<IsReviewActive> for bool {
-    fn from(value: IsReviewActive) -> Self {
-        value.0
-    }
-}
-
-/// Awaiting-compact state for guided plan UI.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct IsAwaitingCompact(pub bool);
-
-impl IsAwaitingCompact {
-    pub fn yes() -> Self {
-        IsAwaitingCompact(true)
-    }
-    pub fn no() -> Self {
-        IsAwaitingCompact(false)
-    }
-}
-
-impl From<bool> for IsAwaitingCompact {
-    fn from(b: bool) -> Self {
-        IsAwaitingCompact(b)
-    }
-}
-
-impl From<IsAwaitingCompact> for bool {
-    fn from(value: IsAwaitingCompact) -> Self {
-        value.0
-    }
-}
-
 /// Thinking state for ask panels.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct IsThinking(pub bool);
@@ -1423,20 +1365,6 @@ impl std::ops::Not for SupportsAuto {
     }
 }
 
-impl std::ops::Not for IsReviewActive {
-    type Output = bool;
-    fn not(self) -> Self::Output {
-        !self.0
-    }
-}
-
-impl std::ops::Not for IsAwaitingCompact {
-    type Output = bool;
-    fn not(self) -> Self::Output {
-        !self.0
-    }
-}
-
 impl std::ops::Not for IsThinking {
     type Output = bool;
     fn not(self) -> Self::Output {
@@ -1483,5 +1411,134 @@ impl std::ops::Not for HasLatestCheckpoint {
     type Output = bool;
     fn not(self) -> Self::Output {
         !self.0
+    }
+}
+// --- Numeric newtypes for tool-scope and traversal concepts ---
+
+newtype_uint!(
+    /// Count of files in a result set or search operation.
+    ///
+    /// Distinguishes file counts from other u64 values like byte counts or
+    /// timestamps. Used by file scanner and catalog operations to report
+    /// the number of files matched.
+    FileCount, u64
+);
+
+newtype_uint!(
+    /// Maximum allowed depth for recursive directory traversal.
+    ///
+    /// Distinguishes depth limits from other u32 values like line numbers
+    /// or event counts. Used when configuring file scanning or graph
+    /// walking operations.
+    MaxDepth, u32
+);
+
+newtype_uint!(
+    /// Current traversal depth in a recursive directory or graph walk.
+    ///
+    /// Tracks how deep the traversal has progressed, preventing accidental
+    /// confusion with the maximum depth limit or other u32 values.
+    CurrentDepth, u32
+);
+
+newtype_uint!(
+    /// Duration in whole seconds before an operation should time out.
+    ///
+    /// Wraps a raw u64 so that timeout durations are not accidentally
+    /// interchanged with other u64 values like byte counts or timestamps.
+    TimeoutSecs, u64
+);
+
+newtype_uint!(
+    /// Count of rows in a data set or result table.
+    ///
+    /// Distinguishes row counts from other u64 values like file counts or
+    /// byte counts. Used when reporting tabular results.
+    RowCount, u64
+);
+
+// --- Semantic bool wrappers for tool-scope concepts ---
+
+/// Indicates whether a value or resource is currently present.
+///
+/// Distinguishes presence checks from other boolean values like execution
+/// success or visibility state. Used for optional-value presence testing
+/// in tool execution and configuration contexts.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct IsPresent(pub bool);
+
+impl IsPresent {
+    pub fn yes() -> Self {
+        IsPresent(true)
+    }
+    pub fn no() -> Self {
+        IsPresent(false)
+    }
+}
+
+impl From<bool> for IsPresent {
+    fn from(b: bool) -> Self {
+        IsPresent(b)
+    }
+}
+
+impl From<IsPresent> for bool {
+    fn from(value: IsPresent) -> Self {
+        value.0
+    }
+}
+
+impl std::ops::Not for IsPresent {
+    type Output = bool;
+    fn not(self) -> Self::Output {
+        !self.0
+    }
+}
+
+impl std::fmt::Display for IsPresent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", if self.0 { "present" } else { "absent" })
+    }
+}
+
+/// Indicates whether a choice list or selection has available options.
+///
+/// Distinguishes choice-availability from other boolean values like presence
+/// or visibility. Used in `query_user` and selection contexts to signal
+/// whether choices exist for the user to select from.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct HasChoices(pub bool);
+
+impl HasChoices {
+    pub fn yes() -> Self {
+        HasChoices(true)
+    }
+    pub fn no() -> Self {
+        HasChoices(false)
+    }
+}
+
+impl From<bool> for HasChoices {
+    fn from(b: bool) -> Self {
+        HasChoices(b)
+    }
+}
+
+impl From<HasChoices> for bool {
+    fn from(value: HasChoices) -> Self {
+        value.0
+    }
+}
+
+impl std::ops::Not for HasChoices {
+    type Output = bool;
+    fn not(self) -> Self::Output {
+        !self.0
+    }
+}
+
+impl std::fmt::Display for HasChoices {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", if self.0 { "has_choices" } else { "no_choices" })
     }
 }

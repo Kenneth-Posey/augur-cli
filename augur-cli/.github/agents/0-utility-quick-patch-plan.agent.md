@@ -20,14 +20,14 @@ run git commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-plan-implementation` - plan structure, phase requirements, and
    quality gate checklist
 2. `0-global-line-count-check` - plan file size limits (300-line hard cap per file)
 3. `2-plan-behavior-planning` - behavior plan structure, traceability rules,
-   and state machine completeness criteria; invoke when `behavior-plan.md` is in scope
+   and state machine completeness criteria; read when `behavior-plan.md` is in scope
 4. `2-plan-function-sig-planning` - function signature plan validation criteria;
-   invoke when `function-sig-plan.md` is in scope
+   read when `function-sig-plan.md` is in scope
 5. `0-global-critical-rules` - safety, workflow, and definition of done constraints
 
 ## Inputs
@@ -53,8 +53,8 @@ Invoke at start:
 1. Read the reviewer failure notes. Identify the exact checklist items and the
    required correction for each failure. Do not invent additional corrections.
 2. Read the failing artifact(s) in full.
-3. Invoke `0-global-critical-rules` and `0-global-plan-implementation`. Also
-   invoke `2-plan-behavior-planning` when `behavior-plan.md` is in scope,
+3. Read `0-global-critical-rules` and `0-global-plan-implementation`. Also
+   Read `2-plan-behavior-planning` when `behavior-plan.md` is in scope,
    `2-plan-function-sig-planning` when `function-sig-plan.md` is in scope, and
    `0-global-line-count-check` when any artifact is near or over the size limit.
 4. For each listed failure only, apply the minimal correction that directly

@@ -15,7 +15,7 @@ semantic-wrapper enforcement.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `4-review-type-validation` - lifetime and ownership correctness, generic-bound soundness, unsafe justification,
    semantic type usage, and pass/fail criteria
 2. `4-review-type-validation-tooling` - required tool-running contract; use

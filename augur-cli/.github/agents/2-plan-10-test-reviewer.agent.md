@@ -14,7 +14,7 @@ Reviews test strategy plans for semantic quality and returns an approval or reje
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `2-plan-test-planning` - test strategy validation criteria, coverage matrix rules, and pass condition clarity
 2. Read [`../local/language-companions.md`](../local/language-companions.md) - look up the `2-plan-test-planning` companion key for language-specific test type classification and naming conventions
 
@@ -35,6 +35,8 @@ Invoke at start:
 - **Decision Summary:** `"pass"` or `"fail"` with a summary
 
 ## Step-by-Step Behavior
+
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
 
 1. **Validate Behavior Coverage:** For each Given/When/Then spec, verify at least one test scenario maps to it with clear When→function and Then→assertion mappings. Flag any behavior without a test.
 

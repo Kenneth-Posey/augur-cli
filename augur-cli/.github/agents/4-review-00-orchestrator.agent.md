@@ -17,7 +17,7 @@ sequencing, signal collection, consolidation rules, and hard-stop conditions.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-orchestration-pipeline` - Stage 4 checker dispatch, parallel launch
    contract, consolidation rules, and hard-stop conditions
 
@@ -35,7 +35,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke the `0-global-orchestration-pipeline` skill.
+1. Read the `0-global-orchestration-pipeline` skill.
 2. Follow **Stage 4: Review** from the pipeline skill exactly:
     - Step 4.1 - Launch all eleven checkers as background agents simultaneously:
       `review-architecture-checker`, `review-behavior-checker`,

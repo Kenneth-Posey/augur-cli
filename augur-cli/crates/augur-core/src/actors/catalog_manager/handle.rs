@@ -11,7 +11,7 @@ pub struct CatalogManagerHandle {
     tx: tokio::sync::mpsc::Sender<CatalogManagerCommand>,
 }
 
-pub(crate) enum CatalogManagerCommand {
+pub enum CatalogManagerCommand {
     GenerateCatalog {
         provider_filter: Option<ProviderName>,
         format: OutputFormat,

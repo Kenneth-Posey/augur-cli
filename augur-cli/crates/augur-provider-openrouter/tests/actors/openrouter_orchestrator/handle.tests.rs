@@ -81,6 +81,9 @@ async fn handle_reports_queue_unavailable_after_shutdown() {
                 .instruction_prefix(Arc::new(InstructionPrefix(vec![])))
                 .repo_root(RepoRoot::new("."))
                 .max_parallel_workers(1)
+                .default_model_config(
+                    augur_provider_openrouter::model_config::fallback_default_model_config(),
+                )
                 .build(),
         )
         .build();

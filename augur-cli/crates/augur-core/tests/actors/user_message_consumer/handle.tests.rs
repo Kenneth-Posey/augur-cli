@@ -1,9 +1,9 @@
 use augur_core::actors::user_message_consumer::user_message_consumer_actor::{
-    spawn, UserMessageOutputChannels,
+    UserMessageOutputChannels, spawn,
 };
 use std::fs;
 use tokio::sync::mpsc;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 #[test]
 fn handle_source_exposes_process_and_shutdown_methods() {

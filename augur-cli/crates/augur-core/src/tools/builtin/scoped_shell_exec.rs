@@ -3,7 +3,7 @@
 
 use crate::tools::builtin::child_process;
 use crate::tools::handler::{ToolCallResult, ToolHandler};
-use augur_domain::domain::newtypes::IsPredicate;
+use augur_domain::domain::newtypes::{IsPredicate, TimeoutSecs};
 use augur_domain::domain::string_newtypes::{OutputText, ShellCommand, StringNewtype, ToolName};
 use augur_domain::domain::task_types::RepoRoot;
 use augur_domain::tools::definition::ToolDefinition;
@@ -104,7 +104,7 @@ fn build_child_command(repo_root: &RepoRoot, argv: &[String]) -> tokio::process:
 
 fn output_from_command_result(
     execution: Result<Result<std::process::Output, std::io::Error>, tokio::time::error::Elapsed>,
-    timeout_secs: u64,
+    timeout_secs: TimeoutSecs,
 ) -> ToolCallResult {
     match execution {
         Err(_elapsed) => result(
@@ -173,9 +173,11 @@ impl ToolHandler for ScopedShellExecTool {
             Ok(command) => command,
             Err(result) => return result,
         };
-        let timeout_secs = args["timeout_secs"]
-            .as_u64()
-            .unwrap_or(DEFAULT_TIMEOUT_SECS);
+        let timeout_secs = TimeoutSecs::from(
+            args["timeout_secs"]
+                .as_u64()
+                .unwrap_or(DEFAULT_TIMEOUT_SECS),
+        );
         tracing::Span::current().record("command", tracing::field::display(command.as_str()));
         let argv = match parse_command(command.as_str()) {
             Ok(argv) => argv,
@@ -183,7 +185,7 @@ impl ToolHandler for ScopedShellExecTool {
         };
 
         let mut child_cmd = build_child_command(&self.repo_root, &argv);
-        let execution = timeout(Duration::from_secs(timeout_secs), child_cmd.output()).await;
+        let execution = timeout(Duration::from_secs(*timeout_secs), child_cmd.output()).await;
         output_from_command_result(execution, timeout_secs)
     }
 }

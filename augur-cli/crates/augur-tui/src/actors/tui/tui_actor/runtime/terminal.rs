@@ -3,10 +3,7 @@
 use crate::actors::tui::assistant::clipboard::{
     extend_selection, paste_from_clipboard, start_selection,
 };
-use crate::actors::tui::assistant::key_dispatch::{
-    dispatch_chat_key, dispatch_guided_plan_key, dispatch_plan_esc, dispatch_query_key,
-};
-use crate::actors::tui::assistant::plan_view::handle_plan_mouse_scroll;
+use crate::actors::tui::assistant::key_dispatch::{dispatch_chat_key, dispatch_query_key};
 use crate::domain::tui_input::{MouseAction, classify_mouse, insert_paste};
 use crate::domain::tui_state::{AppState, ConversationMode, SelectionPoint};
 use augur_domain::domain::string_newtypes::PromptText;
@@ -34,18 +31,10 @@ pub(in crate::actors::tui::tui_actor) fn handle_mouse_event(
     state: &mut AppState,
     event: crossterm::event::MouseEvent,
 ) -> EventOutcome {
-    if in_plan_mode(state) {
-        handle_plan_mouse_scroll(state, event);
-        return EventOutcome::Redraw;
-    }
     if let Some(outcome) = handle_secondary_panel_mouse(state, event) {
         return outcome;
     }
     handle_main_panel_mouse(state, event)
-}
-
-fn in_plan_mode(state: &AppState) -> bool {
-    matches!(state.interaction.mode, ConversationMode::Plan(_))
 }
 
 fn handle_main_panel_mouse(
@@ -238,27 +227,8 @@ async fn dispatch_key_for_mode(
 ) -> ControlFlow<()> {
     match state.interaction.mode {
         ConversationMode::Query(_) => dispatch_query_key(state, key),
-        ConversationMode::GuidedPlan(_) => dispatch_guided_plan_key(state, key, handles).await,
-        ConversationMode::Plan(_) => dispatch_plan_key(state, key, handles).await,
         _ => dispatch_chat_key(state, key, handles).await,
     }
-}
-
-async fn dispatch_plan_key(
-    state: &mut AppState,
-    key: crossterm::event::KeyEvent,
-    handles: &TuiHandles<'_>,
-) -> ControlFlow<()> {
-    if is_plan_exit_key(key) && dispatch_plan_esc(state).is_some() {
-        return ControlFlow::Continue(());
-    }
-    dispatch_chat_key(state, key, handles).await
-}
-
-fn is_plan_exit_key(key: crossterm::event::KeyEvent) -> bool {
-    use crossterm::event::{KeyCode, KeyEventKind};
-
-    key.kind == KeyEventKind::Press && key.code == KeyCode::Esc
 }
 
 /// Restore the terminal and notify waiters that shutdown has completed.

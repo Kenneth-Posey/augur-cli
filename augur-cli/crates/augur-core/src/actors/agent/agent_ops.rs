@@ -51,6 +51,10 @@ pub struct TurnConfig {
     /// Typically sourced from the model's `auto_compact_threshold` in the
     /// provider catalog (e.g. 300K for deepseek/deepseek-v4-flash).
     pub request_cap_threshold: TokenCount,
+    /// Maximum tool response tokens before the output is replaced with a
+    /// warning asking the LLM to use a more targeted call.
+    /// Uses [`TOOL_RESPONSE_CONTEXT_LIMIT_TOKENS`] (50_000) when set to zero.
+    pub tool_response_cap: TokenCount,
 }
 
 /// Accumulated result from consuming one LLM response stream.

@@ -19,7 +19,7 @@ run build tools. Only write to `.github/local/`.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-system-topology` - schema definition, field semantics, layer mapping
    rules, and validation requirements for system-actor-graph.yml
 2. `0-external-topology-extractor` - usage, arguments, and output format for
@@ -43,7 +43,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-system-topology` and `0-external-topology-extractor` to load the
+1. Read `0-system-topology` and `0-external-topology-extractor` to load the
    schema requirements and tool usage.
 
 2. **Run the topology extractor tool:**

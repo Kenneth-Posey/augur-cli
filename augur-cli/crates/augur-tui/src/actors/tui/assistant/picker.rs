@@ -164,3 +164,6 @@ pub(crate) async fn restore_session(
         Ok(record) => apply_restored_session(state, record, handles).await,
     }
 }
+#[cfg(test)]
+#[path = "../../../../tests/actors/tui/assistant/picker.tests.rs"]
+mod tests;

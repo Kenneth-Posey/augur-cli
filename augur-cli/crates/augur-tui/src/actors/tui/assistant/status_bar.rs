@@ -59,3 +59,6 @@ pub fn format_model_display(config: &AppConfig, ep_name: &EndpointName) -> Model
     let effort = EffortLevel::from_temperature(config.agent.temperature);
     ModelLabel::new(format!("{} ({})", model, effort.label()))
 }
+#[cfg(test)]
+#[path = "../../../../tests/actors/tui/assistant/status_bar.tests.rs"]
+mod tests;

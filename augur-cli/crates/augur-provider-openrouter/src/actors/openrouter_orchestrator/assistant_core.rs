@@ -502,6 +502,7 @@ fn build_task_services(
             "{}/.github/agents",
             args.config.repo_root.as_ref()
         )))
+        .default_model_config(args.config.default_model_config.clone())
         .maybe_orchestrator(Some(orchestrator))
         .build()
 }

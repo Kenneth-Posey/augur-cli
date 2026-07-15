@@ -22,7 +22,7 @@ Core domain logic, actors, configuration, persistence, and tools.
 - `crates/augur-core/src/macros.rs` - crate-level macros
 - `crates/augur-core/src/actors/` - actor implementations
   - `active_model`, `agent`, `ask`, `cache`, `catalog_manager`, `command`, `deterministic_orchestrator`,
-    `file_read`, `file_scanner`, `guided_plan`, `history_adapter`, `llm_feed_consumer`, `logger`,
+    `file_read`, `file_scanner`, `history_adapter`, `llm_feed_consumer`, `logger`,
     `lsp`, `mod.rs`, `orchestrator`, `session`, `supervisor`, `token_tracker`, `tool`,
     `user_message_consumer`
 - `crates/augur-core/src/config/` - configuration schema and loading

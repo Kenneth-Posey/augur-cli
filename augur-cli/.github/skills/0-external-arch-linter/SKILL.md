@@ -7,7 +7,12 @@ description: >
   ensures acyclic module graphs.
 ---
 
-# run.sh
+# arch-linter
+
+## When to use
+
+Use this skill when you need deterministic verification of Rust project module
+layout, dependency direction, and cyclic-import rules in a CI or review pipeline.
 
 ## Purpose
 
@@ -15,61 +20,69 @@ Lint Rust projects for module layout, dependency direction, circular imports,
 path leaks, repository-relative source-root reference leaks, and acyclic module
 graphs.
 
-## Development Build
-
-Only needed when modifying the tool source in this directory.
-
-```bash
-cd .github/skills/0-external-arch-linter
-cargo build --release
-```
-
 ## Run
 
 ```bash
-.github/skills/0-external-arch-linter/run.sh [repo-relative-root] [--output-format <format>] [--fail-on-findings <yes|no>]
+.github/skills/0-external-arch-linter/run.sh [SRC_ROOT] [--output-format <format>] [--fail-on-findings <yes|no>]
 ```
 
-## Usage
+## Arguments
 
-- `[repo-relative-root]` - Repository-relative root to analyze (default: repository root)
-- `--output-format <format>` - Output format: `text` | `json` (default: `text`)
-- `--fail-on-findings <yes|no>` - Return a non-zero exit code when findings are present: `yes` | `no` (default: `yes`)
+| Argument | Description | Default |
+|---|---|---|
+| `SRC_ROOT` | Path to the Rust `src/` directory to analyze | `src` |
+| `--output-format <format>` | Output format: `text` or `json` | `text` |
+| `--fail-on-findings <yes\|no>` | Return non-zero exit code when findings are present: `yes` or `no` | `yes` |
+| `-h`, `--help` | Print help | - |
+| `-V`, `--version` | Print version | - |
 
-## Examples
+## Output
 
-```bash
-# Lint default repository root
-.github/skills/0-external-arch-linter/run.sh
+Produces a deterministic lint report in either human-readable text or
+machine-readable JSON format. Exit codes:
 
-# Lint custom repository root
-.github/skills/0-external-arch-linter/run.sh <repo-relative-root>
+- `0` -- No findings, or `--fail-on-findings no` was set.
+- `1` -- Findings were present and `--fail-on-findings yes` (the default).
 
-# JSON output for downstream processing
-.github/skills/0-external-arch-linter/run.sh <repo-relative-root> --output-format json
-
-# Generate report but exit 0 even with findings
-.github/skills/0-external-arch-linter/run.sh <repo-relative-root> --fail-on-findings no
-
-# Linting mode: fail on findings (exit code 1 if violations detected)
-.github/skills/0-external-arch-linter/run.sh <repo-relative-root> --fail-on-findings yes
-```
-
-## Example Output (text format)
+### Text format example
 
 ```
-Architecture Lint Report: <repo-relative-root>
+Architecture Lint Report: <SRC_ROOT>
 
 Findings (3 total):
-  1. Circular dependency: actor → wiring → actor
-  2. Wrong-direction import: handlers → domain (should be: domain → handlers)
+  1. Circular dependency: actor -> wiring -> actor
+  2. Wrong-direction import: handlers -> domain (should be: domain -> handlers)
   3. Layer violation: ui imports core (skipping services layer)
 
 Status: FAIL
 Exit code: 1
 ```
 
+### JSON format
+
+When `--output-format json` is used, the report is emitted as deterministic
+JSON suitable for downstream processing.
+
+## Examples
+
+```bash
+# Lint the default src/ directory
+.github/skills/0-external-arch-linter/run.sh
+
+# Lint a specific source directory
+.github/skills/0-external-arch-linter/run.sh src/my_crate
+
+# JSON output for downstream processing
+.github/skills/0-external-arch-linter/run.sh src --output-format json
+
+# Generate report but exit 0 even with findings
+.github/skills/0-external-arch-linter/run.sh src --fail-on-findings no
+
+# Fail on findings (exit code 1 if violations detected)
+.github/skills/0-external-arch-linter/run.sh src --fail-on-findings yes
+```
+
 ## Key Files
 
-- `run.sh` - Canonical wrapper for arch linter
+- `.github/skills/0-external-arch-linter/run.sh` -- Canonical wrapper for arch-linter
 

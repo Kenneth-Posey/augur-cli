@@ -14,7 +14,7 @@ Consolidate reviewer signals and return the Stage 4 decision.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-orchestration-pipeline` - Stage 4 consolidation decision table and signal merge rules
 
 ## Inputs
@@ -35,7 +35,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. **Initialize:** Invoke `0-global-orchestration-pipeline`, receive all 11
+1. **Initialize:** Read `0-global-orchestration-pipeline`, receive all 11
    signals and reports, record arrival timestamps, and load the merge logic.
 
 2. **Apply Merge Logic:**

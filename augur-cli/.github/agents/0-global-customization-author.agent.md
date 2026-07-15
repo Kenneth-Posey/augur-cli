@@ -23,7 +23,7 @@ commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-tdd-workflow` - for minimal-change discipline and done criteria.
 
 ## Inputs
@@ -39,7 +39,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-tdd-workflow` skill.
+1. Read `0-global-tdd-workflow` skill.
 2. Choose the artifact type with the decision gate in the matching creation
    prompt:
    - **Agent** → `.github/prompts/add-agent.prompt.md`
@@ -87,7 +87,7 @@ Invoke at start:
       - Check whether the new agent takes over a responsibility previously
         owned by an existing agent and update any affected companion files accordingly.
    b. If a new skill was added or an existing skill's name changed:
-      - Check every agent spec that invokes the affected skill and update the
+      - Check every agent spec that reads the affected skill and update the
         skill name reference if it changed.
    c. If a new prompt was added:
       - Check `.github/AGENTS.md` and `.github/copilot-instructions.md` for prompt

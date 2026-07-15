@@ -20,7 +20,7 @@ missing proof.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-critical-rules` - for commit gating, phased-work commit policy, and
    implementation-complete checks before a commit is created.
 2. `0-global-changelog-writing` - for the current repository changelog contract,
@@ -41,7 +41,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-critical-rules`, invoke `0-global-changelog-writing`, and
+1. Read `0-global-critical-rules`, read `0-global-changelog-writing`, and
    read [`../local/rules.md`](../local/rules.md).
 2. Identify the requested git action and classify it as one of:
    - read-only git inspection (`status`, `diff`, `log`, branch inspection),

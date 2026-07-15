@@ -19,7 +19,7 @@ focused contracts.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `3-implement-function-sig-implementation` - language-neutral Stage 3
    contract-surface implementation patterns
 2. Read [`../local/language-companions.md`](../local/language-companions.md) -
@@ -48,7 +48,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `3-implement-function-sig-implementation`. Read
+1. Read `3-implement-function-sig-implementation`. Read
    `../local/language-companions.md` for the language companion and
    `../local/directories.md` for layout rules.
 2. Parse the function signature plan into operation names, inputs, outputs,

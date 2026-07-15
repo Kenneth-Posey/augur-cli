@@ -1,6 +1,7 @@
 //! Query overlay rendering: displays a question, optional choices, and free-form input.
 
 use crate::domain::tui_state::QueryState;
+use augur_domain::domain::newtypes::HasChoices;
 use augur_domain::domain::string_newtypes::ChoiceText;
 use augur_domain::domain::string_newtypes::{OutputText, PromptText, StringNewtype};
 use ratatui::Frame;
@@ -15,7 +16,7 @@ struct ChoicesBlockParams<'a> {
 
 struct FreeformBlockParams<'a> {
     freeform: &'a str,
-    has_choices: bool,
+    has_choices: HasChoices,
 }
 
 /// Render the query overlay for the full terminal frame.
@@ -42,7 +43,7 @@ fn render_no_choices(f: &mut Frame, state: &QueryState) {
         chunks[1],
         FreeformBlockParams {
             freeform: &state.freeform,
-            has_choices: false,
+            has_choices: HasChoices::no(),
         },
     );
 }
@@ -71,7 +72,7 @@ fn render_with_choices(f: &mut Frame, state: &QueryState) {
         chunks[2],
         FreeformBlockParams {
             freeform: &state.freeform,
-            has_choices: true,
+            has_choices: HasChoices::yes(),
         },
     );
 }
@@ -143,8 +144,8 @@ fn build_choice_lines(choices: &[ChoiceText], selected: Option<usize>) -> Vec<Ou
 /// Returns `"Free-form: "` when choices are present (the user may also select a choice),
 /// or `"Your response: "` when no choices exist (only free-form input is available).
 /// Used by `query_content` and `render_freeform_block`.
-fn freeform_label(has_choices: bool) -> &'static str {
-    if has_choices {
+fn freeform_label(has_choices: HasChoices) -> &'static str {
+    if has_choices.0 {
         "Free-form: "
     } else {
         "Your response: "
@@ -159,7 +160,7 @@ fn freeform_label(has_choices: bool) -> &'static str {
 fn query_content(state: &QueryState) -> (PromptText, Vec<OutputText>, PromptText) {
     let question = state.question.clone();
     let choices = build_choice_lines(&state.choices, state.selected);
-    let label = freeform_label(!state.choices.is_empty());
+    let label = freeform_label(HasChoices(!state.choices.is_empty()));
     let freeform = PromptText::new(format!("{}{}", label, state.freeform));
     (question, choices, freeform)
 }

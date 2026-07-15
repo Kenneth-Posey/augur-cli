@@ -7,7 +7,7 @@ use crate::tools::handler::ToolHandler;
 use augur_domain::domain::lsp::{LspError, LspLocation, LspOperation, LspQueryInput, LspSymbol};
 use augur_domain::domain::newtypes::{CharacterOffset, Count, IsPredicate, LineNumber};
 use augur_domain::domain::string_newtypes::{
-    OutputText, RootUri, StringNewtype, ToolDescription, ToolName,
+    FilePath, OutputText, RootUri, StringNewtype, ToolDescription, ToolName,
 };
 use augur_domain::domain::tool_types::{ToolCallResult, ToolDefinition};
 use augur_domain::domain::traits::LspClient;
@@ -284,7 +284,7 @@ async fn validate_position_args(
 }
 
 struct PositionQueryArgs {
-    file_path: String,
+    file_path: FilePath,
     line: u32,
     character: u32,
 }
@@ -294,7 +294,7 @@ fn parse_position_query_args(
     args: &serde_json::Value,
 ) -> Result<PositionQueryArgs, ToolCallResult> {
     Ok(PositionQueryArgs {
-        file_path: parse_required_string_arg(op, args, "file_path")?,
+        file_path: FilePath::new(parse_required_string_arg(op, args, "file_path")?),
         line: parse_u32_arg(op, args, "line")?,
         character: parse_u32_arg(op, args, "character")?,
     })

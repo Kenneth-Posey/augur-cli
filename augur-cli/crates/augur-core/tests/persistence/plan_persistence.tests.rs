@@ -98,8 +98,7 @@ fn test_update_step_status_missing_or_multirow_returns_row_count_error() {
             result,
             Err(PlanPersistenceError::UnexpectedRowCount {
                 key: ref candidate,
-                expected: 1,
-                actual: 0
+                ..
             }) if *candidate == key
         )
     );

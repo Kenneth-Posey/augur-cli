@@ -24,6 +24,7 @@ fn make_record(endpoint: &str) -> SessionRecord {
                 sdk_session_id: None,
                 ask_session: IsPredicate::from(false),
             },
+            title: None,
         },
         state: augur_core::persistence::SessionState::default(),
     }

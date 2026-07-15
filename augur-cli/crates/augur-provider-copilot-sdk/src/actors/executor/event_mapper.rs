@@ -5,13 +5,8 @@
 //! so these functions are fully testable without the `copilot-executor` feature.
 
 use super::commands::SessionEvent;
-use augur_domain::plan_tree::NodeStatus;
-use augur_domain::string_newtypes::{FailureReason, OutputText, StringNewtype};
+use augur_domain::string_newtypes::{OutputText, StringNewtype};
 use augur_domain::types::AgentOutput;
-
-const STATUS_IN_PROGRESS: &str = "in_progress";
-const STATUS_DONE: &str = "done";
-const STATUS_FAILED: &str = "failed";
 
 /// Map a local `SessionEvent` to an `AgentOutput`, if one applies.
 ///
@@ -28,18 +23,6 @@ pub fn map_session_event(event: &SessionEvent) -> Option<AgentOutput> {
             Some(AgentOutput::Error(OutputText::new(message.clone())))
         }
         SessionEvent::SessionIdle => Some(AgentOutput::TurnComplete),
-        SessionEvent::PlanNodeUpdated {
-            node_id,
-            status,
-            notes,
-        } => {
-            let node_status = parse_node_status(status, notes.as_deref());
-            Some(AgentOutput::PlanNodeUpdate {
-                node_id: node_id.clone(),
-                status: node_status,
-                notes: notes.as_deref().map(OutputText::new),
-            })
-        }
         _ => map_assistant_event(event).or_else(|| map_tool_event(event)),
     }
 }
@@ -88,18 +71,4 @@ fn map_tool_event(event: &SessionEvent) -> Option<AgentOutput> {
         });
     }
     None
-}
-
-/// Parse a status string from the `update_plan_step` tool into a `NodeStatus`.
-///
-/// Expected values: `"in_progress"`, `"done"`, `"failed"`. Any unrecognised
-/// string maps to `Pending` as a safe default. `notes` is used as the failure
-/// message when status is `"failed"`.
-fn parse_node_status(status: &str, notes: Option<&str>) -> NodeStatus {
-    match status {
-        STATUS_IN_PROGRESS => NodeStatus::InProgress,
-        STATUS_DONE => NodeStatus::Done,
-        STATUS_FAILED => NodeStatus::Failed(FailureReason::new(notes.unwrap_or(""))),
-        _ => NodeStatus::Pending,
-    }
 }

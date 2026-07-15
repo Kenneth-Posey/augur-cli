@@ -167,7 +167,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "augur-app"
-version = "7.0.0"
+version = "8.0.0"
 dependencies = [
  "anyhow",
  "augur-core",
@@ -219,7 +219,7 @@ dependencies = [
 
 [[package]]
 name = "augur-domain"
-version = "7.0.0"
+version = "8.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -238,9 +238,10 @@ dependencies = [
 
 [[package]]
 name = "augur-graph-builder"
-version = "3.0.0"
+version = "4.0.0"
 dependencies = [
  "anyhow",
+ "augur-domain",
  "cargo_metadata",
  "clap",
  "serde",
@@ -275,7 +276,7 @@ dependencies = [
 
 [[package]]
 name = "augur-provider-anthropic"
-version = "5.0.0"
+version = "6.0.0"
 dependencies = [
  "augur-domain",
  "augur-provider-shared",
@@ -305,7 +306,7 @@ dependencies = [
 
 [[package]]
 name = "augur-provider-ollama"
-version = "4.0.0"
+version = "5.0.0"
 dependencies = [
  "augur-domain",
  "augur-provider-shared",
@@ -317,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "augur-provider-openai"
-version = "5.0.0"
+version = "6.0.0"
 dependencies = [
  "augur-domain",
  "augur-provider-shared",
@@ -330,7 +331,7 @@ dependencies = [
 
 [[package]]
 name = "augur-provider-openrouter"
-version = "7.0.0"
+version = "8.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -349,7 +350,7 @@ dependencies = [
 
 [[package]]
 name = "augur-provider-shared"
-version = "4.0.0"
+version = "5.0.0"
 dependencies = [
  "augur-domain",
  "bon",
@@ -363,7 +364,7 @@ dependencies = [
 
 [[package]]
 name = "augur-tui"
-version = "4.0.0"
+version = "5.0.0"
 dependencies = [
  "anyhow",
  "arboard",

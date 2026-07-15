@@ -7,9 +7,8 @@
 //! Startup sequence (feature-enabled):
 //! 1. Build `copilot_sdk::Client` using config.
 //! 2. Start the client and open a session.
-//! 3. Register the `update_plan_step` tool on the session.
-//! 4. Subscribe to session events and spawn the event dispatch loop.
-//! 5. Enter the command loop, dispatching `ExecutorCmd` to the session.
+//! 3. Subscribe to session events and spawn the event dispatch loop.
+//! 4. Enter the command loop, dispatching `ExecutorCmd` to the session.
 
 use super::commands::ExecutorCmd;
 use super::commands::SessionEvent;
@@ -19,7 +18,6 @@ use super::handle::{ExecutorHandle, make_output_channel};
 use augur_domain::channels::EXECUTOR_COMMAND_CAPACITY;
 use augur_domain::config::types::ExecutorConfig;
 use augur_domain::newtypes::{NumericNewtype, TokenCount};
-use augur_domain::plan_tree::PlanNodeId;
 use augur_domain::string_newtypes::{OutputText, ProcessId, StringNewtype, ToolCallId, ToolName};
 use augur_domain::types::AgentOutput;
 use tokio::sync::mpsc;
@@ -78,7 +76,6 @@ async fn run_with_sdk(
         let _ = client.stop().await;
         return;
     };
-    register_update_plan_step_tool(&session, output_tx.clone()).await;
     spawn_event_dispatch(session.subscribe(), output_tx.clone());
     run_command_loop(&session, &mut cmd_rx).await;
     let _ = client.stop().await;
@@ -268,38 +265,6 @@ async fn run_shell_exec(
             }
         }
     }
-}
-
-pub async fn register_update_plan_step_tool(
-    session: &copilot_sdk::Session,
-    output_tx: tokio::sync::broadcast::Sender<AgentOutput>,
-) {
-    use copilot_sdk::Tool;
-
-    let tool = Tool::new("update_plan_step")
-        .description("Report progress on a plan tree node. Call when starting, completing, or failing a step.")
-        .parameter("node_id", "string", "The PlanNodeId of the step being updated", true)
-        .parameter("status", "string", "One of: in_progress, done, failed", true)
-        .parameter("notes", "string", "Failure reason or completion notes", false)
-        .skip_permission(true);
-
-    let tx = output_tx.clone();
-    let handler: copilot_sdk::ToolHandler =
-        std::sync::Arc::new(move |_name, args: &serde_json::Value| {
-            let node_id = args["node_id"].as_str().unwrap_or("").to_owned();
-            let status = args["status"].as_str().unwrap_or("").to_owned();
-            let notes = args["notes"].as_str().map(|s| s.to_owned());
-            let event = SessionEvent::PlanNodeUpdated {
-                node_id: PlanNodeId::new(node_id),
-                status,
-                notes,
-            };
-            emit_event(&event, &tx);
-            copilot_sdk::ToolResultObject::text("ok")
-        });
-    session
-        .register_tool_with_handler(tool, Some(handler))
-        .await;
 }
 
 fn translate_sdk_event(event: &copilot_sdk::SessionEventData) -> SessionEvent {

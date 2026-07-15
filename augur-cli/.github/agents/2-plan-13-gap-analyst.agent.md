@@ -29,7 +29,7 @@ artifacts under `.github/` and `plans/<feature-slug>/`. The only allowed write i
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-behavioral-specification` - GWT scenario structure and traceability rules
 2. `2-plan-test-planning` - test strategy coverage requirements and pass condition rules
 
@@ -50,7 +50,9 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. **Invoke skills:** Read and apply `0-global-behavioral-specification` and `2-plan-test-planning`.
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. **Read skills:** Read and apply `0-global-behavioral-specification` and `2-plan-test-planning`.
 
 2. **Enumerate coverage requirements:** Build a list of all GWT scenario IDs from `behaviors.md`. Every scenario must pass all five traceability checks below.
 

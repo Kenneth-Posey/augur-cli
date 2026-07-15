@@ -18,8 +18,7 @@ fn llm_actor_is_not_in_augur_core_and_is_owned_by_provider_openrouter() {
             .exists()
     );
     assert!(
-        root
-            .join("crates/augur-provider-openrouter/src/actors/llm/llm_actor.rs")
+        root.join("crates/augur-provider-openrouter/src/actors/llm/llm_actor.rs")
             .exists()
     );
 }

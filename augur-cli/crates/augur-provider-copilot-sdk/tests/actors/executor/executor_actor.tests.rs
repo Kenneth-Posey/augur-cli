@@ -1,14 +1,12 @@
-use augur_domain::plan_tree::NodeStatus;
 use augur_domain::string_newtypes::StringNewtype;
 use augur_domain::types::AgentOutput;
 use augur_provider_copilot_sdk::actors::executor::executor_actor::{
-    register_update_plan_step_tool, run_command_loop, spawn_event_dispatch,
+    run_command_loop, spawn_event_dispatch,
 };
 use copilot_sdk::{
     AssistantIntentData, Session, SessionEvent, SessionEventData, ToolExecutionPartialResultData,
     ToolExecutionProgressData,
 };
-use serde_json::json;
 use tokio::sync::{broadcast, mpsc};
 use tokio::time::{Duration, timeout};
 
@@ -120,46 +118,6 @@ async fn sdk_tool_partial_result_event_is_published_to_output_stream() {
             assert_eq!(output.as_str(), "first line\nsecond line");
         }
         other => panic!("expected ToolPartialResult, got {other:?}"),
-    }
-}
-
-/// Verifies that invoking the registered `update_plan_step` tool publishes a
-/// `PlanNodeUpdate` carrying the translated node status and notes.
-#[tokio::test]
-async fn update_plan_step_tool_invocation_publishes_plan_node_update() {
-    let session = test_session();
-    let (output_tx, mut output_rx) = broadcast::channel(8);
-    register_update_plan_step_tool(&session, output_tx).await;
-
-    session
-        .invoke_tool(
-            "update_plan_step",
-            &json!({
-                "node_id": "phase-6-executor-gap",
-                "status": "failed",
-                "notes": "tool output did not reach subscribers"
-            }),
-        )
-        .await
-        .expect("update_plan_step tool should be registered");
-
-    match recv_output(&mut output_rx).await {
-        AgentOutput::PlanNodeUpdate {
-            node_id,
-            status,
-            notes,
-        } => {
-            assert_eq!(node_id.as_str(), "phase-6-executor-gap");
-            assert_eq!(
-                status,
-                NodeStatus::Failed("tool output did not reach subscribers".into())
-            );
-            assert_eq!(
-                notes.as_deref(),
-                Some("tool output did not reach subscribers")
-            );
-        }
-        other => panic!("expected PlanNodeUpdate, got {other:?}"),
     }
 }
 

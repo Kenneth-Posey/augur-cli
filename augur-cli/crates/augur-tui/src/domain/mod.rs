@@ -19,3 +19,17 @@ pub mod types {
 
 pub use tui_display_state::TuiDisplayState;
 pub use tui_state::AppState;
+// Legacy test-compat re-exports for mirrored test modules that reference
+// types from augur-domain via crate::domain::<submodule> paths.
+pub mod traits {
+    pub use augur_domain::domain::traits::*;
+}
+pub mod thinking_mode {
+    pub use augur_domain::domain::thinking_mode::*;
+}
+pub mod task_types {
+    pub use augur_domain::domain::task_types::*;
+}
+pub use augur_core::domain::DeterministicOrchestratorEvent;
+pub use augur_core::domain::NormalizedSignal;
+pub use augur_domain::domain::string_newtypes::WorkflowStepId;

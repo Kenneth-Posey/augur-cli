@@ -17,10 +17,12 @@ fn llm_provider_shared_module_is_owned_by_provider_shared_crate() {
             .join("crates/augur-core/src/actors/llm/providers/shared.rs")
             .exists()
     );
-    assert!(root.join("crates/augur-provider-shared/src/lib.rs").exists());
     assert!(
-        root
-            .join("crates/augur-provider-shared/src/request_context.rs")
+        root.join("crates/augur-provider-shared/src/lib.rs")
+            .exists()
+    );
+    assert!(
+        root.join("crates/augur-provider-shared/src/request_context.rs")
             .exists()
     );
 }

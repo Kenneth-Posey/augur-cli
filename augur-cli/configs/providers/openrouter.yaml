@@ -1,27 +1,52 @@
 provider: openrouter
+instruction_files:
+  - .github/PROMPT.md
+  - .github/MAIN_PROMPT.md
+  - .github/copilot-instructions.md
+  - .github/AGENTS.md
+  - .github/routing.md
+  - .github/local/identity.md
+  - .github/local/directories.md
+  - .github/local/rules.md
+  - .github/local/language-companions.md
+  - .github/local/prompts-guide.md
+  - .github/instructions/critical-rules.instructions.md
+  - .github/instructions/rust.instructions.md
+background_instruction_files:
+  - .github/PROMPT.md
+  - .github/TASK_PROMPT.md
+  - .github/copilot-instructions.md
+  - .github/AGENTS.md
+  - .github/routing.md
+  - .github/local/identity.md
+  - .github/local/directories.md
+  - .github/local/rules.md
+  - .github/local/language-companions.md
+  - .github/local/prompts-guide.md
+  - .github/instructions/critical-rules.instructions.md
+  - .github/instructions/rust.instructions.md
 openrouter:
-  background_instruction_files:
-    - .github/copilot-instructions.md
-    - .github/AGENTS.md
-    - .github/routing.md
-    - .github/local/identity.md
-    - .github/local/directories.md
-    - .github/local/rules.md
-    - .github/local/language-companions.md
-    - .github/instructions/critical-rules.instructions.md
-    - .github/instructions/rust.instructions.md
-  instruction_files:
-    - .github/copilot-instructions.md
-    - .github/AGENTS.md
-    - .github/routing.md
-    - .github/local/identity.md
-    - .github/local/directories.md
-    - .github/local/rules.md
-    - .github/local/language-companions.md
-    - .github/instructions/critical-rules.instructions.md
-    - .github/instructions/rust.instructions.md
   cache:
     enabled: true
+  tools:
+    - type: openrouter:web_fetch
+      parameters:
+        engine: exa
+        max_uses: 10
+        max_content_tokens: 100000
+        allowed_domains: []
+        blocked_domains: []
+    - type: openrouter:datetime
+      parameters:
+        timezone: America/Los_Angeles
+    - type: openrouter:web_search
+      parameters:
+        user_location:
+          type: approximate
+          city: San Francisco
+          region: California
+          country: US
+          timezone: America/Los_Angeles
 models:
   - id: deepseek/deepseek-v3.2
     display_name: 'DeepSeek: DeepSeek V3.2'
@@ -33,6 +58,7 @@ models:
     max_context_length: 131000
     max_tool_iterations: 250
     tool_compaction_ratio: 0.9
+    tool_response_cap: 50000
   - id: deepseek/deepseek-v3.2-exp
     display_name: 'DeepSeek: DeepSeek V3.2 Exp'
     cost_input_per_mtok: 0.27
@@ -43,6 +69,7 @@ models:
     max_context_length: 164000
     max_tool_iterations: 250
     tool_compaction_ratio: 0.9
+    tool_response_cap: 50000
   - id: deepseek/deepseek-v4-flash
     display_name: 'DeepSeek: DeepSeek V4 Flash'
     cost_input_per_mtok: 0.10
@@ -53,6 +80,7 @@ models:
     max_context_length: 1000000
     max_tool_iterations: 250
     tool_compaction_ratio: 0.9
+    tool_response_cap: 50000
   - id: deepseek/deepseek-v4-pro
     display_name: 'DeepSeek: DeepSeek V4 Pro'
     cost_input_per_mtok: 0.44
@@ -63,5 +91,4 @@ models:
     max_context_length: 1000000
     max_tool_iterations: 250
     tool_compaction_ratio: 0.9
-
-
+    tool_response_cap: 50000

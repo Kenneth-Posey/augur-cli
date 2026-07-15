@@ -5,12 +5,12 @@ mod failure_routing;
 mod parallel_groups;
 mod progression;
 use deterministic_orchestrator_ops::{
-    StepProgressArgs, annotate_last_failure_decision, apply_artifact_updates, dispatch_request,
-    emit, emit_halted, emit_step_progress, handle_evaluator_dispatch_failure,
-    handle_worker_dispatch_failure, merge_artifact_updates,
+    StepProgressArgs, annotate_last_failure_decision, dispatch_request, emit, emit_halted,
+    emit_step_progress, handle_evaluator_dispatch_failure, handle_worker_dispatch_failure,
+    merge_artifact_existence,
 };
 
-use super::artifact_store::{ArtifactUpdate, StepArtifactResolver};
+use super::artifact_store::{ArtifactExistence, StepArtifactResolver};
 use super::background_dispatch::{
     AgentDispatchTicket, BackgroundAgentRuntime, DeterministicAgentDispatcher,
 };
@@ -20,7 +20,8 @@ use super::decision::{
     choose_failure_decision,
 };
 use super::handle::DeterministicOrchestratorHandle;
-use super::loader::{ensure_local_workflow_file, load_workflow_document};
+use super::loader::AgentInstructionLibrary;
+use super::loader::{ensure_local_workflow_file, load_agent_instructions, load_workflow_document};
 use crate::domain::deterministic_orchestrator::{
     DeterministicOrchestratorEvent, FailureDecision, FailureOrigin, GroupMemberResult,
     NormalizedSignal, PendingFailureContext, StepEvaluatorRecord, StepExecutionRecord,
@@ -58,7 +59,7 @@ struct RuntimePorts {
 struct StepOutcome {
     step_id: WorkflowStepId,
     signal: NormalizedSignal,
-    artifact_updates: Vec<ArtifactUpdate>,
+    artifact_existence: Vec<ArtifactExistence>,
     /// Evaluator response text captured when the evaluator emitted Hold.
     /// `None` for worker completions and evaluator Advance results.
     evaluator_output: Option<OutputText>,
@@ -69,12 +70,12 @@ impl StepOutcome {
     fn new(
         step_id: WorkflowStepId,
         signal: NormalizedSignal,
-        artifact_updates: Vec<ArtifactUpdate>,
+        artifact_existence: Vec<ArtifactExistence>,
     ) -> Self {
         Self {
             step_id,
             signal,
-            artifact_updates,
+            artifact_existence,
             evaluator_output: None,
         }
     }
@@ -89,7 +90,7 @@ struct AppliedDecision {
 #[derive(Clone, Debug)]
 struct PendingStepExecution {
     execution: StepExecutionRecord,
-    artifact_updates: Vec<ArtifactUpdate>,
+    artifact_existence: Vec<ArtifactExistence>,
 }
 
 #[derive(Clone, Debug)]
@@ -98,7 +99,7 @@ struct EvaluatedStep {
     execution: StepExecutionRecord,
     transition_signal: NormalizedSignal,
     failure_origin: FailureOrigin,
-    artifact_updates: Vec<ArtifactUpdate>,
+    artifact_existence: Vec<ArtifactExistence>,
 }
 
 struct RunLoopArgs {
@@ -215,6 +216,11 @@ struct DeterministicOrchestratorRunState {
     pending_worker: Option<PendingStepExecution>,
     artifact_store: StepArtifactResolver,
     failure_policy: Arc<dyn FailureDecisionPolicy>,
+    agent_instructions: AgentInstructionLibrary,
+    /// IDs of parallel group members still awaiting completion.
+    pending_parallel_members: Vec<WorkflowStepId>,
+    /// Active parallel group step ID, if any.
+    active_parallel_group_id: Option<WorkflowStepId>,
 }
 
 impl DeterministicOrchestratorRunState {
@@ -225,6 +231,9 @@ impl DeterministicOrchestratorRunState {
             pending_worker: None,
             artifact_store: StepArtifactResolver::new(repo_root),
             failure_policy,
+            agent_instructions: AgentInstructionLibrary::default(),
+            pending_parallel_members: Vec::new(),
+            active_parallel_group_id: None,
         }
     }
 }
@@ -417,10 +426,10 @@ fn worker_completion_outcome(cmd: DeterministicOrchestratorCmd) -> Option<StepOu
     if let DeterministicOrchestratorCmd::WorkerCompleted {
         step_id,
         signal,
-        artifact_updates,
+        artifact_existence,
     } = cmd
     {
-        return Some(StepOutcome::new(step_id, signal, artifact_updates));
+        return Some(StepOutcome::new(step_id, signal, artifact_existence));
     }
     None
 }
@@ -429,7 +438,7 @@ fn evaluator_completion_outcome(cmd: DeterministicOrchestratorCmd) -> Option<Ste
     if let DeterministicOrchestratorCmd::EvaluatorCompleted {
         step_id,
         signal,
-        artifact_updates,
+        artifact_existence,
         evaluator_output,
     } = cmd
     {
@@ -437,7 +446,7 @@ fn evaluator_completion_outcome(cmd: DeterministicOrchestratorCmd) -> Option<Ste
             StepOutcome::builder()
                 .step_id(step_id)
                 .signal(signal)
-                .artifact_updates(artifact_updates)
+                .artifact_existence(artifact_existence)
                 .maybe_evaluator_output(evaluator_output)
                 .build(),
         );
@@ -496,6 +505,8 @@ fn initialize_pipeline_run(
     state.progress.executed_steps = ExecutedStepIndex::default();
     state.run_state = WorkflowRunState::default();
     state.pending_worker = None;
+    state.pending_parallel_members = Vec::new();
+    state.active_parallel_group_id = None;
     state.run_state.current_step_id = first_step_id;
 }
 
@@ -516,6 +527,8 @@ async fn handle_start(
         tracing::warn!("deterministic orchestrator failed to load local workflow document");
         return;
     };
+
+    state.agent_instructions = load_agent_instructions(state.artifact_store.repo_root(), &document);
 
     let mut step_index = build_step_index(&document);
 
@@ -546,7 +559,7 @@ async fn handle_start(
         return;
     }
 
-    start_current_step(state, ports).await;
+    Box::pin(start_current_step(state, ports)).await;
 }
 
 /// Replaces `<feature-slug>` placeholders in all step artifact paths within the index.
@@ -682,15 +695,14 @@ async fn apply_needs_revision_routing(
     failure_routing::apply_needs_revision_routing(state, ports, step).await;
 }
 
-/// Records artifact updates, pushes the execution record, and tracks group membership.
+/// Records the execution record and tracks group membership.
 ///
-/// Inputs: `state` - run state updated with artifacts and prior step log;
-/// `evaluated` - the evaluated step carrying execution data and artifact changes.
+/// Inputs: `state` - run state updated with prior step log;
+/// `evaluated` - the evaluated step carrying execution data.
 fn record_evaluated_step_state(
     state: &mut DeterministicOrchestratorRunState,
     evaluated: &EvaluatedStep,
 ) {
-    apply_artifact_updates(state, &evaluated.execution, &evaluated.artifact_updates);
     state
         .run_state
         .prior_steps
@@ -746,9 +758,9 @@ async fn handle_step_failure(
 /// whose id and artifact updates are rendered into the message text.
 async fn broadcast_step_pass_message(ports: &RuntimePorts, evaluated: &EvaluatedStep) {
     let artifact_paths: Vec<&str> = evaluated
-        .artifact_updates
+        .artifact_existence
         .iter()
-        .map(|u| u.artifact.path.as_str())
+        .map(|e| e.artifact.path.as_str())
         .collect();
     let msg_text = if artifact_paths.is_empty() {
         format!("Step '{}' passed.", evaluated.step.id)
@@ -804,6 +816,16 @@ async fn handle_step_evaluation(
     ports: &RuntimePorts,
     evaluated: EvaluatedStep,
 ) {
+    // Parallel group members always route through the group handler,
+    // not through individual failure/transition logic. The consolidation
+    // step handles quick-patch recovery based on all member results.
+    if is_member_of_active_parallel_group(state, &evaluated.step) {
+        state.pending_worker = None;
+        record_evaluated_step_state(state, &evaluated);
+        advance_parallel_group_or_next_member(state, ports, &evaluated.step).await;
+        return;
+    }
+
     state.pending_worker = None;
     let step_passed = evaluated.transition_signal == NormalizedSignal::Advance;
     record_evaluated_step_state(state, &evaluated);
@@ -816,6 +838,15 @@ async fn handle_step_evaluation(
     state.run_state.pending_failure = None;
     broadcast_step_pass_message(ports, &evaluated).await;
     route_step_after_pass(state, ports, &evaluated).await;
+}
+
+/// Returns true when the evaluated step is a member of the currently active parallel group.
+fn is_member_of_active_parallel_group(
+    state: &DeterministicOrchestratorRunState,
+    step: &WorkflowStep,
+) -> bool {
+    state.active_parallel_group_id.is_some()
+        && parallel_groups::is_pending_parallel_member(state, &step.id)
 }
 
 /// Advances a parallel group after one of its members completes with a pass signal.
@@ -935,7 +966,13 @@ async fn handle_delegate_fix(
         args.failure_notes.as_ref(),
     );
 
-    let patch_signal = dispatch_patch_agent_and_await(ports, &args.step_id, patch_request).await;
+    let patch_signal = dispatch_patch_agent_and_await(
+        ports,
+        &args.step_id,
+        patch_request,
+        &state.agent_instructions,
+    )
+    .await;
 
     if patch_signal != NormalizedSignal::Advance {
         emit_halted(&ports.event_tx, args.step_id);
@@ -982,24 +1019,33 @@ async fn dispatch_patch_agent_and_await(
     ports: &RuntimePorts,
     step_id: &WorkflowStepId,
     patch_request: WorkflowDispatchRequest,
+    agent_instructions: &AgentInstructionLibrary,
 ) -> NormalizedSignal {
     if let Some(mock_signal) = try_mock_remediation_dispatch(&patch_request) {
         return mock_signal;
     }
 
-    let dispatcher = remediation_dispatcher(ports);
+    let dispatcher = remediation_dispatcher(ports, agent_instructions);
     let Some(ticket) = dispatch_patch_ticket(&dispatcher, &patch_request, step_id).await else {
         return NormalizedSignal::Hold;
     };
     await_patch_signal(&dispatcher, ticket, step_id).await
 }
 
-fn remediation_dispatcher(ports: &RuntimePorts) -> DeterministicAgentDispatcher {
+fn remediation_dispatcher(
+    ports: &RuntimePorts,
+    agent_instructions: &AgentInstructionLibrary,
+) -> DeterministicAgentDispatcher {
     match &ports.agent_feed_tx {
-        Some(tx) => {
-            DeterministicAgentDispatcher::new_with_feed(ports.dispatch_runtime.clone(), tx.clone())
-        }
-        None => DeterministicAgentDispatcher::new(ports.dispatch_runtime.clone()),
+        Some(tx) => DeterministicAgentDispatcher::new_with_feed(
+            ports.dispatch_runtime.clone(),
+            tx.clone(),
+            agent_instructions.clone(),
+        ),
+        None => DeterministicAgentDispatcher::new(
+            ports.dispatch_runtime.clone(),
+            agent_instructions.clone(),
+        ),
     }
 }
 
@@ -1050,80 +1096,37 @@ struct ReviewerRestoreArgs {
     step_id: WorkflowStepId,
 }
 
-/// Restores run cursor and pending-worker state, then re-dispatches the reviewer evaluator.
+/// Restores the run cursor and re-dispatches the failed step from scratch after a
+/// successful quick-patch.  This re-fires the **entire** step (worker first, then
+/// evaluator for `worker_with_gate` steps) rather than skipping straight to the
+/// evaluator, which is what the `quick-patch-and-retry` contract requires.
 ///
-/// On missing prior worker execution: emits Halted and clears the cursor.
-/// Finds the most-recent worker execution record for `return_to_reviewer` in prior steps.
-///
-/// Returns `None` if no record exists; the caller must handle the missing-record case.
-fn find_prior_worker_execution(
-    state: &DeterministicOrchestratorRunState,
-    return_to_reviewer: &WorkflowStepId,
-) -> Option<StepExecutionRecord> {
-    state
-        .run_state
-        .prior_steps
-        .iter()
-        .rev()
-        .find(|r| r.step_id == *return_to_reviewer)
-        .cloned()
-}
-
-/// Reconstructs a bare worker `StepExecutionRecord` from a prior record.
-///
-/// Copies only `step_id`, `worker_signal`, and `updated_artifacts` - dropping any
-/// evaluator or remediation data - so the evaluator sees a clean worker baseline.
-fn rebuild_worker_execution_from_prior(prior: &StepExecutionRecord) -> StepExecutionRecord {
-    StepExecutionRecord::builder()
-        .step_id(prior.step_id.clone())
-        .worker_signal(prior.worker_signal.clone())
-        .updated_artifacts(prior.updated_artifacts.clone())
-        .build()
-}
-
+/// This dispatches the worker agent directly (bypassing the input verification step
+/// in `progression::start_current_step`, since the patch agent already verified the
+/// inputs are fixable) and lets the evaluator follow naturally via the normal
+/// worker-completion handler.
 async fn restore_reviewer_state_and_dispatch(
     state: &mut DeterministicOrchestratorRunState,
     ports: &RuntimePorts,
     args: ReviewerRestoreArgs,
 ) {
-    let Some(prior_record) = find_prior_worker_execution(state, &args.return_to_reviewer) else {
-        tracing::warn!(
-            step_id = %args.return_to_reviewer,
-            "no prior worker execution for reviewer step after patch - halting"
-        );
-        emit_halted(&ports.event_tx, args.step_id);
-        state.run_state.current_step_id = None;
-        return;
-    };
-
-    let worker_execution = rebuild_worker_execution_from_prior(&prior_record);
-
-    let Some(_) = args.reviewer_step.dispatch.evaluator_agent.as_ref() else {
-        tracing::warn!(
-            failing_step_id = %args.step_id,
-            reviewer_step_id = %args.return_to_reviewer,
-            reviewer_kind = ?args.reviewer_step.kind,
-            "delegate-fix reviewer restore cannot re-dispatch a single-pass step without an evaluator"
-        );
+    let Some(step) = workflow_step(state, &args.return_to_reviewer).cloned() else {
         emit_halted(&ports.event_tx, args.step_id);
         state.run_state.current_step_id = None;
         return;
     };
 
     state.run_state.current_step_id = Some(args.return_to_reviewer.clone());
-    state.pending_worker = Some(PendingStepExecution {
-        execution: worker_execution.clone(),
-        artifact_updates: vec![],
-    });
+    state.pending_worker = None;
 
+    // Re-fire the entire step from scratch (worker first).
+    // The evaluator will follow naturally via the normal worker-completion handler.
+    state.artifact_store.pre_create_output_dirs(&step);
     dispatch_request(
         ports,
         state.artifact_store.clone(),
-        build_evaluator_dispatch_request(
-            &args.reviewer_step,
-            &worker_execution,
-            state.progress.feature_context.clone(),
-        ),
+        build_worker_dispatch_request(&step, state.progress.feature_context.clone()),
+        &state.agent_instructions,
     )
     .await;
 }

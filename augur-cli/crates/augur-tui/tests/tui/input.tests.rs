@@ -3172,25 +3172,30 @@ fn apply_agent_feed_output_status_line_buffering_regression() {
     );
 }
 
-/// Verifies that when a buffered StatusLine contains '\n', flushing produces separate
-/// output lines for each segment.
+/// Verifies that when a StatusLine chunk contains '\n', the completed paragraphs are
+/// flushed to output immediately with their own timestamps.
 ///
-/// Newline characters within a StatusLine are split into multiple output lines on flush.
-/// The first segment inherits the original header (timestamp); subsequent segments are
-/// plain lines with no timestamp.
+/// Newline characters within a StatusLine trigger an immediate flush of the completed
+/// paragraph so each paragraph gets its own timestamp, and only the trailing segment
+/// remains pending for further accumulation.
 #[test]
 fn agent_feed_newline_in_status_line_splits_on_flush() {
     use augur_tui::domain::types::AgentFeedOutput;
 
     let mut state = default_state();
 
-    // Send a StatusLine containing newlines - it stays buffered until flushed.
+    // Send a StatusLine containing newlines.
     apply_agent_feed_output(
         &mut state,
         AgentFeedOutput::StatusLine("Line one\nLine two\nLine three".into()),
     );
 
-    // Not yet flushed - still in pending buffer.
+    // "Line one" and "Line two" are flushed immediately; "Line three" stays pending.
+    assert_eq!(
+        state.interaction.panel.agent_feed.output.len(),
+        2,
+        "\"Line one\" and \"Line two\" must be flushed to output on newline"
+    );
     assert!(
         state
             .interaction
@@ -3199,15 +3204,49 @@ fn agent_feed_newline_in_status_line_splits_on_flush() {
             .buffers
             .pending_status_message
             .is_some(),
-        "StatusLine with newlines must remain in the pending buffer until a structural event"
+        "\"Line three\" must remain in the pending buffer"
     );
     assert_eq!(
-        state.interaction.panel.agent_feed.output.len(),
-        0,
-        "No output lines must be created before flush"
+        state
+            .interaction
+            .panel
+            .agent_feed
+            .buffers
+            .pending_status_message
+            .as_ref()
+            .map(|l| l.text.as_str())
+            .unwrap_or(""),
+        "Line three",
+        "Pending buffer must contain \"Line three\""
     );
 
-    // Flush by sending a TaskCompleted event.
+    // Verify first two output lines have their content and timestamps.
+    assert_eq!(
+        state.interaction.panel.agent_feed.output[0].text.as_str(),
+        "Line one",
+        "First flushed line must be \"Line one\""
+    );
+    assert!(
+        state.interaction.panel.agent_feed.output[0]
+            .header
+            .timestamp
+            .is_some(),
+        "Flushed \"Line one\" must have a timestamp"
+    );
+    assert_eq!(
+        state.interaction.panel.agent_feed.output[1].text.as_str(),
+        "Line two",
+        "Second flushed line must be \"Line two\""
+    );
+    assert!(
+        state.interaction.panel.agent_feed.output[1]
+            .header
+            .timestamp
+            .is_some(),
+        "Flushed \"Line two\" must have a timestamp"
+    );
+
+    // Flush remaining by sending a TaskCompleted event.
     apply_agent_feed_output(
         &mut state,
         AgentFeedOutput::TaskCompleted {
@@ -3216,21 +3255,11 @@ fn agent_feed_newline_in_status_line_splits_on_flush() {
     );
 
     let feed = &state.interaction.panel.agent_feed;
-    // Expect: "Line one", "Line two", "Line three" (from the status split) + 1 completion line.
+    // Expect: "Line one", "Line two", "Line three" (from the status) + 1 completion line.
     assert_eq!(
         feed.output.len(),
         4,
         "Three newline-delimited segments plus one TaskCompleted line must be in output"
-    );
-    assert_eq!(
-        feed.output[0].text.as_str(),
-        "Line one",
-        "First segment must be the first output line"
-    );
-    assert_eq!(
-        feed.output[1].text.as_str(),
-        "Line two",
-        "Second segment must be the second output line"
     );
     assert_eq!(
         feed.output[2].text.as_str(),

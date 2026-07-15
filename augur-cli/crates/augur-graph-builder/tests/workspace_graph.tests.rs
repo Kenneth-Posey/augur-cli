@@ -96,8 +96,8 @@ fn test_graph_data_module_node_children() {
         }],
         cross_edges: vec![CrossCrateEdge {
             source: "my-crate::actors".to_string(),
-            target_crate: "other-crate".to_string(),
-            target_module: "other-crate::lib".to_string(),
+            target_crate: "other-crate".to_string().into(),
+            target_module: "other-crate::lib".to_string().into(),
         }],
     };
 

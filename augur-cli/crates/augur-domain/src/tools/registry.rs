@@ -20,6 +20,17 @@ impl ToolRegistry {
         self.handlers.push(Box::new(handler));
     }
 
+    /// Register a tool definition without a local handler.
+    ///
+    /// These are provider-side tools (e.g. OpenRouter `openrouter:web_fetch`)
+    /// that the LLM may call, but which the provider handles on the server
+    /// side. The registry includes the definition so it is advertised in the
+    /// `tools` array sent to the LLM, but `find()` will return `None` for
+    /// these tools since no local handler exists.
+    pub fn register_definition_only(&mut self, definition: ToolDefinition) {
+        self.definitions.push(definition);
+    }
+
     pub fn definitions(&self) -> &[ToolDefinition] {
         &self.definitions
     }

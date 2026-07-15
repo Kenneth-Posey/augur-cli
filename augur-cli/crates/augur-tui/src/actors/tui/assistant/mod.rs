@@ -1,7 +1,7 @@
 //! No direct `*.tests.rs` mirror by design: this module is a facade/re-export layer.
 //! Behavior is validated by mirrored tests of child modules and higher-level integration tests.
 //! Focused helper modules for clipboard handling, key dispatch, output
-//! buffering, picker/session restore flows, plan helpers, and status-bar data.
+//! buffering, picker/session restore flows, query helpers, and status-bar data.
 
 /// Clipboard and selection helpers.
 pub mod clipboard;
@@ -11,8 +11,8 @@ pub mod key_dispatch;
 pub mod output_buf;
 /// Session picker event handling helpers.
 pub mod picker;
-/// Plan-mode and query lifecycle helpers.
-pub mod plan_view;
+/// Query lifecycle helpers.
+pub mod query_flow;
 /// Session restore and hydration helpers.
 pub mod session_restore;
 /// Status-bar construction helpers.

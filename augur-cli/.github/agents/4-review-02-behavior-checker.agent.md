@@ -18,7 +18,7 @@ test baseline from [`.github/local/identity.md`](../local/identity.md). Default 
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `4-review-behavior-validation` - behavior validation contract covering test execution, coverage measurement,
    panic-safety, feature completeness, and pass/fail criteria
 2. `4-review-behavior-tools` - tool-running contract; use

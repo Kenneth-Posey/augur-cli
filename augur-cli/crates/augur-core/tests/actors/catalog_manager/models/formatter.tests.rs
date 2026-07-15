@@ -4,12 +4,14 @@ use augur_core::actors::catalog_manager::models::formatter::{
 use augur_core::actors::catalog_manager::models::{
     ContextWindowSize, ModelId, ModelInfo, ModelPricing, ProviderName,
 };
+use augur_domain::StringNewtype;
 use augur_domain::domain::UsdCost;
+use augur_domain::domain::string_newtypes::ModelName;
 
 fn model(id: &str, provider: &str, input_cost: f64, output_cost: f64) -> ModelInfo {
     ModelInfo {
         id: ModelId(id.to_owned()),
-        name: format!("{id} name"),
+        name: ModelName::new(format!("{id} name")),
         provider: ProviderName(provider.to_owned()),
         context_window: ContextWindowSize(200_000),
         pricing: ModelPricing {
