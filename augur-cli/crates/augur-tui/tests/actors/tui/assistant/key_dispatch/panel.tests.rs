@@ -1,6 +1,6 @@
-use crate::actors::tui::assistant::key_dispatch::panel::*;
-use crate::domain::string_newtypes::EndpointName;
-use crate::domain::tui_state::{AppScreen, AppState, InputFocus, SecondaryView};
+use augur_tui::actors::tui::assistant::key_dispatch::panel::*;
+use augur_tui::domain::string_newtypes::EndpointName;
+use augur_tui::domain::tui_state::{AppScreen, AppState, InputFocus, SecondaryView};
 
 fn conversation_state() -> AppState {
     AppState::new(EndpointName::new("ep"), AppScreen::Conversation)

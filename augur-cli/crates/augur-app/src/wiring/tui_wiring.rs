@@ -51,7 +51,6 @@ pub fn build_spawned_tui_deps(
         session: core.domain.session.handle.clone(),
         ask: core.domain.ask.handle.clone(),
         file_scanner: core.planning.file_scanner.handle.clone(),
-        guided_plan: core.planning.guided_plan.clone(),
     };
     let channels = TuiChannelDeps {
         output_rx: channels.output_rx,
@@ -104,9 +103,9 @@ pub fn build_tui_runtime_deps(
             tools: TuiServiceTools::builder()
                 .command(core.context.control.command.clone())
                 .file_scanner(deps.services.file_scanner)
-                .guided_plan(deps.services.guided_plan)
                 .ask(deps.services.ask)
                 .logger(core.handles.io.logger.clone())
+                .agent_feed_tx(deps.channels.feed_tx.clone())
                 .build(),
         },
         channels: TuiChannels {

@@ -45,11 +45,11 @@ fn format_bash_call(args: &serde_json::Map<String, serde_json::Value>) -> String
         .get("command")
         .and_then(|v| v.as_str())
         .unwrap_or("(unknown)");
-    let description = args
-        .get("description")
-        .and_then(|v| v.as_str())
-        .unwrap_or("bash");
-    format!("  \u{2192} {}\n    {}", description, command)
+    if let Some(description) = args.get("description").and_then(|v| v.as_str()) {
+        format!("  \u{2192} {}\n    {}", description, command)
+    } else {
+        format!("  \u{2192} {}", command)
+    }
 }
 
 fn format_glob_call(args: &serde_json::Map<String, serde_json::Value>) -> String {

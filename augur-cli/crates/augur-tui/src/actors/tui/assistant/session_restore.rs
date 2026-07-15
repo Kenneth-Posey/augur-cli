@@ -46,6 +46,10 @@ pub(crate) async fn apply_restored_session(
     handles.persistence.restore_from(&record);
     state.status.context_window.reset_for_new_session();
     hydrate_output_from_messages(state, &record);
+
+    // Restore the session title from the persisted title field (set automatically
+    // from the first user prompt or overridden via `/session-title`).
+    state.interaction.session_title = handles.persistence.title();
     state
         .output
         .scroll_offset
@@ -180,3 +184,6 @@ fn push_restored_assistant_text(state: &mut AppState, text: &str, timestamp: Tim
         state.output.lines.push(OutputLine::plain(part));
     }
 }
+#[cfg(test)]
+#[path = "../../../../tests/actors/tui/assistant/session_restore.tests.rs"]
+mod tests;

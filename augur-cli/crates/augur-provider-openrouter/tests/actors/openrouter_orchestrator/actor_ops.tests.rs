@@ -81,6 +81,9 @@ async fn zero_max_parallel_workers_defaults_to_four() {
                 .instruction_prefix(Arc::new(InstructionPrefix(vec![])))
                 .repo_root(RepoRoot::new("."))
                 .max_parallel_workers(0)
+                .default_model_config(
+                    augur_provider_openrouter::model_config::fallback_default_model_config(),
+                )
                 .build(),
         )
         .build();

@@ -16,5 +16,9 @@ fn executor_ops_live_in_provider_bucket() {
         repo.join("crates/augur-provider-copilot-sdk/src/actors/executor/executor_ops.rs")
             .exists()
     );
-    assert!(!repo.join("crates/augur-core/src/actors/executor/executor_ops.rs").exists());
+    assert!(
+        !repo
+            .join("crates/augur-core/src/actors/executor/executor_ops.rs")
+            .exists()
+    );
 }

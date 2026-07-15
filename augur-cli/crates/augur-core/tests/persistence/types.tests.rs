@@ -19,6 +19,7 @@ fn make_record(endpoint: &str) -> SessionRecord {
                 sdk_session_id: None,
                 ask_session: IsPredicate::from(false),
             },
+            title: None,
         },
         state: SessionState::default(),
     }
@@ -200,7 +201,7 @@ fn session_record_round_trips() {
 fn summarize_empty_messages_returns_empty_preview() {
     let record = make_record("ep");
     let summary = summarize(&record);
-    assert_eq!(summary.preview.as_str(), "");
+    assert_eq!(summary.preview.as_str(), "<<no prompt>>");
     assert_eq!(summary.message_count, Count::new(0));
 }
 

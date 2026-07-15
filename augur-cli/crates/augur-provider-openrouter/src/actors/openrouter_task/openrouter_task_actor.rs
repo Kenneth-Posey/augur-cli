@@ -6,7 +6,8 @@ use super::openrouter_task_actor_ops as actor_ops;
 use super::spec_loader::load_agent_spec;
 use crate::actors::openrouter_orchestrator::handle::OpenRouterOrchestratorHandle;
 use crate::compaction::{compact_messages_for_openrouter, estimate_request_tokens_for_compaction};
-use crate::model_config::{ResolvedModelConfig, resolve_model_config};
+use crate::model_config::ResolvedModelConfig;
+use crate::model_config::resolve_model_config;
 use actor_ops::{
     build_task_system_prompt, is_at_iteration_limit, prepend_prefix, signal_to_feed_event,
 };
@@ -82,6 +83,12 @@ pub struct TaskServices {
     pub spec_base_path: RepoRoot,
     /// Optional token tracker for recording LLM usage after each turn.
     pub token_tracker: Option<TokenTrackerHandle>,
+    /// Pre-resolved model config for the default endpoint (from provider catalog config files).
+    ///
+    /// Used as the fallback when no per-run model override is set, so background
+    /// agents respect the same configured limits as the main conversation.
+    pub default_model_config: ResolvedModelConfig,
+
     /// Optional OpenRouter orchestrator handle for correlated run lifecycle reporting.
     pub orchestrator: Option<OpenRouterOrchestratorHandle>,
 }
@@ -230,8 +237,13 @@ async fn run<L: LlmClient, T: ToolExecutor>(
                 &task_config,
             )
             .await;
-            // Resolve per-model config once at task startup.
-            let model_config = resolve_model_config(task_config.runtime.model_override.as_ref());
+            // Resolve per-model config: use the pre-resolved default from config
+            // files when no per-run override is set, matching the main agent's
+            // config-driven threshold (wiring/domain.rs → resolve_model_config).
+            let model_config = match task_config.runtime.model_override.as_ref() {
+                Some(override_id) => resolve_model_config(Some(override_id)),
+                None => task_services.default_model_config.clone(),
+            };
             run_task_loop(
                 TaskLoopDeps {
                     runtime: TaskLoopRuntime {
@@ -442,8 +454,10 @@ async fn execute_tool_iteration<L: LlmClient, T: ToolExecutor>(
         ))),
     )
     .await;
-    history.push(augur_domain::tools::execution::tool_result_message(
-        &call, &result,
+    history.push(augur_domain::tools::execution::capped_tool_result_message(
+        &call,
+        &result,
+        Some(runtime.model_config.tool_response_cap),
     ));
     Ok(())
 }
@@ -541,10 +555,12 @@ fn build_completion_stream<L: LlmClient, T: ToolExecutor>(
     let raw = history.messages_for_request();
     let prefixed = prepend_prefix(runtime.instruction_prefix, &raw);
     let prefixed_messages_count = prefixed.len();
+    let cap = runtime.model_config.effective_request_cap();
 
-    // Only compact if estimated tokens exceed the auto-compact threshold.
+    // Only compact if estimated tokens exceed the effective request cap
+    // (following the same logic as the main agent in assistant_core.rs).
     let estimated = estimate_request_tokens_for_compaction(&prefixed);
-    let messages = if estimated > runtime.model_config.auto_compact_threshold {
+    let messages = if estimated > cap {
         compact_messages_for_openrouter(
             prefixed,
             runtime.model_config.compaction_target,
@@ -554,6 +570,20 @@ fn build_completion_stream<L: LlmClient, T: ToolExecutor>(
         prefixed
     };
 
+    // Re-verify after compaction: if still over the cap, emit a warning
+    // but proceed anyway (the LLM provider may reject the request or the
+    // conversation may still fit with provider-level headroom).
+    let post_compact_estimated = estimate_request_tokens_for_compaction(&messages);
+    if post_compact_estimated > cap {
+        tracing::warn!(
+            event = "task_request_still_over_budget_after_compaction",
+            estimated_tokens = ?post_compact_estimated,
+            compaction_target = ?runtime.model_config.compaction_target,
+            cap = ?cap,
+            action = "proceed_with_warning",
+        );
+    }
+
     tracing::debug!(
         event = "task_llm_request_meta",
         endpoint = "openrouter",
@@ -562,7 +592,9 @@ fn build_completion_stream<L: LlmClient, T: ToolExecutor>(
         compacted_messages_count = messages.len(),
         tools_count = tool_defs.len(),
         estimated_tokens = ?estimated,
+        post_compact_estimated = ?post_compact_estimated,
         auto_compact_threshold = ?runtime.model_config.auto_compact_threshold,
+        effective_request_cap = ?cap,
     );
     runtime.llm.complete_stream(
         CompletionRequest::builder()

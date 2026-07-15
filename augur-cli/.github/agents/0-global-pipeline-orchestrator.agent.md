@@ -22,7 +22,7 @@ heading. For interactive sessions, use the pipeline skill directly.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-orchestration-pipeline` - full pipeline workflow: all four stages,
    agent sequencing, failure routing, hard-stop conditions, and checkpoint commits
 2. `0-utility-session-orchestrator` - orch-query CLI contract, signal taxonomy,
@@ -43,7 +43,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke the `0-global-orchestration-pipeline`,
+1. Read the `0-global-orchestration-pipeline`,
    `0-utility-session-orchestrator`, and `0-global-failure-routing` skills.
 2. Initialize session context in orch-query with feature request details.
 3. Run the **Pre-flight Checks** defined in the pipeline skill. Halt on any failure.

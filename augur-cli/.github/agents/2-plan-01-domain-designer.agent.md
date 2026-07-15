@@ -14,7 +14,7 @@ Design language-agnostic domain models with clear boundaries and no infrastructu
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `2-plan-domain-planning` - entity/aggregate/value object design patterns and invariant specification
 2. `0-global-functional-pseudocode` - pseudocode notation for expressing state machines, transitions, and domain operations in language-agnostic form
 3. `0-global-typestate` - type-driven state safety principles for designing invalid-state prevention
@@ -34,7 +34,9 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. **Extract Domain Vocabulary:** Read feature and behavior specs to identify noun phrases (entities) and actions (operations). Map Given/When/Then clauses to domain objects and operations. Invoke `2-plan-domain-planning`.
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. **Extract Domain Vocabulary:** Read feature and behavior specs to identify noun phrases (entities) and actions (operations). Map Given/When/Then clauses to domain objects and operations. Read `2-plan-domain-planning`.
 
 2. **Identify Entity Candidates:** For each noun, determine whether it has persistent identity and a lifecycle. Document its identity key (natural key or UUID) and lifecycle states (creation, valid transitions, deletion/archival).
 

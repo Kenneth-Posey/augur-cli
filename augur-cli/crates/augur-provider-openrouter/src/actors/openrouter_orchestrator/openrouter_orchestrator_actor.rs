@@ -5,6 +5,7 @@ use super::handle::OpenRouterOrchestratorHandle;
 use super::openrouter_orchestrator_actor_ops as actor_ops;
 use super::openrouter_orchestrator_ops::RunLifecycleLedger;
 use crate::actors::llm::handle::LlmHandle;
+use crate::model_config::ResolvedModelConfig;
 use augur_domain::ModelId;
 use augur_domain::actors::{active_model::ActiveModelHandle, tool::InlineToolExecutor};
 use augur_domain::newtypes::Count;
@@ -59,6 +60,13 @@ pub struct OrchestratorTaskConfig {
     pub repo_root: RepoRoot,
     /// Maximum number of OpenRouter task workers running in parallel.
     pub max_parallel_workers: usize,
+    /// Pre-resolved model config for the default endpoint.
+    ///
+    /// This is resolved once at wiring time from the provider catalog config files,
+    /// matching how the main agent gets its `request_cap_threshold`.
+    /// Background tasks use this as the fallback when no model override is active,
+    /// ensuring they respect the same configured limits as the main conversation.
+    pub default_model_config: ResolvedModelConfig,
 }
 
 /// Commands accepted by the OpenRouter orchestrator actor.

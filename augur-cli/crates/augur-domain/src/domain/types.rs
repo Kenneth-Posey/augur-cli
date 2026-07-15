@@ -4,7 +4,6 @@ use crate::domain::newtypes::{
     Count, ExecutionSuccess, Temperature, TimestampMs, TokenCount, ToolResultStripFraction,
     UsdCost, WaitSecs,
 };
-use crate::domain::plan_tree::{CheckpointConfig, PlanNodeId, PlanTree};
 use crate::domain::string_newtypes::{
     AgentName, CachedFileContent, EndpointName, FailureReason, FileDisplayName, FilePath, ModelId,
     ModelLabel, OutputText, PromptText, StatusLabel, StringNewtype, ToolCallId, ToolName,
@@ -486,23 +485,9 @@ pub enum AgentOutput {
     },
     /// Emitted by `ExecutorActor` when the CLI session becomes idle.
     ///
-    /// Signals the `SupervisorActor` that the executor has finished processing
-    /// the current step's prompt and is ready for the next prompt. The supervisor
-    /// uses this to advance the plan tree to the next pending leaf.
+    /// Signals that the executor has finished processing the current prompt and
+    /// is ready for the next prompt.
     TurnComplete,
-    /// Emitted by `ExecutorActor` when the `update_plan_step` tool fires.
-    ///
-    /// The executor registers `update_plan_step` on the CLI session. When the
-    /// CLI agent calls it, the executor sends this event so the supervisor can
-    /// update the plan tree node status and notes in place.
-    PlanNodeUpdate {
-        /// The plan node whose status changed.
-        node_id: crate::domain::plan_tree::PlanNodeId,
-        /// New execution status for the node.
-        status: crate::domain::plan_tree::NodeStatus,
-        /// Optional notes (failure reason or completion summary).
-        notes: Option<OutputText>,
-    },
     /// Model update reported by the Copilot SDK or executor for a completed assistant turn.
     ///
     /// Emitted by `ExecutorActor` and `CopilotChatActor` when the SDK reports
@@ -618,48 +603,14 @@ pub enum AgentOutput {
 // ── SupervisorEvent ───────────────────────────────────────────────────────────
 
 /// Events emitted by the supervisor actor on its broadcast event channel.
-///
-/// Flows from `SupervisorActor` to `TuiActor` and any other subscribers via
-/// `broadcast::channel<SupervisorEvent>`. The TUI plan panel renders the live
-/// tree state by replaying these events against the initial `PlanGenerated`
-/// snapshot. The executor emits `AgentOutput` events on a separate channel.
 #[derive(Clone, Debug)]
 pub enum SupervisorEvent {
-    /// The plan tree has been generated from a goal and is ready for display.
-    ///
-    /// Carries an `Arc` so every subscriber gets the same allocation - no
-    /// per-subscriber clone of the full tree. The TUI holds the `Arc` as its
-    /// initial render snapshot, updating it via subsequent step events.
-    PlanGenerated(Arc<PlanTree>),
-    /// A leaf node has started executing. The TUI updates its status indicator.
-    StepStarted(PlanNodeId),
-    /// A leaf node completed successfully. The TUI marks the node done.
-    StepCompleted(PlanNodeId),
-    /// A leaf node failed. Execution halts after this event.
-    StepFailed {
-        /// The node that failed.
-        id: PlanNodeId,
-        /// Human-readable failure reason from the phase gate evaluation.
-        reason: OutputText,
-    },
-    /// A checkpoint has been triggered (explicit marker or heuristic threshold).
-    ///
-    /// The config indicates which actions (commit / compact) are being taken.
-    CheckpointTriggered(CheckpointConfig),
-    /// All pending leaf nodes have been executed successfully.
-    ExecutionComplete,
     /// The supervisor encountered an unrecoverable error or was cancelled.
     Failed {
         /// Human-readable reason for the failure.
         reason: OutputText,
     },
-    /// A display-only `AgentOutput` event forwarded from the executor during
-    /// step execution (e.g. `IntentMessage`, `ToolProgress`, `ToolPartialResult`).
-    ///
-    /// The supervisor's drain loop re-emits these events so they reach the TUI
-    /// output pane while execution is in progress. The TUI handles this variant
-    /// by calling `apply_agent_output` directly, preserving the same rendering
-    /// path as the copilot actor.
+    /// A display-only `AgentOutput` event forwarded from the executor.
     DisplayOutput(AgentOutput),
 }
 
@@ -742,9 +693,6 @@ pub enum CommandOutcome {
     /// Produced by the registry when no model id follows the command, allowing
     /// the Copilot headless CLI to choose the model automatically.
     SelectAutoModel,
-    /// The user typed `/run-plan <path>`; the TUI should load and start the
-    /// named guided plan file. The inner `String` is the raw path argument.
-    RunPlan(FilePath),
     /// The user typed `/new-session`; the TUI should save the current session,
     /// reset the persistence handle to a new UUID, ask the Copilot actor to
     /// create a fresh SDK session, and clear the output pane.
@@ -773,6 +721,9 @@ pub enum CommandOutcome {
         /// Optional provider name filter (e.g., Some("openrouter")).
         provider: Option<String>,
     },
+    /// The user typed `/session-title <text>`; override the session title shown at the top
+    /// of the conversation screen and persisted to the session file.
+    SetSessionTitle(OutputText),
 }
 
 // ── AgentFeedOutput ───────────────────────────────────────────────────────────

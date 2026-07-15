@@ -15,7 +15,7 @@ Read-only gatekeeper. Do not write or modify any files.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-plan-implementation` - for quality gate checklist and valid agent names.
 2. Read [`.github/local/language-companions.md`](../local/language-companions.md) and use the language-specific architecture-validation companion (capability key: `4-review-architecture-validation`) for module placement and dependency-direction rules.
 
@@ -36,7 +36,9 @@ Also return ordered findings by phase. Each finding includes:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-plan-implementation`. Read [`.github/local/language-companions.md`](../local/language-companions.md) and invoke the language-specific architecture-validation companion (capability key: `4-review-architecture-validation`).
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. Read `0-global-plan-implementation`. Read [`.github/local/language-companions.md`](../local/language-companions.md) and read the language-specific architecture-validation companion (capability key: `4-review-architecture-validation`).
 2. Read plan root file. Follow all part-file links and read each part file.
 3. **Load the research snapshot** when available. Read the snapshot path from
    `.github/local/directories.md`. If no path is defined there, skip the

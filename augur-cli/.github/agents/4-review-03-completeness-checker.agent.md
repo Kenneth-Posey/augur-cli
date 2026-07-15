@@ -15,7 +15,7 @@ Emit validation signal (pass/fail) to `review-orchestrator`.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `4-review-completeness-validation` - completeness contract: required artifacts, stub detection, test harness, checksum integrity, plan traceability, and pass/fail criteria
 2. `4-review-completeness-tools` - tool-running contract; use [`language-companions.md`](../local/language-companions.md) for the required cargo-diagnostics and test-gap-fusion commands3. `lsp-query-usage` - coordinate rules and operation workflows for lsp_query;
    read when using workspaceSymbol or documentSymbol to verify symbol presence

@@ -263,25 +263,66 @@ fn apply_feed_clear(feed: &mut crate::domain::tui_state::AgentFeedTranscript) {
     feed.buffers = crate::domain::tui_state::EventBuffers::default();
 }
 
-/// Accumulate `StatusLine` text into the single pending status message.
+/// Accumulate `StatusLine` text, flushing completed paragraphs to output so each
+/// gets its own timestamp.
 ///
 /// Creates a new timestamped pending entry on the first chunk; appends subsequent
-/// chunks to the same entry. The pending entry stays visible in the panel live
-/// (rendered via `secondary_container`) and is committed to `output` only at
-/// structural boundaries: `TaskStarted`, `TaskCompleted`, `TaskFailed`, and `Clear`.
+/// chunks to the same entry. When a chunk contains a hard newline (`\n`), the
+/// content before the newline is committed to `output` (with its timestamp) and a
+/// fresh pending line (with a new timestamp) is started for content after it.
+/// This way each paragraph in a multi-paragraph streaming response has its own
+/// timestamp in the committed output, rather than accumulating a single giant
+/// `OutputLine` with dozens of embedded `\n`.
+///
+/// The pending entry stays visible in the panel live (rendered via
+/// `secondary_container`) and is finally committed on structural boundaries:
+/// `TaskStarted`, `TaskCompleted`, `TaskFailed`, and `Clear`.
 fn accumulate_status_line(
     feed: &mut crate::domain::tui_state::AgentFeedTranscript,
     text: augur_domain::domain::string_newtypes::OutputText,
 ) {
     use crate::domain::tui_state::{OutputLine, current_timestamp_ms};
 
-    if feed.buffers.pending_status_message.is_none() {
-        let mut line = OutputLine::plain(text);
-        line.header.timestamp = Some(current_timestamp_ms());
-        feed.buffers.pending_status_message = Some(line);
-    } else if let Some(ref mut line) = feed.buffers.pending_status_message {
-        let combined = format!("{}{}", line.text.as_str(), text.as_str());
-        line.text = augur_domain::domain::string_newtypes::OutputText::new(combined);
+    let raw = text.as_str();
+
+    // Fast path: no newline → just append to current pending line.
+    if !raw.contains('\n') {
+        if feed.buffers.pending_status_message.is_none() {
+            let mut line = OutputLine::plain(text);
+            line.header.timestamp = Some(current_timestamp_ms());
+            feed.buffers.pending_status_message = Some(line);
+        } else if let Some(ref mut line) = feed.buffers.pending_status_message {
+            let combined = format!("{}{}", line.text.as_str(), raw);
+            line.text = augur_domain::domain::string_newtypes::OutputText::new(combined);
+        }
+        return;
+    }
+
+    // Slow path: split on '\n'. Each completed segment is flushed to output
+    // (with a fresh timestamp) so that multi-paragraph messages produce one
+    // committed OutputLine per paragraph.
+    let mut segments = raw.split('\n').peekable();
+    while let Some(segment) = segments.next() {
+        let is_last = segments.peek().is_none();
+
+        // Append to current pending line (or create one).
+        if feed.buffers.pending_status_message.is_none() {
+            let mut line = OutputLine::plain(
+                augur_domain::domain::string_newtypes::OutputText::new(segment.to_owned()),
+            );
+            line.header.timestamp = Some(current_timestamp_ms());
+            feed.buffers.pending_status_message = Some(line);
+        } else if let Some(ref mut line) = feed.buffers.pending_status_message {
+            let combined = format!("{}{}", line.text.as_str(), segment);
+            line.text = augur_domain::domain::string_newtypes::OutputText::new(combined);
+        }
+
+        if !is_last {
+            // Commit the completed paragraph to output with its timestamp.
+            // A fresh pending line will be created for the next segment.
+            flush_pending_status_message(feed);
+        }
+        // Last segment stays pending for further accumulation.
     }
 }
 

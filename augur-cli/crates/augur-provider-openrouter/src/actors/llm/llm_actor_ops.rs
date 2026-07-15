@@ -38,7 +38,7 @@ mod tests {
     use augur_domain::config::provider_catalog::OpenRouterCacheConfig;
     use augur_domain::config::{AgentConfig, AppConfig, CopilotConfig, PersistenceConfig};
     use augur_domain::newtypes::{Temperature, TokenCount};
-    use augur_domain::string_newtypes::{EndpointName, FilePath, OutputText};
+    use augur_domain::string_newtypes::{EndpointName, FilePath, OutputText, SessionId};
     use augur_domain::types::StreamChunk;
     use augur_provider_shared::request_context::{CompleteFields, CompleteRoute, RequestPayload};
 
@@ -87,7 +87,7 @@ mod tests {
         let cfg = LlmRunConfig {
             app: test_app_config(),
             or_cache: OpenRouterCacheConfig::default(),
-            session_id: "test-session-id".to_string(),
+            session_id: SessionId::new("test-session-id"),
             logger: test_logger(),
         };
 

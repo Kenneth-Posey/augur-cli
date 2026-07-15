@@ -22,7 +22,7 @@ Emit `fail` with structured diagnostics when any check fails.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `2-plan-architecture-planning` - dependency graph structure rules, direction-of-flow requirements, module placement criteria, and acyclicity validation
 2. Read [`../local/language-companions.md`](../local/language-companions.md) - look up the `2-plan-architecture-planning` companion key for language-specific module boundary and ownership rules
 3. `0-system-topology` - schema and rules for reading the system actor topology
@@ -30,7 +30,7 @@ Invoke at start:
 
 ## Inputs
 
-- **Dependency Graph (Pseudocode):** `plans/<feature-slug>/plan/dependency-graph.md` - output from `2-plan-03-dependency-designer`
+- **Dependency Graph (Pseudocode):** `plans/<feature-slug>/plan/dependency-graph.md` - output from `plan-dependency-designer`
 - **Domain Entity Specification:** `plans/<feature-slug>/plan/domain-spec.md` - every domain entity and aggregate must have a module placement in the graph
 - **Behavioral Specifications (GWT):** `plans/<feature-slug>/design/behaviors.md` - every actor-to-actor or module-to-module communication implied by the scenarios must appear as an edge in the graph
 - **Feature Specification:** `plans/<feature-slug>/design/features.md` - for coverage cross-check
@@ -42,11 +42,13 @@ Invoke at start:
 
 - **Pass/Fail Decision:** `pass` or `fail` with summary
 - **Validation Report:** `plans/<feature-slug>/plan/dependency-validation.md` - findings for cycles, direction violations, missing placements, missing communication edges, and language-companion checks
-- **Diagnostic Feedback:** For each finding: affected module pair or entity, violation type, and remediation guidance for `2-plan-03-dependency-designer`
+- **Diagnostic Feedback:** For each finding: affected module pair or entity, violation type, and remediation guidance for `plan-dependency-designer`
 
 ## Step-by-Step Behavior
 
-1. **Invoke skills:** Read and apply `2-plan-architecture-planning`. Read `../local/language-companions.md` and invoke the listed language companion for `2-plan-architecture-planning`.
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. **Read skills:** Read and apply `2-plan-architecture-planning`. Read `../local/language-companions.md` and read the listed language companion for `2-plan-architecture-planning`.
 
 2. **Acyclicity check:** Walk the full dependency graph. Flag any cycle, regardless of direction or module type.
 
@@ -71,7 +73,7 @@ Invoke at start:
 
 7. **Interface boundary completeness:** For each edge that crosses a layer boundary, verify the graph names the interface contract (function or message type). Flag edges with no interface contract.
 
-8. **Language companion checks:** Apply checks from the language companion invoked in step 1. Incorporate findings.
+8. **Language companion checks:** Apply checks from the language companion read in step 1. Incorporate findings.
 
 9. **Aggregate and emit:** Write the validation report. Emit `pass` if no findings remain; otherwise emit `fail` with the full diagnostic list.
 

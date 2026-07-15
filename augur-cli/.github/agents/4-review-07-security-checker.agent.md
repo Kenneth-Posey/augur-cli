@@ -15,7 +15,7 @@ Emit validation signal (pass/fail) to `review-orchestrator`.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `4-review-security-validation` - universal security validation contract: unsafe justification, input validation, injection prevention, integer safety, secret handling, cryptographic correctness, and pass/fail criteria
 2. `4-review-security-tools` - universal tool-running contract; use [`language-companions.md`](../local/language-companions.md) for deterministic cargo clippy unsafe-focus and syn-analyzer security-pattern commands
 

@@ -94,75 +94,6 @@ pub fn compute_layout(input: ChatLayoutInput<'_>) -> LayoutSizes {
         .build()
 }
 
-/// Percentage of the terminal width allocated to the plan panel right zone.
-///
-/// At 25%, a 200-column terminal gives the panel 50 columns and the chat area
-/// 150 columns. The panel is also subject to `MIN_PLAN_PANEL_COLS`.
-/// Consumers: `compute_plan_layout`, `render_plan_layout`.
-pub const PLAN_PANEL_WIDTH_PERCENT: u16 = 25;
-
-/// Minimum column width enforced for the plan panel regardless of terminal size.
-///
-/// Prevents the panel from becoming too narrow to read on small terminals.
-/// When the 25% calculation falls below this floor, this value is used instead
-/// and the chat area shrinks to absorb the difference.
-const MIN_PLAN_PANEL_COLS: u16 = 20;
-
-/// Column widths for the horizontal plan-mode split.
-#[derive(bon::Builder)]
-pub struct PlanLayoutWidths {
-    /// Columns allocated to the left chat zone.
-    pub chat_cols: u16,
-    /// Columns allocated to the right plan panel zone.
-    pub panel_cols: u16,
-}
-
-/// Compute the horizontal column split for plan mode.
-///
-/// Allocates `PLAN_PANEL_WIDTH_PERCENT`% of `total_width` to the plan panel,
-/// with a minimum of `MIN_PLAN_PANEL_COLS` (20). The chat zone receives the
-/// remainder. The two widths always sum to `total_width`.
-/// Called by `render_plan_layout` in `screens/conversation.rs`.
-pub fn compute_plan_layout(total_width: Count) -> PlanLayoutWidths {
-    let raw_panel =
-        (total_width.inner() as u32 * PLAN_PANEL_WIDTH_PERCENT as u32 / PERCENT_DENOMINATOR) as u16;
-    let total_width = total_width.inner() as u16;
-    let panel_cols = raw_panel.max(MIN_PLAN_PANEL_COLS).min(total_width);
-    let chat_cols = total_width.saturating_sub(panel_cols);
-    PlanLayoutWidths::builder()
-        .chat_cols(chat_cols)
-        .panel_cols(panel_cols)
-        .build()
-}
-
-/// Column widths for the three-pane layout when both the secondary container and
-/// the plan panel are active simultaneously.
-#[derive(bon::Builder)]
-pub struct ThreePaneLayout {
-    /// Columns for the conversation area (primary feed + optional secondary container combined).
-    pub conversation_cols: u16,
-    /// Columns for the plan/guided-plan panel.
-    pub plan_panel_cols: u16,
-}
-
-/// Compute three-pane layout when both secondary container and plan panel are active.
-///
-/// Applies the plan panel percentage (25%) first using [`compute_plan_layout`], then
-/// the remaining width is the conversation area. The secondary split within the
-/// conversation area is handled separately by [`compute_secondary_layout`] applied to
-/// the conversation rect. The two widths always sum to `total_width`.
-///
-/// Called by `screens::conversation::render_plan_layout` and
-/// `screens::conversation::render_guided_plan_layout` when
-/// `state.interaction.panel.secondary_view.is_some()`.
-pub fn compute_three_pane_layout(total_width: Count) -> ThreePaneLayout {
-    let plan = compute_plan_layout(total_width);
-    ThreePaneLayout::builder()
-        .conversation_cols(plan.chat_cols)
-        .plan_panel_cols(plan.panel_cols)
-        .build()
-}
-
 /// Input parameters for computing inline query input height.
 #[derive(bon::Builder)]
 pub struct QueryInputRowsInput<'a> {
@@ -351,31 +282,21 @@ pub(crate) fn split_controls_area(area: Rect) -> (Rect, Rect) {
 ///
 /// `area` is the rect allocated to the conversation column.
 /// `reference_width` is the full terminal width used for secondary-pane
-/// percentage calculations. When `None`, `area.width` is used as the reference
-/// (chat mode). When `Some(w)`, `w` is used instead (plan mode, where `area`
-/// is narrower than the terminal).
+/// percentage calculations. When `None`, `area.width` is used as the reference.
+/// When `Some(w)`, `w` is used instead.
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct ConversationArea {
-    pub(crate) area: Rect,
-    pub(crate) reference_width: Option<u16>,
+pub struct ConversationArea {
+    pub area: Rect,
+    pub reference_width: Option<u16>,
 }
 
 impl ConversationArea {
-    /// Construct a `ConversationArea` for chat/query mode, where `area` already
-    /// spans the full terminal width.
-    pub(crate) fn full(area: Rect) -> Self {
+    /// Construct a `ConversationArea` where `area` already spans the intended
+    /// conversation width.
+    pub fn full(area: Rect) -> Self {
         Self {
             area,
             reference_width: None,
-        }
-    }
-
-    /// Construct a `ConversationArea` for plan mode, where `area` is narrower
-    /// than the terminal and `terminal_width` is the full terminal width.
-    pub(crate) fn plan(area: Rect, terminal_width: Count) -> Self {
-        Self {
-            area,
-            reference_width: Some(terminal_width.inner() as u16),
         }
     }
 }

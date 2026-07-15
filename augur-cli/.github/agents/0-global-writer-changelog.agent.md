@@ -18,7 +18,7 @@ speculative work.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-changelog-writing` - changelog naming, required sections,
    checkpoint wording, and validation rules.
 2. Read [`.github/local/rules.md`](../local/rules.md) and
@@ -44,7 +44,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-changelog-writing` and read the local changelog baseline
+1. Read `0-global-changelog-writing` and read the local changelog baseline
    files.
 2. Verify the input describes completed work only.
    - If the pipeline stage has not passed, or the change is not commit-ready,

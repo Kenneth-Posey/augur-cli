@@ -18,7 +18,7 @@ format/style consistency, scope-drift detection, and the Stage 4 struct-size lim
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `4-review-consistency-validation` - consistency validation rules: naming conventions, documentation completeness, behavior-to-code alignment, scope integrity, and pass/fail criteria
 2. `4-review-consistency-tools` - tool-running contract; use [`language-companions.md`](../local/language-companions.md) for the language-specific doc-extractor and syn-analyzer commands
 

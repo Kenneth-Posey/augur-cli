@@ -8,7 +8,7 @@ use augur_domain::config::provider_catalog::{
     OpenRouterCacheConfig, default_provider_catalog_dir, load_provider_catalog,
 };
 use augur_domain::config::{AppConfig, Provider};
-use augur_domain::string_newtypes::{OutputText, StringNewtype};
+use augur_domain::string_newtypes::{OutputText, SessionId, StringNewtype};
 use augur_domain::types::{AgentOutput, Message, StreamChunk};
 use augur_provider_shared::request_context::{
     CompleteFields, CompleteRoute, LlmCommand, RequestContext, RequestPayload,
@@ -32,7 +32,7 @@ pub(super) struct LlmRunConfig {
     /// Forwarded as the `user` field in OpenAI-compatible request bodies and
     /// as `HTTP-Referer` + `X-OpenRouter-Title` in OpenRouter HTTP headers so requests appear attributed
     /// in the OpenRouter activity log.
-    pub(super) session_id: String,
+    pub(super) session_id: SessionId,
     /// Logger handle for routing raw LLM request/response bodies to the JSONL log.
     pub(super) logger: augur_domain::domain::actor_contracts::LoggerHandle,
 }
@@ -48,7 +48,7 @@ pub(super) struct LlmRunConfig {
 pub fn spawn(
     config: AppConfig,
     agent_tx: broadcast::Sender<AgentOutput>,
-    session_id: String,
+    session_id: impl Into<SessionId>,
     logger: augur_domain::domain::actor_contracts::LoggerHandle,
 ) -> (JoinHandle<()>, LlmHandle) {
     let _ = agent_tx;
@@ -58,7 +58,7 @@ pub fn spawn(
     let run_config = LlmRunConfig {
         app: config,
         or_cache,
-        session_id,
+        session_id: session_id.into(),
         logger,
     };
     let join = tokio::spawn(run(run_config, rx));
@@ -89,7 +89,7 @@ fn load_openrouter_cache_config() -> OpenRouterCacheConfig {
 pub(super) fn inject_openrouter_headers(
     ctx: &mut RequestContext,
     cfg: &OpenRouterCacheConfig,
-    session_id: &str,
+    session_id: &SessionId,
 ) {
     if ctx.endpoint.provider == Provider::OpenRouter {
         let mut headers = build_openrouter_cache_headers(cfg).0;
@@ -99,7 +99,7 @@ pub(super) fn inject_openrouter_headers(
             "https://github.com/Kenneth-Posey/augur-cli".to_string(),
         ));
         ctx.extra_request_headers = headers;
-        ctx.session_id = Some(session_id.to_string());
+        ctx.session_id = Some(session_id.as_str().to_string());
     }
 }
 

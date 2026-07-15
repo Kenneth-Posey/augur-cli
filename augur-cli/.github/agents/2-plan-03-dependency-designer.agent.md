@@ -26,7 +26,7 @@ Write output to `plans/<feature-slug>/plan/dependency-graph.md`. Do not modify
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `2-plan-architecture-planning` - placement rules, single-direction flow requirements, layer definitions, and interface contract specification
 2. `0-system-topology` - schema and usage rules for the system actor topology
    file; read when the feature touches existing actors or wiring
@@ -49,7 +49,9 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. **Invoke skills:** Read and apply `2-plan-architecture-planning`. Identify the architectural layer model (for example, domain → ops → adapter → runtime).
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. **Read skills:** Read and apply `2-plan-architecture-planning`. Identify the architectural layer model (for example, domain → ops → adapter → runtime).
 
 1a. **Load existing topology (conditional):** If the feature's behavioral
     specifications imply interaction with existing actors (any scenario where

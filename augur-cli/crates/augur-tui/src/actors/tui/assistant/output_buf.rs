@@ -190,3 +190,6 @@ fn refresh_model_picker_if_open(state: &mut AppState) {
         super::key_dispatch::refresh_model_hints(state);
     }
 }
+#[cfg(test)]
+#[path = "../../../../tests/actors/tui/assistant/output_buf.tests.rs"]
+mod tests;

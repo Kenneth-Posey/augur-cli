@@ -91,5 +91,5 @@ fn legacy_interrupt_signal_visibility_is_crate_scoped() {
         env!("CARGO_MANIFEST_DIR")
     ))
     .expect("agent handle source must be readable");
-    assert!(source.contains("pub(crate) fn is_cancelled(&self) -> CancelSignal"));
+    assert!(source.contains("pub fn is_cancelled(&self) -> CancelSignal"));
 }

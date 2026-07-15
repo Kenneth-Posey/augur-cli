@@ -334,3 +334,6 @@ fn completions_are_empty(completions: &crate::domain::tui_state::PromptCompletio
             .pending_model_id
             .is_none()
 }
+#[cfg(test)]
+#[path = "../../../../../tests/actors/tui/assistant/key_dispatch/completion.tests.rs"]
+mod tests;

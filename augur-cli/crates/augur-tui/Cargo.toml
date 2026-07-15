@@ -1,6 +1,6 @@
 [package]
 name = "augur-tui"
-version = "4.0.0"
+version = "5.0.0"
 edition = "2024"
 autotests = false
 
@@ -24,16 +24,4 @@ serde = { version = "1", features = ["derive"] }
 augur-core = { path = "../augur-core" }
 augur-domain = { path = "../augur-domain" }
 tempfile = "3"
-
-[[test]]
-name = "actors_tests"
-path = "tests/actors/mod.tests.rs"
-
-[[test]]
-name = "domain_tests"
-path = "tests/domain/mod.tests.rs"
-
-[[test]]
-name = "tui_tests"
-path = "tests/tui/mod.tests.rs"
 

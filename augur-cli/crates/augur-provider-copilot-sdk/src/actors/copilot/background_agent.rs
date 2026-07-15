@@ -29,7 +29,11 @@ use augur_domain::types::{AgentFeedOutput, FeedEntry, FeedId};
 #[derive(bon::Builder)]
 pub struct BackgroundAgentConfig {
     /// The agent type identifier to pass to the Copilot SDK session.
-    pub agent: AgentName,
+    ///
+    /// Set to `None` for pipeline dispatch (the prompt text drives behavior
+    /// instead of the agent identity). Set to `Some(...)` for normal chat
+    /// sessions where the agent identity matters.
+    pub agent: Option<AgentName>,
     /// Stable feed identifier for the UI transcript associated with this agent.
     pub feed_id: FeedId,
     /// The prompt to send to the background agent session.
@@ -77,12 +81,17 @@ async fn emit_feed_event(
 }
 
 async fn emit_background_failure(args: &BackgroundAgentArgs, reason: OutputText) {
-    tracing::warn!(agent = %args.config.agent, reason = %reason, "background agent failed");
+    let display_name = args
+        .config
+        .agent
+        .clone()
+        .unwrap_or_else(AgentName::pipeline);
+    tracing::warn!(agent = %display_name, reason = %reason, "background agent failed");
     emit_feed_event(
         &args.feed_tx,
         &args.config.feed_id,
         AgentFeedOutput::TaskFailed {
-            name: args.config.agent.clone(),
+            name: display_name,
             reason,
         },
     )
@@ -108,7 +117,7 @@ async fn start_background_client(args: &BackgroundAgentArgs) -> Option<copilot_s
     Some(client)
 }
 
-fn background_session_config(agent: &AgentName) -> copilot_sdk::SessionConfig {
+fn background_session_config(agent: &Option<AgentName>) -> copilot_sdk::SessionConfig {
     use crate::shared::copilot_permissions::allow_all_handler;
     use copilot_sdk::SessionConfig;
 
@@ -116,7 +125,7 @@ fn background_session_config(agent: &AgentName) -> copilot_sdk::SessionConfig {
         .ok()
         .and_then(|p| p.to_str().map(str::to_owned));
     SessionConfig {
-        agent: Some(agent.to_string()),
+        agent: agent.as_ref().map(|a| a.to_string()),
         streaming: true,
         config_dir: crate::shared::copilot_session_identity::isolated_config_dir(),
         working_directory,
@@ -171,18 +180,28 @@ async fn stream_background_session(
     session: &std::sync::Arc<copilot_sdk::Session>,
     args: &mut BackgroundAgentArgs,
 ) {
+    let display_name = args
+        .config
+        .agent
+        .clone()
+        .unwrap_or_else(AgentName::pipeline);
     let mut sub = session.subscribe();
     if let Err(reason) = stream_to_feed(&mut sub, args).await {
-        tracing::warn!(agent = %args.config.agent, reason = %reason, "stream_to_feed ended with error");
+        tracing::warn!(agent = %display_name, reason = %reason, "stream_to_feed ended with error");
     }
 }
 
 async fn run_background_agent_with_sdk(mut args: BackgroundAgentArgs) {
+    let display_name = args
+        .config
+        .agent
+        .clone()
+        .unwrap_or_else(AgentName::pipeline);
     emit_feed_event(
         &args.feed_tx,
         &args.config.feed_id,
         AgentFeedOutput::TaskStarted {
-            name: args.config.agent.clone(),
+            name: display_name,
             model: args.config.model.clone(),
         },
     )
@@ -260,6 +279,11 @@ async fn receive_next_event(
     sub: &mut copilot_sdk::EventSubscription,
     args: &mut BackgroundAgentArgs,
 ) -> Result<copilot_sdk::SessionEvent, OutputText> {
+    let display_name = args
+        .config
+        .agent
+        .clone()
+        .unwrap_or_else(AgentName::pipeline);
     match sub.recv().await {
         Ok(event) => Ok(event),
         Err(_) => {
@@ -267,7 +291,7 @@ async fn receive_next_event(
                 &args.feed_tx,
                 &args.config.feed_id,
                 AgentFeedOutput::TaskFailed {
-                    name: args.config.agent.clone(),
+                    name: display_name,
                     reason: OutputText::from("session channel closed"),
                 },
             )
@@ -369,6 +393,11 @@ async fn handle_session_idle(
     ctx: &mut StreamContext,
     args: &mut BackgroundAgentArgs,
 ) -> StreamStep {
+    let display_name = args
+        .config
+        .agent
+        .clone()
+        .unwrap_or_else(AgentName::pipeline);
     if let Some(final_text) = ctx.accumulator.flush() {
         emit_feed_event(
             &args.feed_tx,
@@ -383,9 +412,7 @@ async fn handle_session_idle(
     emit_feed_event(
         &args.feed_tx,
         &args.config.feed_id,
-        AgentFeedOutput::TaskCompleted {
-            name: args.config.agent.clone(),
-        },
+        AgentFeedOutput::TaskCompleted { name: display_name },
     )
     .await;
     StreamStep::Done

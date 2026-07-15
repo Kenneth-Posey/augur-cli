@@ -6,7 +6,7 @@ description: >
   and duplicate-version findings.
 ---
 
-# 0-external-dependency-intel
+# dependency-intel
 
 ## When to use
 
@@ -14,51 +14,82 @@ Use this skill to analyze Rust dependencies from `cargo metadata` and optional
 `cargo audit --json` output. It reports package inventory, advisories,
 dependency trees, and duplicate versions.
 
-## Development Build
+## Purpose
 
-Only needed when modifying the tool source in this directory.
-
-```bash
-cd .github/skills/0-external-dependency-intel
-cargo build --release
-```
+Consumes `cargo metadata --format-version 1` and optional `cargo audit --json`
+output to emit structured package and advisory intelligence. Supports four
+output modes: metadata, advisory, tree, and duplicate-versions.
 
 ## Run
 
 ```bash
-.github/skills/0-external-dependency-intel/run.sh <metadata.json> [--audit <audit.json>] [--mode <mode>] [--output <file>]
+.github/skills/0-external-dependency-intel/run.sh <METADATA> [OPTIONS]
 ```
 
-## Usage
+## Arguments
 
-- `<metadata.json>` - Path to `cargo metadata --format-version 1` JSON output; required
-- `--audit <path>` - Path to `cargo audit --json` output (optional)
-- `--mode <mode>` - Output mode: `metadata` | `advisory` | `tree` | `duplicate-versions` (default: `metadata`)
-- `--output <file>` - Write output to a custom file (optional). When omitted, defaults by mode under `reports/`: `dependency-intel-metadata.json`, `advisories.json`, `dependency-tree.txt`, or `dependency-duplicate-versions.json`
+| Argument / Option | Description |
+|---|---|
+| `<METADATA>` | Path to `cargo metadata --format-version 1` JSON output (required) |
+| `--audit <AUDIT>` | Path to `cargo audit --json` output (optional) |
+| `--mode <MODE>` | Output mode. Possible values: `metadata` (full IntelReport as JSON), `advisory` (advisory findings only), `tree` (workspace tree text view), `duplicate-versions` (packages with duplicate resolved versions). Default: `metadata` |
+| `--output <OUTPUT>` | Write output to this file instead of stdout (optional) |
+| `-h`, `--help` | Print help |
+| `-V`, `--version` | Print version |
+
+## Output
+
+Default output is written to stdout. When `--output <file>` is provided, output
+is written to the specified file path.
+
+- **metadata mode**: JSON report containing package inventory, resolved versions,
+  and dependency relationships.
+- **advisory mode**: JSON report containing advisory findings from `cargo audit`.
+- **tree mode**: Plain-text workspace dependency tree view.
+- **duplicate-versions mode**: JSON report listing packages with duplicate
+  resolved versions.
+
+Exit code `0` on success, non-zero on error.
 
 ## Examples
 
+Generate cargo metadata and run analysis:
+
 ```bash
-# Generate cargo metadata and run analysis
 cargo metadata --format-version 1 > metadata.json
 cargo audit --json > audit.json
+```
 
-# Run dependency analysis (writes to reports/dependency-intel-metadata.json by default)
+Run dependency analysis (output to stdout):
+
+```bash
 .github/skills/0-external-dependency-intel/run.sh metadata.json --audit audit.json --mode metadata
+```
 
-# Extract advisory findings (writes to reports/advisories.json by default)
+Extract advisory findings:
+
+```bash
 .github/skills/0-external-dependency-intel/run.sh metadata.json --audit audit.json --mode advisory
+```
 
-# View dependency tree (writes to reports/dependency-tree.txt by default)
+View dependency tree:
+
+```bash
 .github/skills/0-external-dependency-intel/run.sh metadata.json --mode tree
+```
 
-# Detect duplicate versions (writes to reports/dependency-duplicate-versions.json by default)
+Detect duplicate versions:
+
+```bash
 .github/skills/0-external-dependency-intel/run.sh metadata.json --mode duplicate-versions
+```
 
-# Write advisory findings to a custom path under reports/
+Write advisory findings to a custom file:
+
+```bash
 .github/skills/0-external-dependency-intel/run.sh metadata.json --audit audit.json --mode advisory --output reports/custom-advisories.json
 ```
 
 ## Key Files
 
-- `run.sh` - Canonical wrapper for dependency intel
+- `.github/skills/0-external-dependency-intel/run.sh` - Canonical wrapper for dependency-intel

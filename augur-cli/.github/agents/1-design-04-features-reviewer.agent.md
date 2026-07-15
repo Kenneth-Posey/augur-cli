@@ -28,6 +28,8 @@ Approve only when every requirement is covered, every feature maps to a requirem
 
 ## Step-by-Step Behavior
 
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
 1. Load the feature specification and requirements documents.
 
 2. **Validate coverage:** every requirement is addressed by at least one feature.

@@ -18,7 +18,7 @@ compiling. Do not run git commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-tdd-workflow` - Red/Green discipline and coverage expectations
 2. `3-implement-test-suite-completion` - language-neutral Stage 3 testing and
    Green-completion rules
@@ -50,11 +50,11 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-tdd-workflow` and `3-implement-test-suite-completion`. Read
+1. Read `0-global-tdd-workflow` and `3-implement-test-suite-completion`. Read
    `../local/language-companions.md` for the `2-plan-test-planning` and
    `3-implement-test-suite-completion` companions, and read
    `../local/directories.md` for test placement rules. If writing actor, wiring,
-   or assistant-module tests, also invoke `0-global-interface-design`.
+   or assistant-module tests, also Read `0-global-interface-design`.
 2. Use the project layout and language companion to choose the correct test
    locations and file shapes.
 3. Write tests from the Stage 2 plan so each planned scenario has a concrete

@@ -1,4 +1,4 @@
-use super::{ShutdownSignal, TuiHandle};
+use augur_tui::actors::tui::handle::{ShutdownSignal, TuiHandle};
 use tokio::sync::{mpsc, watch};
 
 fn make_handle(shutdown_rx: watch::Receiver<ShutdownSignal>) -> TuiHandle {

@@ -128,6 +128,9 @@ async fn task_actor_emits_completed_signal_without_network() {
                 .spec_base_path(RepoRoot::new(temp.path().display().to_string()))
                 .maybe_token_tracker(None)
                 .maybe_orchestrator(None)
+                .default_model_config(
+                    augur_provider_openrouter::model_config::fallback_default_model_config(),
+                )
                 .build(),
         )
         .build();
@@ -206,6 +209,9 @@ async fn task_loop_continues_after_tool_transport_error() {
                 .spec_base_path(RepoRoot::new(temp.path().display().to_string()))
                 .maybe_token_tracker(None)
                 .maybe_orchestrator(None)
+                .default_model_config(
+                    augur_provider_openrouter::model_config::fallback_default_model_config(),
+                )
                 .build(),
         )
         .build();

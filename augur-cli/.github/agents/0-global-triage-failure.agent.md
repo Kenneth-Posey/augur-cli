@@ -35,7 +35,7 @@ Analyze failures and return a structured diagnostic assessment. Read-only: do no
 ## Step-by-Step Behavior
 
 1. Parse the failure report tuple to extract the failure type, severity, and context.
-2. Invoke `0-global-failure-routing` for taxonomy, ownership, and recoverability guidance.
+2. Read `0-global-failure-routing` for taxonomy, ownership, and recoverability guidance.
 3. When applicable, analyze dependency evidence for circular dependencies, direction violations, dead code, or missing contracts.
 4. Classify the failure into the closest taxonomy bucket and determine the owning remediation domain.
 5. Assess recoverability from the available evidence and note whether the failure is transient, systematic, or blocked on a manual decision.

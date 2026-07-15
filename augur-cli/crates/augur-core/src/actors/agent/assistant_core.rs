@@ -3,19 +3,12 @@ use super::history::ConversationHistory;
 use crate::actors::cache::handle::CacheHandle;
 use augur_domain::domain::newtypes::{Count, IsPredicate, NumericNewtype, TokenCount};
 use augur_domain::domain::string_newtypes::{OutputText, StringNewtype};
-use augur_domain::domain::task_types::InstructionPrefix;
+use augur_domain::domain::task_types::MessageCompactor;
 use augur_domain::domain::{
     CancelSignal, EndpointName, ExecutionSuccess, LlmClient, LlmUsage, Message, Role, StreamChunk,
     ToolCall, ToolExecutor,
 };
-
-/// Maximum token estimate for a tool result included in the context window.
-///
-/// Results exceeding this limit are replaced with a warning asking the LLM to use
-/// a more targeted call. Applied to both the conversation history and the OpenRouter
-/// context window so that accumulated tool output does not silently grow past
-/// provider content-length limits (e.g. Anthropic 1M tokens max).
-const TOOL_RESPONSE_CONTEXT_LIMIT_TOKENS: TokenCount = TokenCount::of(50_000);
+use augur_domain::tools::execution::{capped_tool_result_message, estimate_output_tokens};
 
 /// Fraction of `max_context_length` used as the total request-size guard threshold
 /// when `request_cap_threshold` is not set.
@@ -51,17 +44,6 @@ fn effective_request_cap(cfg: &TurnConfig) -> TokenCount {
     }
 }
 
-/// Estimate token count for a string using word and character heuristics.
-///
-/// Uses `max(word_count, char_count / 2)` as a conservative over-estimate so
-/// that we err on the side of capping rather than passing oversized payloads.
-fn estimate_output_tokens(text: &impl StringNewtype) -> TokenCount {
-    let s = text.as_str();
-    let by_words = s.split_whitespace().count();
-    let by_chars = (s.len().saturating_add(1)) / 2;
-    TokenCount::new(by_words.max(by_chars).max(1) as u64)
-}
-
 /// Estimate the total tokens across all request messages by summing per-message
 /// content estimates. Uses the same heuristic as `estimate_output_tokens` for each
 /// message's content and a flat overhead per message for role/timestamp metadata.
@@ -77,37 +59,16 @@ fn estimate_messages_tokens(messages: &[Message]) -> TokenCount {
     TokenCount::new(total)
 }
 
-/// Build the message pushed into the OpenRouter context window for a tool result.
-///
-/// If the output is within the token budget, the full result is returned. Otherwise
-/// a warning is returned asking the LLM to issue a more targeted request. The
-/// full output is only persisted to conversation history when it is within
-/// the token budget; oversized results are stored only as a sizing warning
-/// to avoid inflating session file sizes.
-fn capped_tool_result_message(
-    call: &ToolCall,
-    result: &augur_domain::domain::ToolCallResult,
-) -> Message {
-    let estimated = estimate_output_tokens(&result.output);
-    if estimated <= TOOL_RESPONSE_CONTEXT_LIMIT_TOKENS {
-        return crate::tools::execution::tool_result_message(call, result);
-    }
-    let warning = OutputText::new(format!(
-        "[Output too large (~{} tokens). Please retry with a more targeted request \
-         (e.g. specific line ranges, grep patterns, or pagination flags) to reduce \
-         output size.]",
-        estimated.inner()
-    ));
-    Message::tool_result(call.id.clone(), &call.name, warning)
-}
 use std::fmt;
 use tokio::sync::{broadcast, mpsc, watch};
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 /// Optional turn-level runtime extensions for assistant turn execution.
 pub struct TurnExtensions<'a> {
     pub cache: Option<&'a CacheHandle>,
-    pub instruction_prefix: Option<&'a InstructionPrefix>,
+    /// Optional compactor for auto-compaction when the request exceeds the cap.
+    /// When set, `process_turn` will compact and retry once instead of warning.
+    pub compactor: Option<&'a MessageCompactor>,
 }
 
 #[derive(bon::Builder)]
@@ -190,22 +151,53 @@ pub async fn process_turn<L: LlmClient, T: ToolExecutor>(
         } else {
             history.messages_for_request()
         };
-        let request_messages = inject_prefix_if_openrouter(
-            &cfg.endpoint,
-            raw_messages,
-            ext.instruction_prefix,
-            &cfg.app_config,
-        );
+        // Clone so the compactor path still has access.
+        let raw_messages_for_compaction = raw_messages.clone();
+        let request_messages = raw_messages;
 
         // Guard: total estimated tokens across all request messages must not
         // exceed the effective request cap (model's auto_compact_threshold, or
-        // 80% of max_context_length). When the limit is exceeded, warn via a
-        // system message and complete the turn gracefully (no error) so the
-        // agentic loop continues and the user can use /compact or /new-session.
+        // 80% of max_context_length). When the limit is exceeded, auto-compact
+        // (if a compactor is available) and retry once. If compaction is not
+        // available or still over the limit after compaction, complete the turn
+        // gracefully so the user can use /compact or /new-session.
         {
             let cap = effective_request_cap(&cfg);
             let estimated_total = estimate_messages_tokens(&request_messages);
             if estimated_total > cap {
+                // Attempt auto-compaction once if a compactor is available.
+                if let Some(compactor) = ext.compactor {
+                    tracing::info!(
+                        event = "request_too_large_auto_compact",
+                        estimated_tokens = estimated_total.inner(),
+                        cap_tokens = cap.inner(),
+                        action = "compact_and_retry",
+                    );
+                    let _ = output_tx.send(AgentOutput::SystemMessage(OutputText::new(
+                        "[system] context too large, auto-compacting...",
+                    )));
+                    let compacted =
+                        compactor(raw_messages_for_compaction, cfg.model_override.clone());
+                    history.set_messages(compacted);
+                    let _ = output_tx.send(AgentOutput::SystemMessage(OutputText::new(
+                        "[system] context compacted, retrying...",
+                    )));
+                    // Rebuild request messages and re-check.
+                    let retry_request = history.messages_for_request();
+                    let retry_est = estimate_messages_tokens(&retry_request);
+                    if retry_est <= cap {
+                        // Continue the loop with the compacted messages
+                        // by falling through normally.
+                        continue;
+                    }
+                    // Still over cap after compaction — fall through to warn.
+                    tracing::warn!(
+                        event = "request_too_large_after_auto_compact",
+                        estimated_tokens = retry_est.inner(),
+                        cap_tokens = cap.inner(),
+                        action = "warn_and_complete",
+                    );
+                }
                 let msg = format!(
                     "[Request too large: ~{} estimated tokens. \
                      The total context exceeds the safe limit of {}.\n\
@@ -275,17 +267,26 @@ pub async fn process_turn<L: LlmClient, T: ToolExecutor>(
             match consume_stream(stream_rx, output_tx, cancel_rx).await {
                 Ok(result) => result,
                 Err(e) => {
+                    let error_str = e.to_string();
                     tracing::warn!(
                         event = "turn_stream_error",
                         endpoint = cfg.endpoint.as_str(),
                         iteration = iterations.inner(),
-                        error = %e,
+                        error = %error_str,
                     );
-                    let error_text = OutputText::new(e.to_string());
-                    let _ = output_tx.send(AgentOutput::Error(error_text.clone()));
+                    // User-initiated interrupts (steering/escape) use
+                    // Interrupted so the TUI can distinguish them from
+                    // actual errors and keep the thinking spinner alive
+                    // when a new submission follows the interrupt.
+                    if error_str == "turn interrupted" {
+                        let _ = output_tx.send(AgentOutput::Interrupted);
+                    } else {
+                        let error_text = OutputText::new(error_str.clone());
+                        let _ = output_tx.send(AgentOutput::Error(error_text));
+                    }
                     return TurnResult {
                         usage: last_usage,
-                        error: Some(error_text),
+                        error: Some(OutputText::new(error_str)),
                         messages_len: history.len(),
                     };
                 }
@@ -348,9 +349,15 @@ pub async fn process_turn<L: LlmClient, T: ToolExecutor>(
                 OutputText::new(text_buf.clone()),
                 vec![call.clone()],
             ));
-            let conversation_msg = capped_tool_result_message(&call, &result);
+            let tool_response_cap = cfg.tool_response_cap;
+            let conversation_msg =
+                capped_tool_result_message(&call, &result, Some(tool_response_cap));
             history.push_conversation(conversation_msg);
-            history.push_openrouter_context(capped_tool_result_message(&call, &result));
+            history.push_openrouter_context(capped_tool_result_message(
+                &call,
+                &result,
+                Some(tool_response_cap),
+            ));
             // Continue loop to call LLM again with tool result
             continue;
         }
@@ -516,25 +523,5 @@ pub(super) fn is_openrouter_endpoint(
         ))
     } else {
         IsPredicate::from(endpoint.as_str().contains("openrouter"))
-    }
-}
-
-/// Prepend the instruction prefix only for OpenRouter endpoints.
-pub(super) fn inject_prefix_if_openrouter(
-    endpoint: &EndpointName,
-    messages: Vec<Message>,
-    prefix: Option<&InstructionPrefix>,
-    app_config: &augur_domain::config::types::AppConfig,
-) -> Vec<Message> {
-    if !is_openrouter_endpoint(endpoint, app_config).0 {
-        return messages;
-    }
-    match prefix {
-        None => messages,
-        Some(p) => {
-            let mut combined = p.0.clone();
-            combined.extend(messages);
-            combined
-        }
     }
 }

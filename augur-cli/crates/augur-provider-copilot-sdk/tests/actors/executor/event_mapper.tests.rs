@@ -2,7 +2,6 @@
 
 use augur_domain::NumericNewtype;
 use augur_domain::newtypes::TokenCount;
-use augur_domain::plan_tree::{NodeStatus, PlanNodeId};
 use augur_domain::string_newtypes::{OutputText, StringNewtype, ToolCallId, ToolName};
 use augur_domain::types::AgentOutput;
 use augur_provider_copilot_sdk::actors::executor::commands::SessionEvent;
@@ -63,91 +62,6 @@ fn map_session_event_unknown_produces_none() {
     let event = SessionEvent::Unknown;
     let result = map_session_event(&event);
     assert!(result.is_none());
-}
-
-#[test]
-fn map_session_event_plan_node_done_produces_update() {
-    let event = SessionEvent::PlanNodeUpdated {
-        node_id: PlanNodeId::new("step-1"),
-        status: "done".to_owned(),
-        notes: None,
-    };
-    let result = map_session_event(&event);
-    match result {
-        Some(AgentOutput::PlanNodeUpdate {
-            node_id,
-            status,
-            notes,
-        }) => {
-            assert_eq!(node_id.as_str(), "step-1");
-            assert_eq!(status, NodeStatus::Done);
-            assert!(notes.is_none());
-        }
-        other => panic!("expected PlanNodeUpdate, got {:?}", other),
-    }
-}
-
-#[test]
-fn map_session_event_plan_node_in_progress_produces_update() {
-    let event = SessionEvent::PlanNodeUpdated {
-        node_id: PlanNodeId::new("step-1"),
-        status: "in_progress".to_owned(),
-        notes: None,
-    };
-    match map_session_event(&event) {
-        Some(AgentOutput::PlanNodeUpdate { status, .. }) => {
-            assert_eq!(status, NodeStatus::InProgress);
-        }
-        other => panic!("expected PlanNodeUpdate, got {:?}", other),
-    }
-}
-
-#[test]
-fn map_session_event_plan_node_unknown_status_falls_back_to_pending() {
-    let event = SessionEvent::PlanNodeUpdated {
-        node_id: PlanNodeId::new("step-1"),
-        status: "mystery".to_owned(),
-        notes: None,
-    };
-    match map_session_event(&event) {
-        Some(AgentOutput::PlanNodeUpdate { status, .. }) => {
-            assert_eq!(status, NodeStatus::Pending);
-        }
-        other => panic!("expected PlanNodeUpdate, got {:?}", other),
-    }
-}
-
-#[test]
-fn map_session_event_plan_node_failed_carries_notes() {
-    let event = SessionEvent::PlanNodeUpdated {
-        node_id: PlanNodeId::new("step-2"),
-        status: "failed".to_owned(),
-        notes: Some("compile error".to_owned()),
-    };
-    let result = map_session_event(&event);
-    match result {
-        Some(AgentOutput::PlanNodeUpdate { status, notes, .. }) => {
-            assert_eq!(status, NodeStatus::Failed("compile error".into()));
-            assert_eq!(notes.as_deref(), Some("compile error"));
-        }
-        other => panic!("expected PlanNodeUpdate, got {:?}", other),
-    }
-}
-
-#[test]
-fn map_session_event_plan_node_failed_without_notes_uses_empty_reason() {
-    let event = SessionEvent::PlanNodeUpdated {
-        node_id: PlanNodeId::new("step-3"),
-        status: "failed".to_owned(),
-        notes: None,
-    };
-    match map_session_event(&event) {
-        Some(AgentOutput::PlanNodeUpdate { status, notes, .. }) => {
-            assert_eq!(status, NodeStatus::Failed("".into()));
-            assert!(notes.is_none());
-        }
-        other => panic!("expected PlanNodeUpdate, got {:?}", other),
-    }
 }
 
 #[test]

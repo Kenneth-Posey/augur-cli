@@ -9,7 +9,7 @@ fn completions_for_prefix_are_capped_and_sorted() {
     assert!(!completions.is_empty());
     assert!(completions.len() <= 12);
 
-    let mut names: Vec<&str> = completions.iter().map(|c| c.name).collect();
+    let names: Vec<&str> = completions.iter().map(|c| c.name).collect();
     let mut sorted = names.clone();
     sorted.sort_unstable();
     assert_eq!(names, sorted);

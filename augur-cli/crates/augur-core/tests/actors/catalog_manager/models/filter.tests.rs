@@ -2,12 +2,15 @@ use augur_core::actors::catalog_manager::models::filter::filter_models;
 use augur_core::actors::catalog_manager::models::{
     ContextWindowSize, CostTier, FilterOpts, ModelId, ModelInfo, ModelPricing, ProviderName,
 };
+use augur_domain::StringNewtype;
+use augur_domain::domain::IsPredicate;
 use augur_domain::domain::UsdCost;
+use augur_domain::domain::string_newtypes::ModelName;
 
 fn model(id: &str, provider: &str, input_cost: f64) -> ModelInfo {
     ModelInfo {
         id: ModelId(id.to_owned()),
-        name: id.to_owned(),
+        name: ModelName::new(id.to_owned()),
         provider: ProviderName(provider.to_owned()),
         context_window: ContextWindowSize(128_000),
         pricing: ModelPricing {
@@ -39,7 +42,9 @@ fn filter_models_can_restrict_to_tool_use_providers() {
         model("gpt-4o", "openai", 1.0),
         model("llama3.1", "ollama", 0.0),
     ];
-    let opts = FilterOpts::builder().tool_use_only(true).build();
+    let opts = FilterOpts::builder()
+        .tool_use_only(IsPredicate(true))
+        .build();
 
     let filtered = filter_models(models, &opts);
     assert_eq!(filtered.len(), 1);
@@ -54,7 +59,7 @@ fn filter_models_applies_cost_tier_and_latest_only() {
         model("expensive", "openai", 6.0),
     ];
     let opts = FilterOpts::builder()
-        .latest_only(true)
+        .latest_only(IsPredicate(true))
         .max_cost_tier(CostTier::Standard)
         .build();
 

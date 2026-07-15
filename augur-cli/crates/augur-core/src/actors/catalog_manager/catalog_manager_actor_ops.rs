@@ -187,6 +187,7 @@ fn persist_provider_catalogs_in_dir(
                 max_tool_iterations: Count::ZERO,
                 compaction_target: TokenCount::ZERO,
                 auto_compact_threshold: TokenCount::ZERO,
+                tool_response_cap: TokenCount::ZERO,
             });
     }
 
@@ -197,6 +198,8 @@ fn persist_provider_catalogs_in_dir(
             let file = ProviderCatalogFile {
                 provider: provider.into(),
                 models,
+                instruction_files: Vec::new(),
+                background_instruction_files: Vec::new(),
                 openrouter: None,
             };
             write_provider_catalog(provider_dir, &file)

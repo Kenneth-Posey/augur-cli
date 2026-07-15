@@ -17,7 +17,8 @@ output.
 
 Run analyzers in the following fixed order. Do not skip or reorder steps.
 
-1. **Syn analyzer** - run `.github/skills/0-external-syn-analyzer/run.sh`
+1. **Syn analyzer** - run
+   `.github/skills/0-external-syn-analyzer/run.sh`
    on the selected scope. Collect findings for: max parameters exceeded, max
    struct fields exceeded, long functions, deep `if` chains, complexity
    violations, and magic literals. Record file/line/rule for each finding.
@@ -27,31 +28,56 @@ Run analyzers in the following fixed order. Do not skip or reorder steps.
    Collect findings for: dependency-direction violations, wrong-direction imports,
    and cycles. Classify each as critical (cycle) or major (wrong-direction).
 
-3. **Arch-linter** - when the arch-linter tool is available at
-   `.github/skills/0-external-arch-linter/run.sh`, run it on
-   the selected scope and collect layer-rule and placement violations.
+3. **Arch-linter** - run
+   `.github/skills/0-external-arch-linter/run.sh`
+   on the selected scope and collect layer-rule and placement violations.
 
-4. **Doc extractor** - when the doc-extractor tool is available at
-   `.github/skills/0-external-doc-extractor/run.sh`, run it and
-   collect missing Rustdoc findings for public functions, types, and constants.
+4. **Doc extractor** - run
+   `.github/skills/0-external-doc-extractor/run.sh`
+   and collect missing Rustdoc findings for public functions, types, and constants.
 
-5. **Test-gap fusion evidence** - gather `test-gap-fusion` results for the
-   selected scope and collect behavioral coverage gaps per module.
+5. **Test-gap fusion evidence** - run
+   `.github/skills/0-external-test-gap-fusion/run.sh`
+   for the selected scope and collect behavioral coverage gaps per module.
 
 6. **Sig report** - when a rustdoc JSON file is provided, run
    `.github/skills/0-external-sig-report/run.sh <rustdoc-json-path> --consolidation --output-format json`
    Collect duplicate-signature, repeated-return-shape, and doc-related findings.
 
-7. **Consolidate** - merge findings from steps 1-6. Deduplicate overlapping
-   reports that point to the same symbol. Order findings: critical > major >
-   minor.
+7. **Src deadcode analysis** - run
+   `.github/skills/0-external-src-deadcode-analysis/run.sh`
+   on the selected scope. Collect symbols unreachable from crate entrypoints.
 
-8. **Rule mapping** - retain only findings that map to an explicit documented
-   rule.
+8. **Stub detection** - run
+   `.github/skills/0-external-stub-detector/run.sh`
+   on the selected scope. Collect deferred patterns (`todo!()`, `unimplemented!()`,
+   `panic!()`, `unwrap()`, `expect()`) with severity classification.
 
-9. **Follow-up planning** - when a finding requires plan-level remediation,
-   describe the needed follow-up scope, affected files/symbols, required
-   behavior change, TDD expectations, and validation commands.
+9. **Consolidator** - run
+   `.github/skills/0-external-consolidator/run.sh`
+   on the selected scope. Collect dead code, duplicate functions, and
+   chain-collapse candidates with confidence scores.
+
+10. **Rustc dependency check** - run
+    `.github/skills/0-external-rustc-dependency-check/run.sh`
+    on the workspace root. Collect package-layer direction violations and
+    forbidden edges from cargo-resolved metadata.
+
+11. **Actor-ops detector** - when the selected scope contains actor patterns, run
+    `.github/skills/0-external-actor-ops-detector/run.sh`
+    on the selected scope. Collect actor.rs/actor_ops.rs pairing violations and
+    non-trivial actor logic.
+
+12. **Consolidate** - merge findings from steps 1-11. Deduplicate overlapping
+    reports that point to the same symbol. Order findings: critical > major >
+    minor.
+
+13. **Rule mapping** - retain only findings that map to an explicit documented
+    rule.
+
+14. **Follow-up planning** - when a finding requires plan-level remediation,
+    describe the needed follow-up scope, affected files/symbols, required
+    behavior change, TDD expectations, and validation commands.
 
 ## Output
 

@@ -14,7 +14,7 @@ Design signatures that are well typed, complete in error handling, and consisten
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `2-plan-function-sig-planning` - function signature design patterns, parameter/return type specification, error type hierarchies, interface contracts, and behavior-to-signature traceability
 2. `0-global-functional-pseudocode` - pseudocode notation for expressing function signatures and contracts in language-agnostic form
 3. `2-plan-integration-planning` - component interaction contracts across module boundaries
@@ -37,7 +37,9 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. **Extract Domain Operations:** Invoke `2-plan-function-sig-planning` and the language companion from `language-companions.md`. For each entity state machine, identify transition functions. For each behavior spec, map the `when` action to a function, the `given/when` context to inputs, and the `then` postconditions to expected outputs.
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. **Extract Domain Operations:** Read `2-plan-function-sig-planning` and the language companion from `language-companions.md`. For each entity state machine, identify transition functions. For each behavior spec, map the `when` action to a function, the `given/when` context to inputs, and the `then` postconditions to expected outputs.
 
 2. **Design Function Signatures:** For each operation, specify function name (verb prefix: `create_`, `delete_`, `update_`), required and optional parameters with explicit types, and return type covering both success and failure cases.
 

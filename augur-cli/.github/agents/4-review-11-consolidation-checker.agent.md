@@ -18,7 +18,7 @@ and emits only `pass` or `fail`.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `4-review-consolidation-validation` - consolidation contract: pass/fail
    criteria, confidence threshold, and what each finding type means
 2. `4-review-consolidation-tools` - deterministic tool invocation, output
@@ -42,7 +42,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `4-review-consolidation-validation` and `4-review-consolidation-tools`.
+1. Read `4-review-consolidation-validation` and `4-review-consolidation-tools`.
 2. Run the consolidator tool against the implementation source tree:
    ```sh
    .github/skills/0-external-consolidator/run.sh . --output-format json --min-confidence 0.7

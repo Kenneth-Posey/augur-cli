@@ -20,7 +20,7 @@ failures, or run git commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `3-implement-domain-implementation` - domain implementation standards,
    invariant enforcement rules, and lifecycle guard requirements
 2. `3-implement-function-sig-implementation` - function signature implementation
@@ -32,7 +32,7 @@ Invoke at start:
 5. `0-global-critical-rules` - safety, workflow, and definition of done
    constraints
 6. `0-global-interface-design` - actor, wiring, and assistant-module standards;
-   invoke when actor files or assistant modules are in scope
+   read when actor files or assistant modules are in scope
 
 ## Inputs
 
@@ -59,7 +59,7 @@ Invoke at start:
 1. Read the reviewer failure notes. Identify the exact checklist items and the
    required correction for each failure. Do not invent additional corrections.
 2. Read the failing source files in full.
-3. Invoke `0-global-tdd-workflow` and `0-global-critical-rules`. Then invoke
+3. Read `0-global-tdd-workflow` and `0-global-critical-rules`. Then read
    the skills relevant to the affected code type:
    `3-implement-domain-implementation` for domain files,
    `3-implement-function-sig-implementation` for contract surfaces,

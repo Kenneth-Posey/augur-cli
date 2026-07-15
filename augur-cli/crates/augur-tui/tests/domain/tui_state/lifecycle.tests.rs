@@ -1,6 +1,6 @@
-use super::*;
-use crate::domain::newtypes::{Count, ScrollOffset};
-use crate::domain::string_newtypes::{EndpointName, StringNewtype};
+use augur_domain::domain::newtypes::{Count, NumericNewtype, ScrollOffset};
+use augur_domain::domain::string_newtypes::{EndpointName, StringNewtype};
+use augur_tui::domain::tui_state::*;
 
 const EXCESSIVE_SCROLL_OFFSET: Count = Count::of(10);
 const LARGE_SCROLL_AMOUNT: Count = Count::of(100);
@@ -168,11 +168,11 @@ fn agent_feed_scroll_down_clamps_to_zero() {
 fn select_next_agent_feed_clamps_selected_feed_scroll_to_feed_length() {
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.interaction.panel.agent_feed.feeds = vec![
-        crate::domain::tui_state::AgentFeedTranscript {
-            feed_id: crate::domain::types::FeedId::Agent(
-                crate::domain::string_newtypes::ToolCallId::from("agent-1"),
+        augur_tui::domain::tui_state::AgentFeedTranscript {
+            feed_id: augur_tui::domain::types::FeedId::Agent(
+                augur_tui::domain::string_newtypes::ToolCallId::from("agent-1"),
             ),
-            panel: crate::domain::tui_state::AgentFeedPanel {
+            panel: augur_tui::domain::tui_state::AgentFeedPanel {
                 output: vec![
                     OutputLine::plain("a"),
                     OutputLine::plain("b"),
@@ -183,11 +183,11 @@ fn select_next_agent_feed_clamps_selected_feed_scroll_to_feed_length() {
             },
             ..Default::default()
         },
-        crate::domain::tui_state::AgentFeedTranscript {
-            feed_id: crate::domain::types::FeedId::Agent(
-                crate::domain::string_newtypes::ToolCallId::from("agent-2"),
+        augur_tui::domain::tui_state::AgentFeedTranscript {
+            feed_id: augur_tui::domain::types::FeedId::Agent(
+                augur_tui::domain::string_newtypes::ToolCallId::from("agent-2"),
             ),
-            panel: crate::domain::tui_state::AgentFeedPanel {
+            panel: augur_tui::domain::tui_state::AgentFeedPanel {
                 output: vec![OutputLine::plain("x"), OutputLine::plain("y")],
                 scroll: ScrollOffset::of(50),
                 buffers: Default::default(),

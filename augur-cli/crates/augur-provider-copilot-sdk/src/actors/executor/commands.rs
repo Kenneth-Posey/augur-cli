@@ -6,7 +6,6 @@
 //! keeping `event_mapper` free of SDK dependencies.
 
 use augur_domain::newtypes::TokenCount;
-use augur_domain::plan_tree::PlanNodeId;
 use augur_domain::string_newtypes::{
     OutputText, ProcessId, PromptText, ShellCommand, ToolCallId, ToolName,
 };
@@ -79,21 +78,7 @@ pub enum SessionEvent {
         message: String,
     },
     /// The session is idle and ready for the next prompt.
-    ///
-    /// Used by the supervisor to advance to the next plan step.
     SessionIdle,
-    /// The `update_plan_step` tool was called by the CLI agent.
-    ///
-    /// Carries the parsed tool arguments so `event_mapper` can produce
-    /// an `AgentOutput::PlanNodeUpdate` without re-parsing JSON.
-    PlanNodeUpdated {
-        /// The node id string as provided in the tool call.
-        node_id: PlanNodeId,
-        /// Status string: `"in_progress"`, `"done"`, or `"failed"`.
-        status: String,
-        /// Optional notes or failure reason.
-        notes: Option<String>,
-    },
     /// Token usage reported by the assistant for the completed turn.
     ///
     /// Carries optional input, output, and cache-read token counts from the SDK's

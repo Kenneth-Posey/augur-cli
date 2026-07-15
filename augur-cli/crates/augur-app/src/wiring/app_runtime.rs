@@ -7,15 +7,13 @@ use super::{
     UnpackedRuntimeActors,
 };
 use augur_core::actors;
-use augur_domain::config::install_path::effective_repo_root;
+use augur_domain::NumericNewtype;
 use augur_domain::config::types::AppConfig;
 use augur_domain::config::types::ProgramSettings;
 use augur_domain::domain::StringNewtype;
-use augur_domain::domain::channels::AGENT_FEED_CAPACITY;
-use augur_domain::domain::newtypes::NumericNewtype;
+use augur_domain::domain::string_newtypes::OutputText;
 use augur_domain::domain::types::{AgentOutput, FeedEntry, StreamChunk};
 use augur_tui::domain::tui_render::AppRenderer;
-use std::sync::Arc;
 use tokio::sync::mpsc;
 
 #[derive(Clone, Copy)]
@@ -96,102 +94,34 @@ pub fn actor_runtime<H>((join, handle): (TaskJoin, H)) -> super::ActorRuntime<H>
     super::ActorRuntime { join, handle }
 }
 
-/// Spawn the deterministic orchestrator actor at `repo_root` and return its runtime.
 ///
-/// Passes `repo_root` and `feed_tx` to the orchestrator's spawn function and
-/// wraps the result in an [`ActorRuntime`]. `feed_tx` is the channel used to
-/// deliver `FeedEntry` items to TUI consumers.
-pub fn spawn_deterministic_orchestrator_runtime(
-    repo_root: std::path::PathBuf,
-    feed_tx: mpsc::Sender<FeedEntry>,
-) -> ActorRuntime<actors::DeterministicOrchestratorHandle> {
-    let dispatch_runtime = Arc::new(CopilotDeterministicDispatchRuntime {});
-    actor_runtime(
-        actors::deterministic_orchestrator::deterministic_orchestrator_actor::spawn_with_join_and_feed_and_runtime(
-            repo_root,
-            feed_tx,
-            dispatch_runtime,
-        ),
-    )
-}
-
-/// Spawn the deterministic orchestrator rooted at the process working directory.
+/// Replaces the old auto-message bridge that sent step notifications to the
+/// conversational LLM (which responded with chatty "what should I do next?"
+/// output that made the pipeline look like it was asking for user input).
 ///
-/// Resolves the repo root via [`std::env::current_dir`] (falling back to `"."`)
-/// and delegates to [`spawn_deterministic_orchestrator_runtime`].
-pub fn spawn_root_deterministic_orchestrator_runtime(
-    feed_tx: mpsc::Sender<FeedEntry>,
-) -> ActorRuntime<actors::DeterministicOrchestratorHandle> {
-    spawn_deterministic_orchestrator_runtime(current_repo_root(), feed_tx)
-}
-
-fn current_repo_root() -> std::path::PathBuf {
-    effective_repo_root()
-}
-
-#[derive(Debug, Default)]
-struct CopilotDeterministicDispatchRuntime {}
-
-impl augur_core::actors::deterministic_orchestrator::background_dispatch::BackgroundAgentRuntime
-    for CopilotDeterministicDispatchRuntime
-{
-    fn dispatch(
-        &self,
-        launch: augur_core::actors::deterministic_orchestrator::background_dispatch::BackgroundAgentLaunch,
-    ) -> Result<
-        augur_core::actors::deterministic_orchestrator::background_dispatch::BackgroundRuntimeTicket,
-        augur_core::actors::deterministic_orchestrator::background_dispatch::DispatchError,
-    >{
-        let (feed_tx, feed_rx) = mpsc::channel(AGENT_FEED_CAPACITY.inner());
-        let (signal_tx, signal_rx) = tokio::sync::oneshot::channel();
-        let task = tokio::spawn(augur_provider_copilot_sdk::actors::copilot::background_agent::run_background_agent(
-            augur_provider_copilot_sdk::actors::copilot::background_agent::BackgroundAgentArgs::builder()
-                .config(
-                    augur_provider_copilot_sdk::actors::copilot::background_agent::BackgroundAgentConfig::builder()
-                        .agent(launch.agent)
-                        .feed_id(launch.feed_id)
-                        .prompt(launch.prompt)
-                        .maybe_model(launch.model)
-                        .build(),
-                )
-                .feed_tx(feed_tx)
-                .signal_tx(signal_tx)
-                .classifier(Arc::new(
-                    augur_provider_copilot_sdk::actors::copilot::event_classifier::CopilotEventClassifier,
-                ))
-                .build(),
-        ));
-        Ok(
-            augur_core::actors::deterministic_orchestrator::background_dispatch::BackgroundRuntimeTicket::new(
-                task,
-                feed_rx,
-                Some(signal_rx),
-            ),
-        )
-    }
-}
-
-/// Wire orchestrator auto-messages → LLM for hands-free pipeline continuation.
-///
-/// Spawns a task that bridges automated messages from the deterministic
-/// orchestrator to the LLM actor, forwarding each reply back to the agent
-/// output broadcast so the TUI and other subscribers see the response.
+/// Instead, each step-completion message is forwarded directly as a clean
+/// `AgentOutput::Token` line on the agent output broadcast channel, so the
+/// user sees pipeline progress in the main chat without any conversational
+/// detour. The pipeline continues dispatching the next step in the background
+/// regardless of this forwarding.
 pub(super) fn wire_auto_message_bridge(core: &CoreRuntime, domain: &SpawnedDomainActors) {
+    let logger = core.handles.io.logger.clone();
     let mut auto_msg_rx = domain
         .deterministic_orchestrator
         .handle
         .subscribe_automated_messages();
-    let llm = core.handles.services.llm.clone();
-    let session = domain.session.handle.clone();
     let agent_output_tx = domain.agent.handle.clone_output_tx();
     tokio::spawn(async move {
         loop {
             match auto_msg_rx.recv().await {
                 Ok(msg) => {
-                    let endpoint = session.active_endpoint();
-                    let reply_rx = llm.send_automated(msg.0, endpoint);
-                    let fwd_tx = agent_output_tx.clone();
-                    tokio::spawn(forward_reply_to_broadcast(reply_rx, fwd_tx));
+                    let line = format!(
+                        "\n--- pipeline: {} ---\n",
+                        msg.0.as_str().trim_end_matches('.'),
+                    );
+                    let _ = agent_output_tx.send(AgentOutput::Token(OutputText::new(line)));
+                    let _ = agent_output_tx.send(AgentOutput::Done);
+                    logger.log_line(OutputText::from("system"), msg.0.clone());
                 }
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
@@ -394,7 +324,6 @@ pub fn build_run_runtime(core: CoreRuntime, actors: SpawnedAppActors) -> RunRunt
                         agent: actors.domain.agent.handle,
                         session: actors.domain.session.handle,
                         file_scanner: actors.planning.file_scanner.handle,
-                        guided_plan: actors.planning.guided_plan,
                         deterministic_orchestrator: actors.domain.deterministic_orchestrator.handle,
                     },
                     ui: PrimaryUiHandles {

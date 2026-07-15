@@ -27,6 +27,7 @@ use crate::tui::components::primary_feed::{
     BRAILLE_FRAMES, output_line_to_ratatui, render_scroll_indicator_for, split_output_area,
 };
 use augur_domain::domain::newtypes::{Count, NumericNewtype, ScrollOffset};
+use augur_domain::domain::string_newtypes::{OutputText, StringNewtype};
 use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier, Style};
@@ -267,17 +268,70 @@ fn spinner_char(state: &TuiDisplayState) -> char {
 /// During an active task, StatusLine and ToolEvent chunks accumulate in
 /// `buffers` and are only flushed to `output` at task boundaries. Appending
 /// them here ensures live content is visible before the flush occurs.
+///
+/// Any pending line that contains embedded hard newlines (`\n`) is split into
+/// multiple `OutputLine` entries before being returned. This prevents a single
+/// multi-paragraph streaming message from ballooning into dozens of display rows
+/// on a single `OutputLine`, which would cause the render-slice `fill_from_bottom`
+/// algorithm to exclude all committed content (one multi-row line can exceed
+/// the viewport and push everything else off-screen).
 fn build_agent_feed_display_lines(
     feed: &crate::domain::tui_state::AgentFeedState,
 ) -> Vec<crate::domain::tui_state::OutputLine> {
     if feed.buffers.pending_tool_event.is_none() && feed.buffers.pending_status_message.is_none() {
         return feed.output.clone();
     }
-    feed.output
+    let committed = feed.output.iter().cloned();
+    let pending_status = feed
+        .buffers
+        .pending_status_message
         .iter()
-        .cloned()
-        .chain(feed.buffers.pending_status_message.iter().cloned())
-        .chain(feed.buffers.pending_tool_event.iter().cloned())
+        .flat_map(split_line_at_newlines);
+    let pending_tool = feed
+        .buffers
+        .pending_tool_event
+        .iter()
+        .flat_map(split_line_at_newlines);
+    committed
+        .chain(pending_status)
+        .chain(pending_tool)
+        .collect()
+}
+
+/// Split an `OutputLine` at embedded `\n` characters into multiple lines.
+///
+/// The first segment inherits the original line's header and kind; subsequent
+/// segments get `Plain` kind and no header, matching the convention used by
+/// `flush_pending_status_message` and `flush_pending_tool_event`.
+///
+/// Returns a single-element vec when `line.text` contains no `\n`.
+fn split_line_at_newlines(
+    line: &crate::domain::tui_state::OutputLine,
+) -> Vec<crate::domain::tui_state::OutputLine> {
+    use crate::domain::tui_state::OutputLine as Ol;
+
+    let text: &str = &line.text;
+    if !text.contains('\n') {
+        return vec![line.clone()];
+    }
+    let kind = line.kind.clone();
+    let header = line.header.clone();
+    text.split('\n')
+        .enumerate()
+        .map(|(idx, part)| {
+            let text = OutputText::new(part.to_owned());
+            if idx == 0 {
+                // First segment inherits the original header and kind.
+                Ol::builder()
+                    .text(text)
+                    .kind(kind.clone())
+                    .header(header.clone())
+                    .build()
+            } else {
+                // Subsequent segments: plain, no header.
+                Ol::plain(text)
+            }
+        })
         .collect()
 }
 

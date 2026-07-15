@@ -1,3 +1,4 @@
+use super::super::loader::AgentInstructionLibrary;
 use super::*;
 
 /// Handle an agent execution failure for the current orchestration step.
@@ -153,6 +154,7 @@ pub(super) async fn dispatch_remediation(
             patch_agent: &patch_agent,
             failure_notes: remediation_failure_notes(state),
         },
+        &state.agent_instructions,
     )
     .await
     {
@@ -180,7 +182,8 @@ pub(super) async fn dispatch_remediation(
         "dispatch_remediation: no prior parallel-group member results found; retrying original worker"
     );
     let retry_request = build_original_worker_retry_request(state, step);
-    super::dispatch_patch_agent_and_await(ports, &step.id, retry_request).await
+    super::dispatch_patch_agent_and_await(ports, &step.id, retry_request, &state.agent_instructions)
+        .await
 }
 
 struct QuickPatchPhaseRequest<'a> {
@@ -192,11 +195,17 @@ struct QuickPatchPhaseRequest<'a> {
 async fn dispatch_quick_patch_phase(
     ports: &RuntimePorts,
     request: QuickPatchPhaseRequest<'_>,
+    agent_instructions: &AgentInstructionLibrary,
 ) -> bool {
     let patch_request =
         build_patch_dispatch_request(request.patch_agent, request.step, request.failure_notes);
-    let patch_signal =
-        super::dispatch_patch_agent_and_await(ports, &request.step.id, patch_request).await;
+    let patch_signal = super::dispatch_patch_agent_and_await(
+        ports,
+        &request.step.id,
+        patch_request,
+        agent_instructions,
+    )
+    .await;
     patch_signal == NormalizedSignal::Advance
 }
 
@@ -225,8 +234,13 @@ async fn retry_failed_parallel_members(
             return NormalizedSignal::Hold;
         };
         let retry_step_id = retry_request.step_id.clone();
-        let retry_signal =
-            super::dispatch_patch_agent_and_await(ports, &retry_step_id, retry_request).await;
+        let retry_signal = super::dispatch_patch_agent_and_await(
+            ports,
+            &retry_step_id,
+            retry_request,
+            &state.agent_instructions,
+        )
+        .await;
         if retry_signal != NormalizedSignal::Advance {
             return NormalizedSignal::Hold;
         }

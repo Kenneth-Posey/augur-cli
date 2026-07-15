@@ -6,50 +6,61 @@ description: >
   no code changes.
 ---
 
-# run.sh
+# src-deadcode-analysis
 
 ## When to use
 
 Use this skill when you need deterministic, read-only deadcode findings limited
 to a repository-relative Rust path.
 
-## Key Files
+## Purpose
 
-- `run.sh` - Canonical wrapper for src deadcode analysis
-
-## Scope
-
-- Analyzes Rust source under a repository-relative Rust path.
-- Builds symbol-level reachability from entrypoints (`main` and public `lib` API roots).
-- Reports `true_dead_code` for symbols unreachable from the entrypoint root set.
-- Private functions are only reported when they have no inbound references at all,
-  which suppresses internal helper chains that are still used within the file.
-- Does not apply fixes, rewrites, or deletions.
+Detect top-level symbols under `src/` that are not referenced by other source
+files. Builds a symbol-level reachability graph from crate entrypoints (`main`
+and public `lib` API roots) and reports symbols unreachable from that root set.
+Private functions are only reported when they have no inbound references at all,
+which suppresses internal helper chains that are still used within the file.
+Does not apply fixes, rewrites, or deletions. Input scope is explicit and
+repository-relative.
 
 ## Run
 
 ```bash
-.github/skills/0-external-src-deadcode-analysis/run.sh [<repo-relative-rust-path>] [--format <format>]
+.github/skills/0-external-src-deadcode-analysis/run.sh [<TARGET_PATH>] [OPTIONS]
 ```
 
 ## Arguments
 
-- `[<repo-relative-rust-path>]` - Repository-relative Rust path to analyze (default: repository Rust source root)
-- `--format <format>` - Output format: `text` | `json` (default: `text`)
+- `<TARGET_PATH>` - Directory to analyze (default: `src`)
+- `-f, --format <FORMAT>` - Output format: `text` | `json` (default: `text`)
+- `-h, --help` - Print help
+- `-V, --version` - Print version
+
+## Output
+
+Produces a symbol deadcode report listing symbols unreachable from the
+entrypoint root set. Available output formats:
+
+- **text** (default): Human-readable listing of unreachable symbols.
+- **json**: Machine-readable output with per-symbol evidence including
+  `reference_count`, `referenced_files`, and `is_public`.
+
+Exit codes:
+
+- `0` - No unreachable symbols detected (clean).
+- `1` - Unreachable symbols exist.
+- `2` - Runtime or configuration error.
 
 ## Examples
 
 ```bash
-# Analyze the default repository Rust path with text output
+# Analyze the default src/ directory with text output
 .github/skills/0-external-src-deadcode-analysis/run.sh
 
-# Analyze a specific Rust path and emit JSON
-.github/skills/0-external-src-deadcode-analysis/run.sh <repo-relative-rust-path> --format json
+# Analyze a specific path and emit JSON
+.github/skills/0-external-src-deadcode-analysis/run.sh src/domain --format json
 ```
 
-## Determinism and safety
+## Key Files
 
-- Read-only reporting workflow.
-- Input scope is explicit and repository-relative.
-- Findings include evidence: `reference_count`, `referenced_files`, and `is_public`.
-- Exit codes: `0` when clean, `1` when unreachable symbols exist, `2` on runtime/config errors.
+- `.github/skills/0-external-src-deadcode-analysis/run.sh` - Canonical wrapper for src deadcode analysis

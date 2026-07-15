@@ -25,13 +25,13 @@ structured diagnostics when any check fails.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `2-plan-behavior-planning` - behavior plan structure, traceability rules, state machine completeness criteria, and pass/fail emission rules
 2. Read [`../local/language-companions.md`](../local/language-companions.md) - use the `2-plan-behavior-planning` companion entry for language-specific exhaustiveness and type-safety checks
 
 ## Inputs
 
-- **Behavior Plan (Pseudocode):** `plans/<feature-slug>/plan/behavior-plan.md` - output from `2-plan-07-behavior-planner`
+- **Behavior Plan (Pseudocode):** `plans/<feature-slug>/plan/behavior-plan.md` - output from `plan-behavior-planner`
 - **Behavioral Specifications (GWT):** `plans/<feature-slug>/design/behaviors.md` - Stage 1 source of truth; every scenario here must be traceable in the behavior plan
 - **Function Signature Plan:** `plans/<feature-slug>/plan/function-sig-plan.md` - for contract cross-check
 - **Dependency Graph:** `plans/<feature-slug>/plan/dependency-graph.md` - for module boundary consistency
@@ -42,11 +42,13 @@ Invoke at start:
 
 - **Pass/Fail Decision:** `pass` or `fail` with summary
 - **Validation Report:** Written to `plans/<feature-slug>/plan/behavior-plan-validation.md` - findings across scenario traceability, transition coverage, reachability, guard exhaustiveness, contract testability, and invariant preservation
-- **Diagnostic Feedback:** For each finding: finding type, affected scenario ID or state/event pair, and remediation guidance for `2-plan-07-behavior-planner`
+- **Diagnostic Feedback:** For each finding: finding type, affected scenario ID or state/event pair, and remediation guidance for `plan-behavior-planner`
 
 ## Step-by-Step Behavior
 
-1. **Invoke skills:** Apply `2-plan-behavior-planning`. Read `../local/language-companions.md` and invoke the companion listed for `2-plan-behavior-planning`.
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. **Read skills:** Read and apply `2-plan-behavior-planning`. Read `../local/language-companions.md` and read the companion listed for `2-plan-behavior-planning`.
 
 2. **Scenario traceability:** For each GWT scenario in `behaviors.md`, locate the corresponding entry (state, event, guard, effect) in the behavior plan. Flag any scenario with no matching entry as untraced.
 
@@ -60,7 +62,7 @@ Invoke at start:
 
 7. **Invariant preservation:** For each domain invariant, verify no transition effect in the behavior plan contradicts it.
 
-8. **Language companion checks:** Apply checks from the language companion invoked in step 1. Incorporate all findings.
+8. **Language companion checks:** Apply checks from the language companion read in step 1. Incorporate all findings.
 
 9. **Aggregate and emit:** Write the validation report. Emit `pass` if no findings remain, or `fail` with the full diagnostic list.
 

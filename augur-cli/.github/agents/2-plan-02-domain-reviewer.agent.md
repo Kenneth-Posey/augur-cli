@@ -15,7 +15,7 @@ Used by a human or orchestrator to review domain plans and return a clear pass/f
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `2-plan-domain-planning` - entity/aggregate/value object validation criteria
 
 ## Inputs
@@ -33,6 +33,8 @@ Invoke at start:
 - **Decision Summary:** `"pass"` or `"fail"` with a short summary
 
 ## Step-by-Step Behavior
+
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
 
 1. **Validate Entity Definitions:** Check each entity for an explicit identity key, documented lifecycle (creation/states/deletion), and a clear single-domain responsibility. Flag missing lifecycles or ambiguous identity.
 

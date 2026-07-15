@@ -1,7 +1,6 @@
 //! TUI actor: owns the Ratatui terminal, event loop, and AppState.
 
-mod guided_plan;
-mod runtime;
+pub(crate) mod runtime;
 use super::tui_actor_ops as actor_ops;
 
 use super::assistant::key_dispatch::dispatch_chat_key;
@@ -27,11 +26,8 @@ use tokio::sync::{broadcast, mpsc, watch};
 pub use runtime::layout::TuiOverlayHandles;
 pub use runtime::layout::TuiSubActorHandles;
 
-use guided_plan::{apply_guided_plan_actions, handle_guided_plan_event};
+use runtime::configure_terminal_startup;
 use runtime::run;
-use runtime::{
-    configure_terminal_startup, handle_mouse_event, maybe_finish_guided_plan_compaction,
-};
 
 /// Startup data for the TUI actor: session history and shared handles.
 ///
@@ -56,8 +52,8 @@ pub struct TuiStartupData {
 /// Bundled tool accessory handles for the TUI actor.
 ///
 /// Extracted from `TuiServiceHandles` to keep that struct within the 5-field
-/// limit. Groups the command registry, file scanner, guided plan, ask-panel,
-/// and logger handles used in key dispatch and the event loop.
+/// limit. Groups the command registry, file scanner, ask-panel, logger handles,
+/// and agent feed sender used in key dispatch and the event loop.
 ///
 /// Consumers: `TuiServiceHandles.tools`, `TuiToolHandles<'a>` borrows, `wiring.rs`.
 #[derive(bon::Builder)]
@@ -66,12 +62,14 @@ pub struct TuiServiceTools {
     pub command: CommandHandle,
     /// Handle to the file scanner actor for `@` path autocompletion.
     pub file_scanner: FileScannerHandle,
-    /// Handle to the guided plan actor for file-driven plan execution.
-    pub guided_plan: augur_core::actors::guided_plan::GuidedPlanHandle,
     /// Handle to the ask-panel agent actor for side-channel LLM conversations.
     pub ask: augur_core::actors::ask::AskHandle,
     /// Logger handle for recording TUI events to the session JSONL log.
     pub logger: augur_core::actors::LoggerHandle,
+    /// Sender for agent feed events. Used by command handlers that dispatch
+    /// background work to push live status output to the agent feed panel.
+    /// Cloned from the feed channel created in the wiring layer.
+    pub agent_feed_tx: tokio::sync::mpsc::Sender<augur_domain::domain::types::FeedEntry>,
 }
 
 /// Bundled workflow handles for TUI commands that trigger actor-side actions.
@@ -102,7 +100,7 @@ pub struct TuiServiceHandles {
     pub agent: Arc<dyn ChatProvider>,
     /// Handle to the session actor for reading the active endpoint.
     pub session: SessionHandle,
-    /// Tool accessory handles: command, file scanner, guided plan, and ask panel.
+    /// Tool accessory handles: command, file scanner, and ask panel.
     pub tools: TuiServiceTools,
     /// Handle to the deterministic orchestrator for `/run-pipeline` dispatch.
     pub orchestrator: augur_core::actors::DeterministicOrchestratorHandle,
@@ -158,7 +156,7 @@ struct TuiBackgroundChannels<'a> {
 /// Bundles the channel receivers the TUI event loop reads from.
 ///
 /// Extracted from `TuiStreams` to keep that struct within the 5-field limit.
-/// Groups the main agent output, ask-panel output, query, and guided-plan
+/// Groups the main agent output, ask-panel output, and query
 /// broadcast/mpsc receivers. Background sources (supervisor and agent feed)
 /// are grouped in `TuiBackgroundChannels`.
 #[derive(bon::Builder)]
@@ -166,7 +164,6 @@ struct TuiChannelStreams<'a> {
     output_rx: &'a mut broadcast::Receiver<AgentOutput>,
     ask_output_rx: &'a mut broadcast::Receiver<AgentOutput>,
     query_rx: &'a mut mpsc::Receiver<QueryUserRequest>,
-    guided_plan_rx: &'a mut broadcast::Receiver<augur_domain::domain::guided_plan::GuidedPlanEvent>,
     background: TuiBackgroundChannels<'a>,
 }
 
@@ -198,22 +195,24 @@ struct TuiStreams<'a> {
 /// Bundles the UI tool references needed by key dispatch helpers.
 ///
 /// Extracted from `TuiHandles` to keep that struct within the 5-field limit.
-/// Groups the command registry, file scanner, guided plan, ask-panel, and logger
+/// Groups the command registry, file scanner, ask-panel, and logger
 /// handles used in key dispatch and command handling.
 #[derive(bon::Builder)]
 pub(crate) struct TuiToolHandles<'a> {
     pub(crate) command: &'a CommandHandle,
     pub(crate) file_scanner: &'a FileScannerHandle,
-    pub(crate) guided_plan: &'a augur_core::actors::guided_plan::GuidedPlanHandle,
     pub(crate) ask: &'a augur_core::actors::ask::AskHandle,
     pub(crate) logger: &'a augur_core::actors::LoggerHandle,
+    /// Sender for agent feed events. Cloned and used by command handlers
+    /// that dispatch background work to the agent feed panel.
+    pub(crate) agent_feed_tx: &'a tokio::sync::mpsc::Sender<augur_domain::domain::types::FeedEntry>,
 }
 
 /// Bundles immutable references to the actor handles needed for dispatching.
 ///
 /// Passed to `select_next_event`, `handle_submit`, and `restore_session` so
 /// no individual function exceeds the 3-parameter limit. `tools` groups the
-/// UI-layer accessory handles (command registry, file scanner, guided plan).
+/// UI-layer accessory handles (command registry, file scanner, ask panel, logger).
 #[derive(bon::Builder)]
 pub(crate) struct TuiHandles<'a> {
     pub(crate) agent: &'a dyn ChatProvider,
@@ -284,3 +283,6 @@ pub(super) fn spawn_runtime_task(
 ) -> tokio::task::JoinHandle<()> {
     tokio::spawn(run(args, shutdown_tx, feed_rx))
 }
+#[cfg(test)]
+#[path = "../../../tests/actors/tui/tui_actor.tests.rs"]
+mod tests;

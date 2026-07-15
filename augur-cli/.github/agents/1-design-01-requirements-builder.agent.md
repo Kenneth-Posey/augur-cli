@@ -14,7 +14,7 @@ Turn a raw feature request into a structured requirements document. Express ever
 
 ## Skills
 
-Invoke at start:
+Read at start:
 - Read [`../local/language-companions.md`](../local/language-companions.md) - use the 1-design-requirements-engineering companion key for requirements structure, testability, and consistency rules
 
 ## Inputs
@@ -27,6 +27,8 @@ Invoke at start:
 - **Signal Tuple:** `(status, requirements_count, coverage_summary)` - status is `"complete"` or `"incomplete_with_gaps"`
 
 ## Step-by-Step Behavior
+
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
 
 1. Parse the feature request into candidate requirements
 

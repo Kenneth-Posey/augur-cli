@@ -17,11 +17,11 @@ not run git commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-utility-codebase-survey` - map all callers of the target symbol.
 2. `0-global-tdd-workflow` - for minimal-change discipline, no-behavior-drift expectations,
    and definition of done.
-3. Read [`.github/local/language-companions.md`](../local/language-companions.md) and invoke the language-specific `3-implement-behavior-wiring` companion for structure, composition, newtypes, tracing, and test rules.
+3. Read [`.github/local/language-companions.md`](../local/language-companions.md) and read the language-specific `3-implement-behavior-wiring` companion for structure, composition, newtypes, tracing, and test rules.
 4. `0-global-interface-design` - when refactoring actor files, actor handles, wiring, or
    actor-facing tests.
 5. `0-global-line-count-check` - when the violation concerns Rust logic-line or plan-file
@@ -39,8 +39,8 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-utility-codebase-survey` to map all callers and consumers of the target symbol.
-2. Invoke `0-global-tdd-workflow` and the language-specific `3-implement-behavior-wiring` companion. For actor files/handles/wiring, also invoke `0-global-interface-design`. For file-size violations, also invoke `0-global-line-count-check`.
+1. Read `0-utility-codebase-survey` to map all callers and consumers of the target symbol.
+2. Read `0-global-tdd-workflow` and the language-specific `3-implement-behavior-wiring` companion. For actor files/handles/wiring, also Read `0-global-interface-design`. For file-size violations, also Read `0-global-line-count-check`.
 3. Run `cargo test --quiet` to record the baseline pass count.
 4. Apply the smallest structural change that resolves the stated violation:
    - Oversized function: extract named helpers per logical step; top-level reads as composition.

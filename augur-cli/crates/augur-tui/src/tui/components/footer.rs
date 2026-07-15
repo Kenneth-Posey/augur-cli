@@ -18,27 +18,19 @@ pub struct ControlHint {
 
 /// Return the keyboard hint label pair for the bottom controls row.
 ///
-/// Priority: secondary view open > plan/guided-plan mode > default.
+/// Priority: secondary view open > default.
 /// - `Some(Ask)` open: `("ctrl+w", "close ask")`
 /// - `Some(AgentFeed)` open: `("ctrl+w", "close tasks")`
-/// - Plan mode (no secondary): `("esc", "close plan")`
 /// - Default: `("shift+tab", "open ask")`
 ///
 /// Made `pub(crate)` so render tests can verify hint logic independently.
 pub fn controls_row_hint(
     secondary: Option<&SecondaryView>,
-    mode: &DisplayConversationMode,
+    _mode: &DisplayConversationMode,
 ) -> ControlHint {
     let (key, description) = match secondary {
         Some(SecondaryView::Ask) => ("ctrl+w", "close ask"),
         Some(SecondaryView::AgentFeed) => ("ctrl+w", "close tasks"),
-        None if matches!(
-            mode,
-            DisplayConversationMode::Plan(_) | DisplayConversationMode::GuidedPlan(_)
-        ) =>
-        {
-            ("esc", "close plan")
-        }
         None => ("shift+tab", "open ask"),
     };
     ControlHint {

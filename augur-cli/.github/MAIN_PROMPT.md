@@ -1,13 +1,13 @@
 # Main Conversation Guidance for Agentic Models
 
-This file provides guidance for agents running in the main conversation thread. The main thread coordinates work, makes delegation decisions, and keeps context lean.
+This file provides guidance for running the main conversation thread. The main thread coordinates work, makes delegation decisions, and keeps context lean.
 
 ## Primary Role: Dispatcher and Orchestrator
 
 The main conversation should coordinate instead of doing all work inline.
 
 1. **Assess the task** - Understand intent and scope
-2. **Delegate when useful** - Use background tasks for research, analysis, and heavy lifting
+2. **Delegate as often as possible** - Use background tasks for research, analysis, and heavy lifting
 3. **Coordinate results** - Aggregate findings and decide next steps
 4. **Stay lean** - Avoid loading heavy context that should live in a task
 
@@ -15,7 +15,11 @@ The main conversation should coordinate instead of doing all work inline.
 
 ## When to Delegate to Background Tasks
 
-Delegate when the task is research-intensive, thinking-intensive, batch-oriented, or long-running.
+Delegate when the task is research-intensive, thinking-intensive, batch-oriented, or long-running. Anything
+longer or more complex than a quick question or task that requires minimal thought should be delegated.
+
+Treat delegated tasks as separate executors. Keep the work item scoped, provide the necessary context, 
+and wait for the task result before building on it. Dispatch to the correct agent based on the routing.
 
 ### Research-Intensive Tasks
 - Explore the codebase
@@ -47,13 +51,13 @@ Keep work inline when it is a quick lookup, a small edit, a coordination step, o
 ```
 User Request
   ↓
-Understand Scope
+Quick Scan to Understand Scope
   ↓
 Is this research/thinking/batch/long-running?
-  ├─ Yes → Delegate with task_spawn
+  ├─ Yes or Maybe → Delegate with task_spawn
   └─ No → Do it inline
   ↓
-Task Runs
+Background Task Runs
   ↓
 Report: Findings + Next Steps
 ```
@@ -134,17 +138,17 @@ If a task reports a failure or you disagree with findings:
 ```
 Task Assigned
   ↓
-Is it < 2 minutes of focused work?
-├─ Yes → Stay inline
+Is it < 1 minutes of focused work?
+├─ Yes or Maybe → Stay inline
 └─ No → Consider delegation
   ↓
 Is it research, thinking, batch, or long-running?
-├─ Yes → Delegate
+├─ Yes or Maybe → Delegate
 └─ No → Stay inline if small enough
   ↓
 Is there a specialist task for it?
 ├─ Yes → Delegate
-└─ No → Do inline or propose one
+└─ No → Do inline 
 ```
 
 ## Coordination Checklist
@@ -161,11 +165,3 @@ After the task reports:
 - [ ] Findings are summarized
 - [ ] Next steps are clear
 - [ ] Context stays lean
-
-## Summary: Main Conversation Checklist
-
-- [ ] Delegate heavy work
-- [ ] Stay inline for quick lookups and small edits
-- [ ] Use the actual tool names
-- [ ] Summarize findings before proceeding
-- [ ] Avoid redoing task work inline

@@ -12,38 +12,78 @@ description: >
 Use this skill when you need deterministic CI-safe checks that actor behavior is
 delegated to `actor_ops.rs` instead of being implemented in `actor.rs`.
 
-## Scope
+## Purpose
 
-- Discovers `actor.rs` and `actor_ops.rs` by module directory.
-- Reports missing pairs and orphaned files.
-- Flags non-trivial functions and public helper functions in `actor.rs`.
-- Elevates severity when non-trivial actor logic exists without `actor_ops` delegation.
-- Emits deterministic text or JSON output.
+Discovers `actor.rs` and `actor_ops.rs` by module directory, reports missing
+pairs and orphaned files, flags non-trivial functions and public helper
+functions in `actor.rs`, and elevates severity when non-trivial actor logic
+exists without `actor_ops` delegation. The tool is read-only and produces
+deterministic text or JSON output.
 
 ## Run
 
 ```bash
-.github/skills/0-external-actor-ops-detector/run.sh [src-path] [--format <format>]
+.github/skills/0-external-actor-ops-detector/run.sh [OPTIONS] [TARGET_PATH]
 ```
 
 ## Arguments
 
-- `[src-path]` - Path to analyze (default: `src`)
-- `--format <format>` - Output format: `text` | `json` (default: `text`)
-- `--max-lines <n>` - Maximum function line span before non-trivial signal
-- `--max-chain <n>` - Maximum method-call chain length before non-trivial signal
-- `--max-complexity <n>` - Maximum complexity heuristic score before non-trivial signal
-- `--allow-fn <name>` - Additional exact allowlisted function name (repeatable)
-- `--allow-fn-regex <re>` - Additional allowlisted name regex (repeatable)
-- `--include-fragment <text>` - Only analyze paths containing fragment (repeatable)
-- `--exclude-fragment <text>` - Skip paths containing fragment (repeatable)
+| Argument / Flag | Description | Default |
+|---|---|---|
+| `TARGET_PATH` | Path to analyze | `src` |
+| `--format <FORMAT>` | Output format: `text` or `json` | `text` |
+| `--max-lines <MAX_LINES>` | Maximum function line span before non-trivial signal | `12` |
+| `--max-chain <MAX_CHAIN>` | Maximum method-call chain length before non-trivial signal | `3` |
+| `--max-complexity <MAX_COMPLEXITY>` | Maximum complexity heuristic score before non-trivial signal | `8` |
+| `--allow-fn <ALLOWED_FN_NAMES>` | Additional exact allowlisted function name (repeatable) | — |
+| `--allow-fn-regex <ALLOWED_FN_REGEX>` | Additional allowlisted name regex (repeatable) | — |
+| `--include-fragment <INCLUDE_FRAGMENTS>` | Only analyze paths containing fragment (repeatable) | — |
+| `--exclude-fragment <EXCLUDE_FRAGMENTS>` | Skip paths containing fragment (repeatable) | — |
+| `--orphan-actor-ops-severity <ORPHAN_ACTOR_OPS_SEVERITY>` | Severity for orphaned `actor_ops` files: `warning` or `info` | `warning` |
+| `-h`, `--help` | Print help | — |
+| `-V`, `--version` | Print version | — |
 
-## Determinism and safety
+## Output
 
-- Read-only reporting workflow.
-- Files and findings are sorted for stable output.
-- Exit codes: `0` no error findings, `1` error findings present, `2` runtime/config error.
+The tool scans the target path and reports any `actor.rs`/`actor_ops.rs`
+pairing violations, orphaned files, and non-trivial actor logic. All findings
+are sorted for stable, deterministic output.
+
+Exit codes:
+- `0` — No error findings
+- `1` — Error findings present
+- `2` — Runtime or configuration error
+
+Output format is controlled by `--format`:
+- `text` — Human-readable report
+- `json` — Machine-readable JSON
+
+## Examples
+
+Check the default `src` path for actor delegation violations:
+
+```bash
+.github/skills/0-external-actor-ops-detector/run.sh
+```
+
+Analyze a specific directory with relaxed line-count and complexity thresholds:
+
+```bash
+.github/skills/0-external-actor-ops-detector/run.sh my_crate/src --max-lines 20 --max-complexity 10
+```
+
+Exclude test helper paths and emit JSON for downstream processing:
+
+```bash
+.github/skills/0-external-actor-ops-detector/run.sh --format json --exclude-fragment test
+```
+
+Suppress orphaned-actor_ops warnings to informational level:
+
+```bash
+.github/skills/0-external-actor-ops-detector/run.sh --orphan-actor-ops-severity info
+```
 
 ## Key Files
 
-- `run.sh` - Canonical wrapper for actor ops detector
+- `.github/skills/0-external-actor-ops-detector/run.sh` — Canonical wrapper for the actor-ops detector

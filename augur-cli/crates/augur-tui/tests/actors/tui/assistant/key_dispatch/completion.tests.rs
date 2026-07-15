@@ -1,6 +1,8 @@
-use crate::domain::string_newtypes::{EndpointName, FilePath, ModelId, ModelLabel, StringNewtype};
-use crate::domain::tui_state::{AppScreen, AppState};
-use crate::domain::types::{CommandDef, FileCompletion, ModelOption};
+use augur_tui::domain::string_newtypes::{
+    EndpointName, FilePath, ModelId, ModelLabel, StringNewtype,
+};
+use augur_tui::domain::tui_state::{AppScreen, AppState};
+use augur_tui::domain::types::{CommandDef, FileCompletion, ModelOption};
 
 fn conversation_state() -> AppState {
     AppState::new(EndpointName::new("ep"), AppScreen::Conversation)
@@ -28,7 +30,7 @@ fn fake_file(path: &str) -> FileCompletion {
 
 // ── TestRig for tests that need TuiHandles ───────────────────────────────────
 
-struct NullChat(tokio::sync::broadcast::Sender<crate::domain::types::AgentOutput>);
+struct NullChat(tokio::sync::broadcast::Sender<augur_tui::domain::types::AgentOutput>);
 
 impl NullChat {
     fn new() -> Self {
@@ -37,37 +39,36 @@ impl NullChat {
     }
 }
 
-impl crate::domain::traits::ChatProvider for NullChat {
+impl augur_tui::domain::traits::ChatProvider for NullChat {
     fn submit(
         &self,
-        _: crate::domain::string_newtypes::PromptText,
-        _: Option<crate::domain::string_newtypes::EndpointName>,
+        _: augur_tui::domain::string_newtypes::PromptText,
+        _: Option<augur_tui::domain::string_newtypes::EndpointName>,
     ) {
     }
 
     fn interrupt(&self) {}
     fn shutdown(&self) {}
 
-    fn restore(&self, _: Vec<crate::persistence::types::MessageRecord>) {}
+    fn restore(&self, _: Vec<augur_domain::domain::types::MessageRecord>) {}
 
     fn subscribe_output(
         &self,
-    ) -> tokio::sync::broadcast::Receiver<crate::domain::types::AgentOutput> {
+    ) -> tokio::sync::broadcast::Receiver<augur_tui::domain::types::AgentOutput> {
         self.0.subscribe()
     }
 }
 
 struct TestRigCoreHandles {
-    command: crate::actors::command::handle::CommandHandle,
-    session: crate::actors::SessionHandle,
-    persistence: crate::persistence::handle::PersistenceHandle,
+    command: augur_core::actors::command::handle::CommandHandle,
+    session: augur_core::actors::SessionHandle,
+    persistence: augur_core::persistence::handle::PersistenceHandle,
 }
 
 struct TestRigToolHandles {
-    scanner: crate::actors::file_scanner::FileScannerHandle,
-    guided_plan: crate::actors::guided_plan::GuidedPlanHandle,
-    ask: crate::actors::ask::AskHandle,
-    logger: crate::actors::LoggerHandle,
+    scanner: augur_core::actors::file_scanner::FileScannerHandle,
+    ask: augur_core::actors::ask::AskHandle,
+    logger: augur_core::actors::LoggerHandle,
 }
 
 struct TestRigResources {
@@ -81,19 +82,22 @@ struct TestRig {
     provider: NullChat,
     core: TestRigCoreHandles,
     tools: TestRigToolHandles,
+    _agent_feed_tx: tokio::sync::mpsc::Sender<augur_domain::domain::types::FeedEntry>,
     _resources: TestRigResources,
 }
 
 impl TestRig {
     async fn new() -> Self {
-        let command = crate::actors::command::command_actor::build(&[]);
-        let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+        let command = augur_core::actors::command::command_actor::build(&[]);
+        let (_, session) =
+            augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
         let dir = tempfile::tempdir().expect("tempdir");
-        let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-        let (scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-        let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
-        let (ask, ask_dir) = crate::tests::helpers::fake_ask::make_ask_handle().await;
-        let (logger_join, logger) = crate::tests::helpers::fake_logger::fake_logger_handle();
+        let persistence =
+            augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+        let (scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+        let (ask, ask_dir) = augur_core::helpers::fake_ask::make_ask_handle().await;
+        let (logger_join, logger) = augur_core::helpers::fake_logger::fake_logger_handle();
+        let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
         Self {
             provider: NullChat::new(),
             core: TestRigCoreHandles {
@@ -103,10 +107,10 @@ impl TestRig {
             },
             tools: TestRigToolHandles {
                 scanner,
-                guided_plan,
                 ask,
                 logger,
             },
+            _agent_feed_tx: agent_feed_tx,
             _resources: TestRigResources {
                 _persistence_dir: dir,
                 _scanner_join: scanner_join,
@@ -116,22 +120,22 @@ impl TestRig {
         }
     }
 
-    fn handles(&self) -> crate::actors::tui::tui_actor::TuiHandles<'_> {
+    fn handles(&self) -> augur_tui::actors::tui::tui_actor::TuiHandles<'_> {
         let (_catalog_manager_join, catalog_manager) =
-            crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-        crate::actors::tui::tui_actor::TuiHandles {
+            augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+        augur_tui::actors::tui::tui_actor::TuiHandles {
             agent: &self.provider,
             session: &self.core.session,
             persistence: &self.core.persistence,
-            tools: crate::actors::tui::tui_actor::TuiToolHandles {
+            tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
                 command: &self.core.command,
                 file_scanner: &self.tools.scanner,
-                guided_plan: &self.tools.guided_plan,
+                agent_feed_tx: &self._agent_feed_tx,
                 ask: &self.tools.ask,
                 logger: &self.tools.logger,
             },
-            work: crate::actors::tui::tui_actor::TuiWorkHandles {
-                orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+            work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+                orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
                 catalog_manager,
             },
         }
@@ -183,13 +187,14 @@ fn close_completions_if_open_returns_some_and_clears_when_commands_non_empty() {
 #[test]
 fn apply_selected_completion_returns_early_when_no_completions() {
     let mut state = conversation_state();
-    state.prompt.buffer = "hello".to_owned();
+    state.prompt.buffer = "hello".to_owned().into();
     state.prompt.cursor = 5;
 
     super::apply_selected_completion(&mut state);
 
     assert_eq!(
-        state.prompt.buffer, "hello",
+        state.prompt.buffer,
+        "hello".into(),
         "buffer must not change when no completions are active"
     );
     assert_eq!(state.prompt.cursor, 5, "cursor must remain unchanged");
@@ -204,12 +209,13 @@ fn apply_selected_completion_command_path_sets_buffer_when_selected() {
     let mut state = conversation_state();
     state.prompt.completions.commands = vec![FAKE_CMD];
     state.prompt.completions.command_selected = Some(0);
-    state.prompt.buffer = "/q".to_owned();
+    state.prompt.buffer = "/q".to_owned().into();
 
     super::apply_selected_completion(&mut state);
 
     assert_eq!(
-        state.prompt.buffer, "/quit",
+        state.prompt.buffer,
+        "/quit".into(),
         "buffer must be set to /name of selected command"
     );
     assert_eq!(
@@ -226,12 +232,13 @@ fn apply_selected_completion_command_path_does_nothing_when_no_selection() {
     let mut state = conversation_state();
     state.prompt.completions.commands = vec![FAKE_CMD];
     state.prompt.completions.command_selected = None;
-    state.prompt.buffer = "/q".to_owned();
+    state.prompt.buffer = "/q".to_owned().into();
 
     super::apply_selected_completion(&mut state);
 
     assert_eq!(
-        state.prompt.buffer, "/q",
+        state.prompt.buffer,
+        "/q".into(),
         "buffer must not change when command list is non-empty but nothing is selected"
     );
 }
@@ -245,12 +252,13 @@ fn apply_selected_completion_file_path_does_nothing_when_no_file_selected() {
     let mut state = conversation_state();
     state.prompt.completions.files = vec![fake_file("src/main.rs")];
     state.prompt.completions.file_selected = None;
-    state.prompt.buffer = "hello @m".to_owned();
+    state.prompt.buffer = "hello @m".to_owned().into();
 
     super::apply_selected_completion(&mut state);
 
     assert_eq!(
-        state.prompt.buffer, "hello @m",
+        state.prompt.buffer,
+        "hello @m".into(),
         "buffer must not change when files are present but none is selected"
     );
 }
@@ -262,7 +270,7 @@ fn apply_selected_completion_file_path_expands_at_token_when_file_selected() {
     let mut state = conversation_state();
     state.prompt.completions.files = vec![fake_file("src/lib.rs")];
     state.prompt.completions.file_selected = Some(0);
-    state.prompt.buffer = "read @s".to_owned();
+    state.prompt.buffer = "read @s".to_owned().into();
 
     super::apply_selected_completion(&mut state);
 
@@ -289,12 +297,13 @@ fn apply_selected_completion_model_path_with_empty_id_sets_buffer_to_slash_model
     let mut state = conversation_state();
     state.prompt.completions.model_picker.items = vec![model_option("")];
     state.prompt.completions.model_picker.selected = Some(0);
-    state.prompt.buffer = "/model".to_owned();
+    state.prompt.buffer = "/model".to_owned().into();
 
     super::apply_selected_completion(&mut state);
 
     assert_eq!(
-        state.prompt.buffer, "/model",
+        state.prompt.buffer,
+        "/model".into(),
         "empty model id must produce exactly /model in the buffer"
     );
     assert_eq!(state.prompt.cursor, "/model".len());
@@ -307,12 +316,13 @@ fn apply_selected_completion_model_path_with_id_sets_buffer_to_model_id() {
     let mut state = conversation_state();
     state.prompt.completions.model_picker.items = vec![model_option("gpt-5")];
     state.prompt.completions.model_picker.selected = Some(0);
-    state.prompt.buffer = "/model gp".to_owned();
+    state.prompt.buffer = "/model gp".to_owned().into();
 
     super::apply_selected_completion(&mut state);
 
     assert_eq!(
-        state.prompt.buffer, "/model gpt-5",
+        state.prompt.buffer,
+        "/model gpt-5".into(),
         "selected model id must be written as /model <id>"
     );
     assert_eq!(state.prompt.cursor, "/model gpt-5".len());
@@ -325,12 +335,13 @@ fn apply_selected_completion_model_path_does_nothing_when_no_model_selected() {
     let mut state = conversation_state();
     state.prompt.completions.model_picker.items = vec![model_option("gpt-5")];
     state.prompt.completions.model_picker.selected = None;
-    state.prompt.buffer = "/model gp".to_owned();
+    state.prompt.buffer = "/model gp".to_owned().into();
 
     super::apply_selected_completion(&mut state);
 
     assert_eq!(
-        state.prompt.buffer, "/model gp",
+        state.prompt.buffer,
+        "/model gp".into(),
         "buffer must not change when model picker list is non-empty but nothing is selected"
     );
 }
@@ -347,7 +358,7 @@ async fn refresh_completion_hints_model_prefix_clears_commands_and_files() {
     state.prompt.completions.command_selected = Some(0);
     state.prompt.completions.files = vec![fake_file("src/foo.rs")];
     state.prompt.completions.file_selected = Some(0);
-    state.prompt.buffer = "/model".to_owned();
+    state.prompt.buffer = "/model".to_owned().into();
 
     super::refresh_completion_hints(&mut state, &rig.handles());
 
@@ -383,7 +394,7 @@ async fn refresh_completion_hints_plain_buffer_clears_all_completions() {
     state.prompt.completions.commands = vec![FAKE_CMD];
     state.prompt.completions.model_picker.items = vec![model_option("gpt-5")];
     state.prompt.completions.files = vec![fake_file("src/foo.rs")];
-    state.prompt.buffer = "hello world".to_owned();
+    state.prompt.buffer = "hello world".to_owned().into();
 
     super::refresh_completion_hints(&mut state, &rig.handles());
 
@@ -409,7 +420,7 @@ async fn refresh_completion_hints_run_pipeline_with_at_shows_file_completions() 
     let mut state = conversation_state();
     // Pre-populate command completions to confirm they are cleared.
     state.prompt.completions.commands = vec![FAKE_CMD];
-    state.prompt.buffer = "/run-pipeline @src".to_owned();
+    state.prompt.buffer = "/run-pipeline @src".to_owned().into();
 
     super::refresh_completion_hints(&mut state, &rig.handles());
 
@@ -426,7 +437,7 @@ async fn refresh_completion_hints_run_pipeline_without_at_shows_command_completi
     let rig = TestRig::new().await;
     let mut state = conversation_state();
     state.prompt.completions.files = vec![fake_file("plans/foo.md")];
-    state.prompt.buffer = "/run-pipeline".to_owned();
+    state.prompt.buffer = "/run-pipeline".to_owned().into();
 
     super::refresh_completion_hints(&mut state, &rig.handles());
 

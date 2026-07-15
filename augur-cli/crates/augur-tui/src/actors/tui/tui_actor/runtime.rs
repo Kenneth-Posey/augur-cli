@@ -9,13 +9,15 @@ use super::{TERMINAL_TITLE, TICKER_INTERVAL_MS, TuiHandles, TuiStreams};
 use crate::actors::tui::assistant::output_buf::drain_channel_to_buf;
 use crate::actors::tui::handle::ShutdownSignal;
 use crate::domain::tui_state::AppState;
+use augur_core::actors::token_tracker::TokenTrackerHandle;
 use augur_core::domain::deterministic_orchestrator::DeterministicOrchestratorEvent;
 use augur_domain::domain::string_newtypes::OutputText;
 use augur_domain::domain::types::{AgentOutput, FeedEntry, SupervisorEvent};
 use augur_domain::tools::builtin::query_user::QueryUserRequest;
 use tokio::sync::{broadcast, mpsc, watch};
 
-use augur_core::actors::token_tracker::TokenTrackerHandle;
+use ratatui::layout::Rect;
+
 use events::select_next_event;
 use layout::{TuiSubActorHandles, collect_render_snapshot, render_layout};
 use state::build_initial_state;
@@ -41,39 +43,27 @@ pub(super) fn configure_terminal_startup<W: std::io::Write>(writer: &mut W) -> s
     )
 }
 
-/// Notify guided-plan tools when a pending compaction has completed.
-pub(super) fn maybe_finish_guided_plan_compaction(
-    state: &mut AppState,
-    is_compaction_done: Option<()>,
-    handles: &TuiHandles<'_>,
-) {
-    if is_compaction_done.is_some()
-        && matches!(
-            &state.interaction.mode,
-            crate::domain::tui_state::ConversationMode::GuidedPlan(ui)
-                if ui.guided_awaiting_compact.into()
-        )
-    {
-        handles.tools.guided_plan.compaction_done();
-        state.clear_guided_plan_compact_flag();
-    }
-}
-
 /// Run the TUI actor event loop until quit or terminal shutdown.
 pub(super) async fn run(
     args: super::TuiSpawnArgs,
     shutdown_tx: watch::Sender<ShutdownSignal>,
     agent_feed_rx: mpsc::Receiver<FeedEntry>,
 ) {
-    let mut terminal = ratatui::init();
-    let mut stdout = std::io::stdout();
-    let _ = configure_terminal_startup(&mut stdout);
     let super::TuiSpawnArgs {
         providers,
         channels,
         startup,
         sub_actors,
     } = args;
+
+    tracing::info!(
+        session_count = startup.session_summaries.len(),
+        "sessions loaded"
+    );
+
+    let mut terminal = ratatui::init();
+    let mut stdout = std::io::stdout();
+    let _ = configure_terminal_startup(&mut stdout);
     let mut state = build_initial_state(&providers, &startup);
     let orchestrator_event_rx = providers.orchestrator.subscribe();
     let background = RuntimeBackgroundInput {
@@ -127,7 +117,6 @@ struct RuntimeUi {
 struct RuntimeChannels {
     output_rx: broadcast::Receiver<AgentOutput>,
     query_rx: mpsc::Receiver<QueryUserRequest>,
-    guided_plan_rx: broadcast::Receiver<augur_domain::domain::guided_plan::GuidedPlanEvent>,
     ask_output_rx: broadcast::Receiver<AgentOutput>,
 }
 
@@ -155,7 +144,7 @@ struct RuntimeBackgroundInput {
 struct RuntimeLoopArgs<'a> {
     /// Input channels from the TUI actor spawn args.
     channels: super::TuiInputChannels,
-    /// Service tools for subscribing to guided-plan and ask-output broadcasts.
+    /// Service tools for subscribing to ask-output broadcasts.
     tools: &'a super::TuiServiceTools,
     /// Pre-constructed background channel receivers.
     background: RuntimeBackgroundInput,
@@ -187,7 +176,6 @@ impl RuntimeLoop {
             channels: RuntimeChannels {
                 output_rx: channels.output_rx,
                 query_rx: channels.query_rx,
-                guided_plan_rx: tools.guided_plan.subscribe(),
                 ask_output_rx: tools.ask.subscribe_output(),
             },
             background: RuntimeBackgroundChannels {
@@ -207,7 +195,6 @@ impl RuntimeLoop {
                     .output_rx(&mut self.channels.output_rx)
                     .ask_output_rx(&mut self.channels.ask_output_rx)
                     .query_rx(&mut self.channels.query_rx)
-                    .guided_plan_rx(&mut self.channels.guided_plan_rx)
                     .background(
                         super::TuiBackgroundChannels::builder()
                             .maybe_supervisor_rx(self.background.supervisor_rx.as_mut())
@@ -302,9 +289,9 @@ fn build_handles<'a>(
             super::TuiToolHandles::builder()
                 .command(&providers.tools.command)
                 .file_scanner(&providers.tools.file_scanner)
-                .guided_plan(&providers.tools.guided_plan)
                 .ask(&providers.tools.ask)
                 .logger(&providers.tools.logger)
+                .agent_feed_tx(&providers.tools.agent_feed_tx)
                 .build(),
         )
         .work(
@@ -336,14 +323,15 @@ fn draw_state(state: &mut AppState, runtime_ctx: &mut RuntimeContext<'_, '_>) {
         .set(display.output.last_render_width.get());
 }
 
-/// Initialize panel areas with terminal dimensions before the event loop starts.
+/// Initialize all panel areas with terminal dimensions before the event loop starts.
 ///
 /// This ensures that mouse scroll events arriving before the first render are
 /// correctly classified instead of being ignored due to zero-sized panel_areas.
-/// The output_area starts as Rect::default() (zero dimensions), which causes
-/// the mouse classifier to ignore all scroll events until the first render occurs.
-/// By proactively setting output_area to the terminal size, we guarantee that
-/// scroll events are handled from the start.
+/// The output_area and secondary_panel_area start as Rect::default() (zero
+/// dimensions), which causes the mouse classifier to ignore all scroll events
+/// until the first render occurs.
+/// By proactively setting both to reasonable terminal-sized defaults, we
+/// guarantee that scroll events are handled from the start.
 fn initialize_panel_areas(terminal: &mut ratatui::DefaultTerminal, state: &mut AppState) {
     // Get terminal dimensions by drawing an empty frame
     let _ = terminal.draw(|frame| {
@@ -351,5 +339,21 @@ fn initialize_panel_areas(terminal: &mut ratatui::DefaultTerminal, state: &mut A
         // Initialize output_area with full terminal dimensions as a reasonable default.
         // This will be refined by the actual layout calculation during the first render.
         state.output.panel_areas.output_area.set(area);
+
+        // Also initialize secondary_panel_area so that mouse scroll events over the
+        // right side of the terminal (where the agent feed panel appears) are not
+        // silently dropped before the first real render. Use the right 30% of the
+        // terminal as a best-guess default matching the secondary container layout.
+        let secondary_width = (area.width / 10).clamp(1, 30);
+        let secondary_x = area.width.saturating_sub(secondary_width);
+        state.output.panel_areas.secondary_panel_area.set(Rect {
+            x: secondary_x,
+            y: area.y,
+            width: secondary_width,
+            height: area.height,
+        });
     });
 }
+#[cfg(test)]
+#[path = "../../../../tests/actors/tui/tui_actor/runtime.tests.rs"]
+mod tests;

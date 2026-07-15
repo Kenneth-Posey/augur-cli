@@ -20,7 +20,7 @@ branches, or approve plans.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-orchestration-pipeline` - full pipeline workflow, stage sequencing,
    failure routing, hard-stop conditions, and checkpoint commit contract
 2. `0-utility-session-orchestrator` - signal taxonomy, hard-stop conditions,
@@ -39,7 +39,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke the `0-global-orchestration-pipeline` and
+1. Read the `0-global-orchestration-pipeline` and
    `0-utility-session-orchestrator` skills.
 
 2. **Establish session state:**

@@ -16,8 +16,6 @@ pub mod components;
 pub mod layout;
 /// Interactive picker widget for file and session selection.
 pub mod picker;
-/// Plan panel rendering and plan-tree display helpers.
-pub mod plan_panel;
 /// Query dialog state and rendering helpers.
 pub mod query;
 /// Top-level render dispatch for screen-specific renderers.

@@ -15,7 +15,7 @@ Validate architecture and emit a pass/fail signal to `review-orchestrator`.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `4-review-architecture-validation` - universal architecture validation contract: module structure, dependency direction, ownership boundaries, and pass/fail criteria
 2. `4-review-architecture-tools` - universal tool-running contract; look up language companion via [`language-companions.md`](../local/language-companions.md) for deterministic arch-linter, module-graph, and dependency-intel commands
 

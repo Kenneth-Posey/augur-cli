@@ -58,12 +58,23 @@ fn handle_message_break(state: &mut AppState) {
 }
 
 fn handle_error_output(state: &mut AppState, error: OutputText) {
+    // If a new pending response is already armed (steering submitted before
+    // the old turn's error propagated), don't kill the thinking state.
+    if state.agent.pending_response.is_some() {
+        return;
+    }
     state.push_error_line(format!("[error] {error}"));
     push_turn_end(state, None);
     state.agent.is_turn_complete = true.into();
 }
 
 fn handle_interrupted_output(state: &mut AppState) {
+    // If a new pending response is already armed (user submitted steering
+    // input before the old turn's cancel took effect), keep the thinking
+    // spinner alive so it does not flash off-and-on.
+    if state.agent.pending_response.is_some() {
+        return;
+    }
     if state.agent.thinking.is_active.into() {
         push_turn_end(state, Some(OutputText::from("[stopped]")));
         state.agent.is_turn_complete = true.into();

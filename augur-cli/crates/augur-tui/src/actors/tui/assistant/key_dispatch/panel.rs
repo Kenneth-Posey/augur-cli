@@ -2,7 +2,7 @@
 
 use crate::actors::tui::tui_actor::TuiHandles;
 use crate::domain::tui_state::{
-    AppState, AskPanelState, ConversationMode, InputFocus, LineKind, SecondaryView,
+    AppState, AskPanelState, InputFocus, LineKind, SecondaryView,
 };
 use augur_domain::domain::newtypes::TimestampMs;
 use augur_domain::domain::string_newtypes::{OutputText, PromptText, StringNewtype};
@@ -17,20 +17,6 @@ pub(crate) fn toggle_ask_focus(state: &mut AppState) {
         InputFocus::Main => InputFocus::Ask,
         InputFocus::Ask => InputFocus::Main,
     };
-}
-
-/// Transition from Plan mode to Chat on Esc when idle with no completions.
-pub(crate) fn dispatch_plan_esc(state: &mut AppState) -> Option<()> {
-    let no_completions = state.prompt.completions.commands.is_empty()
-        && state.prompt.completions.files.is_empty()
-        && state.prompt.completions.model_picker.items.is_empty();
-    let not_thinking = !state.agent.thinking.is_active;
-    if no_completions && not_thinking {
-        state.interaction.mode = ConversationMode::Chat;
-        Some(())
-    } else {
-        None
-    }
 }
 
 /// Toggle the ask secondary view on ShiftTab.
@@ -203,3 +189,6 @@ fn system_line_record(
         },
     })
 }
+#[cfg(test)]
+#[path = "../../../../../tests/actors/tui/assistant/key_dispatch/panel.tests.rs"]
+mod tests;

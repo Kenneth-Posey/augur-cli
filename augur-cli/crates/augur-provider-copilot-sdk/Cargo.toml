@@ -9,10 +9,6 @@ name = "actors_tests"
 path = "tests/actors/mod.tests.rs"
 
 [[test]]
-name = "guided_plan_tests"
-path = "tests/guided_plan/mod.tests.rs"
-
-[[test]]
 name = "shared_tests"
 path = "tests/shared/mod.tests.rs"
 

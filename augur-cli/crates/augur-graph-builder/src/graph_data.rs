@@ -2,6 +2,7 @@
 //!
 //! These types serialize to the JSON structure consumed by the HTML viewer.
 
+use augur_domain::domain::string_newtypes::{CrateName, ModuleName};
 use serde::{Deserialize, Serialize};
 
 /// Top-level graph data emitted by the builder.
@@ -71,6 +72,6 @@ pub struct ModuleEdge {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CrossCrateEdge {
     pub source: String,
-    pub target_crate: String,
-    pub target_module: String,
+    pub target_crate: CrateName,
+    pub target_module: ModuleName,
 }

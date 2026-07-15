@@ -9,5 +9,5 @@ fn deterministic_orchestrator_ops_handles_dispatch_and_updates() {
     .expect("deterministic_orchestrator_ops source must be readable");
 
     assert!(source.contains("dispatch_request"));
-    assert!(source.contains("merge_artifact_updates"));
+    assert!(source.contains("merge_artifact_existence"));
 }

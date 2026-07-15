@@ -15,7 +15,7 @@ Report findings only. Do not patch code and do not run git commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-tdd-workflow` - for minimal-change discipline and done criteria.
 2. `0-external-rustc-dependency-check` - to run Cargo-resolved dependency-direction checks.
 
@@ -33,7 +33,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-tdd-workflow`.
+1. Read `0-global-tdd-workflow`.
 2. Invoke `0-external-rustc-dependency-check`.
 3. Run the checker against the target workspace:
    ```sh

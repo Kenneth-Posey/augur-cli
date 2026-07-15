@@ -1,10 +1,8 @@
 //! Session persistence data types.
 //!
 //! Defines the full data model for a saved session: identity metadata, message
-//! records with explicit type tags, strategy trees, and summary projections.
+//! records with explicit type tags, and summary projections.
 //! All types derive `Serialize`/`Deserialize` for JSON round-trips via `serde_json`.
-
-use std::collections::HashMap;
 
 pub use crate::domain::types::{MessageRecord, MessageType};
 
@@ -13,75 +11,6 @@ use crate::domain::newtypes::{Count, NumericNewtype, TimestampMs};
 use crate::domain::string_newtypes::{
     EndpointName, OutputText, PromptText, SdkSessionId, SessionId, StrategyNodeName, StringNewtype,
 };
-
-// ── Strategy tree ────────────────────────────────────────────────────────────
-
-/// Metadata attached to every node in a `StrategyTree`.
-///
-/// Tracks name, description, and three timestamps: creation, last update, and
-/// optional finish time. `NodeMeta::new` stamps `created_at` and
-/// `last_updated_at` to the current wall clock; `finished_at` starts as `None`
-/// and is set when the node's work is complete.
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct NodeMeta {
-    /// Human-readable label for this strategy node.
-    pub name: OutputText,
-    /// Description of the node's purpose or scope.
-    pub description: OutputText,
-    /// Wall-clock timestamp of node creation.
-    pub created_at: TimestampMs,
-    /// Wall-clock timestamp of the most recent update to this node.
-    pub last_updated_at: TimestampMs,
-    /// Wall-clock timestamp when this node's work was finished; `None` if still active.
-    pub finished_at: Option<TimestampMs>,
-}
-
-impl NodeMeta {
-    /// Create a new `NodeMeta` with both timestamps set to now and no finish time.
-    pub fn new(name: impl Into<OutputText>, description: impl Into<OutputText>) -> Self {
-        let now = TimestampMs::now();
-        NodeMeta {
-            name: name.into(),
-            description: description.into(),
-            created_at: now,
-            last_updated_at: now,
-            finished_at: None,
-        }
-    }
-}
-
-/// The kind of a strategy node: either a branch containing child nodes or a
-/// leaf containing a final prompt string.
-///
-/// `Branch` nodes hold named children that can themselves be branches or
-/// leaves, forming a tree. `Leaf` holds the terminal prompt string used when
-/// that branch of the strategy is reached.
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub enum StrategyNodeKind {
-    /// Intermediate node; maps child names to their `StrategyNode` entries.
-    Branch(HashMap<StrategyNodeName, StrategyNode>),
-    /// Terminal node containing the final prompt string for this strategy path.
-    Leaf(PromptText),
-}
-
-/// A single node in a `StrategyTree`, combining metadata with its kind.
-///
-/// Every node carries a `NodeMeta` regardless of depth so that timing and
-/// labelling information is available at any level of the tree.
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct StrategyNode {
-    /// Metadata describing this node.
-    pub meta: NodeMeta,
-    /// Whether this node branches to children or holds a final prompt.
-    pub kind: StrategyNodeKind,
-}
-
-/// A named tree of strategies, rooted at a `HashMap` of top-level nodes.
-#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
-pub struct StrategyTree {
-    /// Top-level strategy nodes keyed by name.
-    pub nodes: HashMap<StrategyNodeName, StrategyNode>,
-}
 
 /// Flags that further describe a persisted session.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -106,6 +35,10 @@ pub struct SessionMeta {
     /// Additional session flags.
     #[serde(default)]
     pub flags: SessionMetaFlags,
+    /// Session title, automatically set to the first user prompt (trimmed to 100 chars)
+    /// or manually overridden via `/session-title` command.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<OutputText>,
 }
 
 /// The current state of a persisted session.
@@ -117,8 +50,8 @@ pub struct SessionState {
     /// Persisted OpenRouter request-context history snapshot.
     #[serde(default)]
     pub openrouter_context_history: Option<Vec<crate::domain::types::Message>>,
-    /// Persisted guided strategy tree.
-    #[serde(default)]
+    /// Active strategy tree for the session, if any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current_strategy: Option<StrategyTree>,
 }
 
@@ -146,6 +79,10 @@ pub struct SessionIdentity {
     pub sdk_session_id: Option<SdkSessionId>,
     /// Whether the session was spawned from the ask panel.
     pub ask_session: IsPredicate,
+    /// Session title. Set automatically from the first user prompt or
+    /// overridden via `/session-title` command.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<OutputText>,
 }
 
 /// Compact summary of a session suitable for listing.
@@ -169,13 +106,73 @@ pub fn summarize(record: &SessionRecord) -> SessionSummary {
             endpoint_name: record.meta.endpoint_name.clone(),
             sdk_session_id: record.meta.flags.sdk_session_id.clone(),
             ask_session: record.meta.flags.ask_session,
+            title: record.meta.title.clone(),
         },
         message_count: Count::new(record.state.messages.len()),
         preview: record
             .state
             .messages
-            .first()
+            .iter()
+            .find(|msg| {
+                msg.message_type == MessageType::User
+                    && !msg.message.content.as_str().starts_with("[FILE:")
+            })
             .map(|message| message.message.content.clone())
-            .unwrap_or_else(|| OutputText::new("")),
+            .unwrap_or_else(|| OutputText::new("<<no prompt>>")),
     }
+}
+
+/// Metadata stored on a single node within a `StrategyTree`.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct NodeMeta {
+    /// Node name key, mirroring the map key it lives under.
+    pub name: StrategyNodeName,
+    /// Human-readable description of what this node does.
+    pub description: OutputText,
+    /// Timestamp when this node was created.
+    pub created_at: TimestampMs,
+    /// Timestamp when this node was last modified.
+    pub last_updated_at: TimestampMs,
+    /// Timestamp when execution of this node finished, if it has run.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub finished_at: Option<TimestampMs>,
+}
+
+impl NodeMeta {
+    /// Create a new `NodeMeta` with timestamps set to now and `finished_at` unset.
+    pub fn new(name: impl Into<String>, description: impl Into<String>) -> Self {
+        let now = TimestampMs::now();
+        NodeMeta {
+            name: StrategyNodeName::new(name),
+            description: OutputText::new(description),
+            created_at: now,
+            last_updated_at: now,
+            finished_at: None,
+        }
+    }
+}
+
+/// A node within a `StrategyTree`, either a terminal prompt or a branch to children.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct StrategyNode {
+    /// Metadata describing this node.
+    pub meta: NodeMeta,
+    /// Payload: a terminal prompt or a subtree of named child nodes.
+    pub kind: StrategyNodeKind,
+}
+
+/// Describes whether a `StrategyNode` is a leaf with a prompt or a branch with children.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub enum StrategyNodeKind {
+    /// Terminal node carrying a prompt to send to the LLM.
+    Leaf(PromptText),
+    /// Intermediate node whose children are further strategy nodes.
+    Branch(std::collections::HashMap<StrategyNodeName, StrategyNode>),
+}
+
+/// A tree of strategy nodes, keyed by `StrategyNodeName`.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+pub struct StrategyTree {
+    /// All nodes in the tree, keyed by their unique name.
+    pub nodes: std::collections::HashMap<StrategyNodeName, StrategyNode>,
 }

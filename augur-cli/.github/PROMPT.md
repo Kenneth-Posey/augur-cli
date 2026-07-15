@@ -82,7 +82,7 @@ from both the line and character values. Failing to do this causes the follow-up
 call to target the wrong position.
 
 For complete per-operation parameter requirements, workflow patterns, and error
-handling, invoke the `lsp-query-usage` skill.
+handling, read the `lsp-query-usage` skill.
 
 ## Repository Guidance
 
@@ -103,10 +103,11 @@ Use the repository's guidance documents and skill files for standards, decision 
   - Estimate file count before broad directory listings
   - Count lines before full-file reads
 - If a tool returns a large-request warning, immediately retry with a smaller request by narrowing scope or paginating results
-- Keep command output short when using `shell_exec`
+- Keep command output short when using `shell_exec`, use the size-check tool first
 - Batch independent reads and searches instead of doing them one by one
 - Prefer targeted requests (specific paths, bounded ranges, limited result windows) to avoid context overload
 - Avoid loading more repository context than needed for the task
+- Avoid using broad grep or search commands that flood the conversation context, use the size-check tool first
 
 ## Large Tool Requests
 
@@ -118,16 +119,40 @@ Use the repository's guidance documents and skill files for standards, decision 
 - Verify request size first with tool calls (for example, file counts or line counts) before loading content at scale
 - Continue in bounded chunks until complete rather than issuing one broad request
 
-## Delegation
+## Skills: Read as file content, do not invoke as an agent.
 
-Treat delegated tasks as separate executors. Keep the work item scoped, provide the necessary context, and wait for the task result before building on it.
+Skills are on-disk knowledge artifacts (`.github/skills/<name>/SKILL.md`).
+Use `file_read` or `file_read_range` to load the skill's content,
+then apply its guidance. Do not call `task_spawn` or `shell_exec` for skills.
 
-## Summary: Shared Checklist
+If a step references a skill by backtick name (for example `` `0-global-tdd-workflow` ``)
+and you cannot read the file at the expected path, try locating it under
+`.github/skills/<name>/SKILL.md` and reading it directly. Skills are not
+executable agents or tools; they are reference documents that guide your
+reasoning.
 
-- [ ] Tool names match the actual runtime
-- [ ] Shared guidance stays neutral across roles
-- [ ] Large files are handled with ranged reads
-- [ ] Large requests are pre-sized and paginated when needed
-- [ ] Symbol work uses `lsp_query`
-- [ ] Text work uses shell-based search
-- [ ] Output stays focused and concise
+## Temporary Scripts
+
+When writing a temporary script like a python script or bash script, save the script in
+the repo root under the /temp_scripts/ directory. Don't attempt to save temporary scripts 
+anywhere else. 
+
+## Building code
+
+When running a code build, use the available quiet mode. 
+
+## Testing code
+
+When running code tests, use the available quiet mode. 
+
+## Avoid feature regression
+
+When making updates to code, if a test fails after a change, check if the test is for
+behavior that should be preserved. We don't want to always update a test to "run green"
+with the code updates if the test failure is indicating a real breakage of behavior 
+we want to preserve. 
+
+## Quiet commands
+
+When running tasks that produce high volume output, use a quiet or low-volume approach
+whenever that is available. Example; use `cargo build -q` instead of `cargo build`. 

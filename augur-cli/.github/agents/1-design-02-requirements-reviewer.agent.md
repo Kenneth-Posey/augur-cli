@@ -14,7 +14,7 @@ Review a requirements document for completeness, internal consistency, and Given
 
 ## Skills
 
-- Invoke [`.github/local/language-companions.md`](../local/language-companions.md) and use the 1-design-requirements-engineering companion for completeness, consistency, and testability criteria.
+- Read [`../local/language-companions.md`](../local/language-companions.md) and use the 1-design-requirements-engineering companion for completeness, consistency, and testability criteria.
 
 ## Inputs
 
@@ -27,7 +27,9 @@ Review a requirements document for completeness, internal consistency, and Given
 
 ## Step-by-Step Behavior
 
-1. Invoke [`.github/local/language-companions.md`](../local/language-companions.md) and apply the 1-design-requirements-engineering companion criteria.
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. Read [`../local/language-companions.md`](../local/language-companions.md) and apply the 1-design-requirements-engineering companion criteria.
 
 2. Parse the requirements document.
 

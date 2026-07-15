@@ -455,8 +455,8 @@ fn process_use_tree(
                 };
                 cross_edges.push(CrossCrateEdge {
                     source: module_id.to_string(),
-                    target_crate: target_crate.clone(),
-                    target_module,
+                    target_crate: target_crate.clone().into(),
+                    target_module: target_module.into(),
                 });
             }
         }
@@ -479,8 +479,8 @@ fn process_use_tree(
                 let target = name.clone() + "::lib";
                 cross_edges.push(CrossCrateEdge {
                     source: module_id.to_string(),
-                    target_crate: name,
-                    target_module: target,
+                    target_crate: name.into(),
+                    target_module: target.into(),
                 });
             }
         }
@@ -490,8 +490,8 @@ fn process_use_tree(
                 let target = ident.clone() + "::lib";
                 cross_edges.push(CrossCrateEdge {
                     source: module_id.to_string(),
-                    target_crate: ident,
-                    target_module: target,
+                    target_crate: ident.into(),
+                    target_module: target.into(),
                 });
             }
         }

@@ -15,7 +15,7 @@ apply fixes and do not run git commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-tdd-workflow` - for minimal-change discipline and done criteria.
 2. `0-external-stub-detector` - to run the deterministic src-only stub detection tool.
 
@@ -31,7 +31,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-tdd-workflow`.
+1. Read `0-global-tdd-workflow`.
 2. Invoke `0-external-stub-detector`.
 3. Run the analyzer against the Rust source tree:
    ```sh

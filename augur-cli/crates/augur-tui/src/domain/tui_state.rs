@@ -8,12 +8,11 @@ mod output_flow;
 mod output_messages;
 
 use augur_domain::domain::newtypes::{
-    Count, IsActive, IsAwaitingCompact, IsPredicate, IsReviewActive, IsRunning, IsSeeded,
+    Count, IsActive, IsPredicate, IsRunning, IsSeeded,
     IsThinking, IsTurnComplete, NumericNewtype, ScrollOffset, ShouldResetUsage, TimestampMs,
 };
-use augur_domain::domain::plan_tree::PlanTree;
 use augur_domain::domain::string_newtypes::{
-    ChoiceText, EndpointName, GitBranch, ModelId, ModelLabel, OutputText, PhaseName, PlanName,
+    ChoiceText, EndpointName, GitBranch, ModelId, ModelLabel, OutputText,
     PromptBuffer, PromptText, SessionId, StatusLabel, StringNewtype, TaskName, WorkingDir,
 };
 use augur_domain::domain::types::{
@@ -49,6 +48,9 @@ pub struct PickerSessionIdentity {
     pub last_updated_at: TimestampMs,
     /// The LLM endpoint active in this session.
     pub endpoint_name: EndpointName,
+    /// Optional session title, set automatically from the first user prompt
+    /// or overridden via `/session-title` command.
+    pub title: Option<OutputText>,
 }
 
 /// Lightweight session projection owned by the shared TUI contract layer.
@@ -89,71 +91,6 @@ pub struct QueryState {
     pub reply_tx: oneshot::Sender<OutputText>,
 }
 
-#[derive(bon::Builder)]
-/// State specific to plan mode, holding the tree snapshot and panel scroll offset.
-///
-/// Only plan-mode-specific fields live here; the shared chat state (output, prompt,
-/// agent, status) remains on `AppState` and is used by both `Chat` and `Plan` modes.
-#[derive(Clone)]
-pub struct PlanModeState {
-    /// The current plan tree snapshot rendered in the right panel.
-    pub tree: PlanTree,
-    /// `false` = preview mode (tree shown but not running), `true` = executing.
-    pub running: IsRunning,
-    /// Scroll offset for the right plan panel. 0 shows the top of the tree.
-    pub tree_scroll: ScrollOffset,
-}
-
-#[derive(bon::Builder)]
-/// UI state for guided plan execution mode.
-///
-/// Holds the per-phase display data rendered in the right panel and flags
-/// controlling the reviewer overlay. Owned by `ConversationMode::GuidedPlan`.
-/// Consumers: `render_guided_plan`, `actors::tui::actor` (event handler).
-#[derive(Clone)]
-pub struct GuidedPlanUiState {
-    /// Ordered list of (phase_name, status) pairs for right-panel rendering.
-    pub phases: Vec<(PhaseName, augur_domain::domain::guided_plan::PhaseStatus)>,
-    /// Zero-based index of the currently active phase.
-    pub current_phase: usize,
-    /// Human-readable plan name shown as the panel header.
-    pub plan_name: PlanName,
-    /// `true` while a Copilot agent hook is streaming reviewer tokens into
-    /// the main chat. The renderer shows a `"Reviewer active…"` banner.
-    pub review_active: IsReviewActive,
-    /// `true` after `CompactRequested` fires: the TUI has called `agent.compact()`
-    /// and is waiting for `AgentOutput::CompactionComplete` before signalling
-    /// `GuidedPlanHandle::compaction_done()` to unblock the guided plan actor.
-    pub guided_awaiting_compact: IsAwaitingCompact,
-}
-
-impl GuidedPlanUiState {
-    /// Build a `GuidedPlanUiState` from a `GuidedPlanConfig`.
-    ///
-    /// All phases start as `Pending`. Called by the `/run-plan` command handler
-    /// immediately after `load_guided_plan` succeeds.
-    pub fn from_config(config: &augur_domain::domain::guided_plan::GuidedPlanConfig) -> Self {
-        GuidedPlanUiState::builder()
-            .phases(
-                config
-                    .phases
-                    .iter()
-                    .map(|p| {
-                        (
-                            PhaseName::new(p.name.to_string()),
-                            augur_domain::domain::guided_plan::PhaseStatus::Pending,
-                        )
-                    })
-                    .collect(),
-            )
-            .current_phase(0)
-            .plan_name(PlanName::new(config.name.to_string()))
-            .review_active(IsReviewActive::no())
-            .guided_awaiting_compact(IsAwaitingCompact::no())
-            .build()
-    }
-}
-
 /// Outer full-screen context. Controls which top-level screen the shell renders.
 ///
 /// `SessionSelector` is shown at startup when saved sessions are available.
@@ -173,16 +110,18 @@ pub enum AppScreen {
 /// Only meaningful when `AppInteraction::screen` is `AppScreen::Conversation`.
 /// Variants are mutually exclusive at runtime.
 ///
-/// Consumers: `AppInteraction`, `render`, `key_dispatch`, `plan_view`.
+
+/// Active mode within the conversation screen.
+///
+/// Only meaningful when `AppInteraction::screen` is `AppScreen::Conversation`.
+/// Variants are mutually exclusive at runtime.
+///
+/// Consumers: `AppInteraction`, `render`, `key_dispatch`.
 pub enum ConversationMode {
     /// Normal chat interaction mode.
     Chat,
     /// Query overlay mode; the LLM is waiting for a structured user answer.
     Query(QueryState),
-    /// Plan mode: chat on the left 75%, plan tree panel on the right 25%.
-    Plan(PlanModeState),
-    /// Guided plan execution mode: chat on the left 75%, phase panel on the right 25%.
-    GuidedPlan(GuidedPlanUiState),
 }
 
 /// Which view is displayed in the secondary container panel.
@@ -372,7 +311,8 @@ pub struct PanelOverlayState {
 }
 
 #[derive(bon::Builder)]
-/// Bundled interaction state: screen context, conversation mode, and panel overlays.
+/// Bundled interaction state: screen context, conversation mode, panel overlays,
+/// and session title.
 ///
 /// Groups all interactive state so `AppState` stays within the 5-field limit.
 ///
@@ -392,6 +332,10 @@ pub struct AppInteraction {
     pub mode: ConversationMode,
     /// Secondary-panel overlay state and focus.
     pub panel: PanelOverlayState,
+    /// The text of the first user-entered prompt, used as the session title
+    /// displayed at the top of the conversation screen. `None` before the first
+    /// prompt is submitted.
+    pub session_title: Option<OutputText>,
 }
 
 /// Metadata captured when a response block is opened, stored until the first
@@ -632,13 +576,6 @@ pub struct PanelAreas {
     /// mouse event handler to restrict wheel scrolling to the output zone only.
     /// Defaults to `Rect::default()` (zero area) until the first render.
     pub output_area: Cell<Rect>,
-    /// Bounding rectangle of the plan panel as recorded by the last render call.
-    ///
-    /// Updated each frame by `render_plan_layout` and `render_guided_plan_layout`
-    /// via interior mutability. Read by `handle_plan_mouse_scroll` to route scroll
-    /// events to the plan panel only when the pointer is within its bounds.
-    /// Defaults to `Rect::default()` (zero area) until the first render in plan mode.
-    pub plan_panel_area: Cell<Rect>,
     /// Bounding rectangle of the secondary (agent feed) panel as recorded by the last render call.
     ///
     /// Updated each frame by `render_secondary_container` via interior mutability.
@@ -652,7 +589,6 @@ impl Default for PanelAreas {
     fn default() -> Self {
         Self {
             output_area: Cell::new(Rect::default()),
-            plan_panel_area: Cell::new(Rect::default()),
             secondary_panel_area: Cell::new(Rect::default()),
         }
     }

@@ -1,8 +1,8 @@
 use augur_core::actors::tool::handle::ToolExecutor;
 use augur_core::actors::tool::inline_executor::InlineToolExecutor;
+use augur_core::tools::registry::ToolRegistry;
 use augur_domain::domain::string_newtypes::{StringNewtype, ToolCallId, ToolName};
 use augur_domain::domain::types::ToolCall;
-use augur_core::tools::registry::ToolRegistry;
 
 #[tokio::test]
 async fn inline_executor_handles_unknown_tool() {

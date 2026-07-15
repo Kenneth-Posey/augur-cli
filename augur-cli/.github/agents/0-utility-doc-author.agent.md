@@ -14,7 +14,7 @@ Do not modify any non-comment, non-documentation line in `.rs` files.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-documentation-standards` - for documentation format rules, section
    structure, and inline doc requirements.
 
@@ -30,7 +30,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-documentation-standards` skill.
+1. Read `0-global-documentation-standards` skill.
 2. If doc-extractor artifacts exist for the target path, use:
    - `run-summary.sh <path>` - compact public-surface overview.
    - `run.sh <path> --tier missing-docs` - JSON list of undocumented public items.

@@ -16,6 +16,22 @@ use std::path::Path;
 
 // ── Default values ────────────────────────────────────────────────────────────
 
+/// Default max context length in tokens when no per-model configuration is available.
+///
+/// Used as a safe fallback when the provider catalog does not specify a
+/// `max_context_length` for the current model. Mirrors the identical constant
+/// in the main agent (`augur_core::actors::agent::agent_ops::DEFAULT_MAX_CONTEXT_LENGTH`).
+const DEFAULT_MAX_CONTEXT_LENGTH: TokenCount = TokenCount::of(200_000);
+
+/// Fraction of `max_context_length` used as the total request-size guard threshold
+/// when `auto_compact_threshold` is not set.
+///
+/// The remaining headroom (20%) accounts for system prompt, tool definitions,
+/// and serialization overhead. Mirrors the identical computation in
+/// `augur_core::actors::agent::assistant_core`.
+const CAP_FRACTION_NUMERATOR: u64 = 80;
+const CAP_FRACTION_DENOMINATOR: u64 = 100;
+
 /// Fallback compaction target when model config is absent or set to zero (400k tokens).
 const FALLBACK_COMPACTION_TARGET: TokenCount = TokenCount::of(400_000);
 
@@ -23,8 +39,11 @@ const FALLBACK_COMPACTION_TARGET: TokenCount = TokenCount::of(400_000);
 const FALLBACK_MAX_ITERATIONS: Count = Count::of(100);
 
 /// Fallback auto-compact threshold when model config is absent or set to zero.
-/// Defaults to 80% of the fallback compaction target (320_000 tokens).
+/// Computed as 80% of `FALLBACK_COMPACTION_TARGET` (320_000 tokens).
 const FALLBACK_AUTO_COMPACT_THRESHOLD: TokenCount = TokenCount::of(320_000);
+
+/// Fallback tool response cap when model config is absent or set to zero (50_000 tokens).
+const FALLBACK_TOOL_RESPONSE_CAP: TokenCount = TokenCount::of(50_000);
 
 // ── Public resolution API ─────────────────────────────────────────────────────
 
@@ -48,6 +67,34 @@ pub struct ResolvedModelConfig {
     pub max_iterations: Count,
     /// Token threshold that triggers automatic compaction toward compaction_target.
     pub auto_compact_threshold: TokenCount,
+    /// Maximum tool response tokens before the output is replaced with a
+    /// warning asking the LLM to use a more targeted call.
+    /// Falls back to [`FALLBACK_TOOL_RESPONSE_CAP`] (50_000) when not set.
+    pub tool_response_cap: TokenCount,
+}
+
+impl ResolvedModelConfig {
+    /// Compute the effective request-size cap, following the same logic as the
+    /// main agent in `assistant_core::effective_request_cap`.
+    ///
+    /// 1. Prefers `auto_compact_threshold` when set (> 0).
+    /// 2. Falls back to `max_context_length * 80%` when `max_context_length > 0`.
+    /// 3. Falls back to `DEFAULT_MAX_CONTEXT_LENGTH * 80%` (160K) when neither
+    ///    is configured.
+    pub fn effective_request_cap(&self) -> TokenCount {
+        if self.auto_compact_threshold > TokenCount::ZERO {
+            self.auto_compact_threshold
+        } else if self.max_context_length > TokenCount::ZERO {
+            TokenCount::new(
+                self.max_context_length.inner() * CAP_FRACTION_NUMERATOR / CAP_FRACTION_DENOMINATOR,
+            )
+        } else {
+            TokenCount::new(
+                DEFAULT_MAX_CONTEXT_LENGTH.inner() * CAP_FRACTION_NUMERATOR
+                    / CAP_FRACTION_DENOMINATOR,
+            )
+        }
+    }
 }
 
 /// Resolve model configuration for an optional model ID.
@@ -93,6 +140,7 @@ fn config_from_catalog(catalog: &ProviderCatalogFile, model_id: &ModelId) -> Res
             defaults.auto_compact_threshold,
         ),
         max_context_length: model.max_context_length,
+        tool_response_cap: resolve_target(model.tool_response_cap, defaults.tool_response_cap),
     }
 }
 
@@ -124,6 +172,14 @@ fn default_strip_fraction() -> ToolResultStripFraction {
     ToolResultStripFraction::new(0.9)
 }
 
+/// Return a `ResolvedModelConfig` populated with hardcoded fallback defaults.
+///
+/// Useful for test builders that need a valid config value but don't care
+/// about specific thresholds.
+pub fn fallback_default_model_config() -> ResolvedModelConfig {
+    fallback_config()
+}
+
 fn fallback_config() -> ResolvedModelConfig {
     ResolvedModelConfig {
         compaction_target: FALLBACK_COMPACTION_TARGET,
@@ -131,6 +187,7 @@ fn fallback_config() -> ResolvedModelConfig {
         max_iterations: FALLBACK_MAX_ITERATIONS,
         auto_compact_threshold: FALLBACK_AUTO_COMPACT_THRESHOLD,
         max_context_length: TokenCount::ZERO,
+        tool_response_cap: FALLBACK_TOOL_RESPONSE_CAP,
     }
 }
 
@@ -148,6 +205,7 @@ mod tests {
         tool_compaction_ratio: ToolResultStripFraction,
         max_tool_iterations: Count,
         auto_compact_threshold: TokenCount,
+        tool_response_cap: TokenCount,
     ) -> ProviderCatalogFile {
         ProviderCatalogFile {
             provider: ProviderName::new("openrouter"),
@@ -162,7 +220,10 @@ mod tests {
                 auto_compact_threshold,
                 tool_compaction_ratio,
                 max_tool_iterations,
+                tool_response_cap,
             }],
+            instruction_files: Vec::new(),
+            background_instruction_files: Vec::new(),
             openrouter: None,
         }
     }
@@ -175,12 +236,14 @@ mod tests {
             ToolResultStripFraction::new(0.5),
             Count::of(50),
             TokenCount::of(150_000),
+            TokenCount::of(100_000),
         );
         let config = config_from_catalog(&catalog, &ModelId::new("test-model"));
         assert_eq!(config.compaction_target, TokenCount::of(200_000));
         assert_eq!(config.strip_fraction, ToolResultStripFraction::new(0.5));
         assert_eq!(config.max_iterations, Count::of(50));
         assert_eq!(config.auto_compact_threshold, TokenCount::of(150_000));
+        assert_eq!(config.tool_response_cap, TokenCount::of(100_000));
     }
 
     #[test]
@@ -191,6 +254,7 @@ mod tests {
             ToolResultStripFraction::ZERO,
             Count::ZERO,
             TokenCount::ZERO,
+            TokenCount::ZERO,
         );
         let config = config_from_catalog(&catalog, &ModelId::new("zero-model"));
         assert_eq!(config.compaction_target, FALLBACK_COMPACTION_TARGET);
@@ -200,6 +264,7 @@ mod tests {
             config.auto_compact_threshold,
             FALLBACK_AUTO_COMPACT_THRESHOLD
         );
+        assert_eq!(config.tool_response_cap, FALLBACK_TOOL_RESPONSE_CAP);
     }
 
     #[test]
@@ -210,6 +275,7 @@ mod tests {
             ToolResultStripFraction::new(0.5),
             Count::of(50),
             TokenCount::of(150_000),
+            TokenCount::of(100_000),
         );
         let config = config_from_catalog(&catalog, &ModelId::new("unknown-model"));
         assert_eq!(config.compaction_target, FALLBACK_COMPACTION_TARGET);
@@ -219,6 +285,7 @@ mod tests {
             config.auto_compact_threshold,
             FALLBACK_AUTO_COMPACT_THRESHOLD
         );
+        assert_eq!(config.tool_response_cap, FALLBACK_TOOL_RESPONSE_CAP);
     }
 
     #[test]
@@ -231,5 +298,6 @@ mod tests {
             config.auto_compact_threshold,
             FALLBACK_AUTO_COMPACT_THRESHOLD
         );
+        assert_eq!(config.tool_response_cap, FALLBACK_TOOL_RESPONSE_CAP);
     }
 }

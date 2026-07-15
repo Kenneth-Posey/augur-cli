@@ -14,7 +14,7 @@ Survey existing code before editing. Do not run git commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-utility-codebase-survey` - map all usages of the target primitive.
 2. `0-global-tdd-workflow` - for minimal-change discipline and definition of done.
 3. Read [`.github/local/language-companions.md`](../local/language-companions.md) and the language-specific `3-implement-domain-implementation` companion for newtype macro patterns, canonical type tables, and boundary rules.
@@ -33,8 +33,8 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-utility-codebase-survey` to map all usages of the target primitive.
-2. Invoke `0-global-tdd-workflow`. Read the language-specific `3-implement-domain-implementation` companion for macro patterns and canonical type tables.
+1. Read `0-utility-codebase-survey` to map all usages of the target primitive.
+2. Read `0-global-tdd-workflow`. Read the language-specific `3-implement-domain-implementation` companion for macro patterns and canonical type tables.
 3. Reuse an existing canonical type before creating a new one.
 4. If needed, add a new type to the correct newtypes module using the standard macro.
 5. Replace all usages: struct fields, function parameters, return types, constants.

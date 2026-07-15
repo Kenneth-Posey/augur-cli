@@ -1,17 +1,17 @@
-use crate::domain::string_newtypes::{
+use augur_domain::domain::types::MessageRecord;
+use augur_tui::domain::string_newtypes::{
     EndpointName, FilePath, ModelLabel, PromptText, StringNewtype,
 };
-use crate::domain::traits::ChatProvider;
-use crate::domain::tui_state::{AppScreen, AppState};
-use crate::domain::types::AgentOutput;
-use crate::persistence::types::MessageRecord;
+use augur_tui::domain::traits::ChatProvider;
+use augur_tui::domain::tui_state::{AppScreen, AppState};
+use augur_tui::domain::types::AgentOutput;
 use std::sync::{Arc, Mutex};
 
-use crate::tests::helpers::fake_ask;
+use augur_core::helpers::fake_ask;
 
-fn model_option(id: &str, display_name: &str) -> crate::domain::types::ModelOption {
-    crate::domain::types::ModelOption::builder()
-        .id(crate::domain::string_newtypes::ModelId::new(id))
+fn model_option(id: &str, display_name: &str) -> augur_tui::domain::types::ModelOption {
+    augur_tui::domain::types::ModelOption::builder()
+        .id(augur_tui::domain::string_newtypes::ModelId::new(id))
         .display_name(ModelLabel::new(display_name))
         .build()
 }
@@ -20,8 +20,8 @@ fn command_def(
     name: &'static str,
     usage: &'static str,
     description: &'static str,
-) -> crate::domain::types::CommandDef {
-    crate::domain::types::CommandDef::builder()
+) -> augur_tui::domain::types::CommandDef {
+    augur_tui::domain::types::CommandDef::builder()
         .name(name)
         .usage(usage)
         .description(description)
@@ -48,13 +48,13 @@ fn close_completions_noop_when_empty() {
 /// waits for the actor to process it, then asserts the hint list is populated.
 #[tokio::test]
 async fn refresh_file_hints_populates_file_completions() {
-    let (join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
+    let (join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
     // scan for "src" prefix - the project's src/ directory exists at cwd
     scanner.scan("src");
     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "@src".to_owned();
+    state.prompt.buffer = "@src".to_owned().into();
 
     super::refresh_file_hints(&mut state, &scanner);
 
@@ -90,25 +90,28 @@ fn close_completions_clears_model_picker() {
 fn should_skip_completion_refresh_for_repeated_history_up() {
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.history.pos = Some(0);
-    state.prompt.buffer = "/model gpt-5".to_owned();
+    state.prompt.buffer = "/model gpt-5".to_owned().into();
     state.prompt.completions.commands = vec![command_def("/model", "/model", "model picker")];
 
     assert!(
         super::should_skip_completion_refresh(
             &state,
-            &crate::domain::tui_input::KeyAction::CompletionUp,
+            &augur_tui::domain::tui_input::KeyAction::CompletionUp,
         ),
         "repeated Up during history navigation must skip completion refresh"
     );
     assert!(
         super::should_skip_completion_refresh(
             &state,
-            &crate::domain::tui_input::KeyAction::CompletionDown,
+            &augur_tui::domain::tui_input::KeyAction::CompletionDown,
         ),
         "Down during history navigation must also skip completion refresh"
     );
     assert!(
-        !super::should_skip_completion_refresh(&state, &crate::domain::tui_input::KeyAction::Tab,),
+        !super::should_skip_completion_refresh(
+            &state,
+            &augur_tui::domain::tui_input::KeyAction::Tab,
+        ),
         "non-history actions must not skip completion refresh"
     );
 }
@@ -124,7 +127,7 @@ fn refresh_model_hints_populates_from_available_models() {
         model_option("gpt-4o", "GPT-4o"),
         model_option("claude-3-5-sonnet", "Claude 3.5 Sonnet"),
     ];
-    state.prompt.buffer = "/model ".to_owned();
+    state.prompt.buffer = "/model ".to_owned().into();
     super::refresh_model_hints(&mut state);
     // 2 models + 1 Auto option = 3
     assert_eq!(state.prompt.completions.model_picker.items.len(), 3);
@@ -141,7 +144,7 @@ fn refresh_model_hints_filters_by_prefix() {
         model_option("gpt-4o", "GPT-4o"),
         model_option("claude-3-5-sonnet", "Claude 3.5 Sonnet"),
     ];
-    state.prompt.buffer = "/model gpt".to_owned();
+    state.prompt.buffer = "/model gpt".to_owned().into();
     super::refresh_model_hints(&mut state);
     // Auto is not shown when filtering by a non-empty prefix that doesn't match ""
     // Only gpt-4o matches the "gpt" prefix; Auto has id "" which doesn't start with "gpt"
@@ -161,7 +164,7 @@ fn refresh_model_hints_filters_by_prefix() {
 fn refresh_model_hints_resets_selection_on_list_change() {
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.models.available = vec![model_option("gpt-4o", "GPT-4o")];
-    state.prompt.buffer = "/model ".to_owned();
+    state.prompt.buffer = "/model ".to_owned().into();
     // Prime picker with a different model list to force a change
     state.prompt.completions.model_picker.items = vec![model_option("old-model", "Old")];
     state.prompt.completions.model_picker.selected = Some(0);
@@ -174,9 +177,9 @@ fn refresh_model_hints_resets_selection_on_list_change() {
 /// file completion list changes between calls.
 #[tokio::test]
 async fn refresh_file_hints_resets_selection_on_list_change() {
-    let (join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
+    let (join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "@src".to_owned();
+    state.prompt.buffer = "@src".to_owned().into();
     // Set a stale selection on a previously different list
     state.prompt.completions.file_selected = Some(99);
 
@@ -201,7 +204,7 @@ async fn refresh_file_hints_resets_selection_on_list_change() {
 fn refresh_model_hints_prepends_auto_option() {
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.models.available = vec![model_option("gpt-4o", "GPT-4o")];
-    state.prompt.buffer = "/model ".to_owned();
+    state.prompt.buffer = "/model ".to_owned().into();
     super::refresh_model_hints(&mut state);
     let items = &state.prompt.completions.model_picker.items;
     assert!(!items.is_empty(), "picker must not be empty");
@@ -227,10 +230,10 @@ fn refresh_model_hints_pre_selects_active_model() {
         model_option("gpt-4o", "GPT-4o"),
         model_option("claude-3-5-sonnet", "Claude 3.5 Sonnet"),
     ];
-    state.prompt.models.active_id = Some(crate::domain::string_newtypes::ModelId::new(
+    state.prompt.models.active_id = Some(augur_tui::domain::string_newtypes::ModelId::new(
         "claude-3-5-sonnet",
     ));
-    state.prompt.buffer = "/model ".to_owned();
+    state.prompt.buffer = "/model ".to_owned().into();
     super::refresh_model_hints(&mut state);
     // Auto is at 0, gpt-4o at 1, claude-3-5-sonnet at 2
     let selected = state.prompt.completions.model_picker.selected;
@@ -253,7 +256,7 @@ fn refresh_model_hints_pre_selects_active_model() {
 fn refresh_model_hints_bare_model_shows_all_models() {
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.prompt.models.available = vec![model_option("gpt-4o", "GPT-4o")];
-    state.prompt.buffer = "/model".to_owned();
+    state.prompt.buffer = "/model".to_owned().into();
     super::refresh_model_hints(&mut state);
     // Auto + gpt-4o = 2 items
     assert_eq!(
@@ -274,7 +277,7 @@ fn refresh_model_hints_filters_by_substring() {
         model_option("gpt-4o", "GPT-4o"),
         model_option("claude-3-5-sonnet", "Claude 3.5 Sonnet"),
     ];
-    state.prompt.buffer = "/model sonnet".to_owned();
+    state.prompt.buffer = "/model sonnet".to_owned().into();
     super::refresh_model_hints(&mut state);
     assert_eq!(
         state.prompt.completions.model_picker.items.len(),
@@ -298,7 +301,7 @@ fn refresh_model_hints_filters_case_insensitively() {
         model_option("gpt-4o", "GPT-4o"),
         model_option("claude-3-5-sonnet", "Claude 3.5 Sonnet"),
     ];
-    state.prompt.buffer = "/model CLAUDE".to_owned();
+    state.prompt.buffer = "/model CLAUDE".to_owned().into();
     super::refresh_model_hints(&mut state);
     assert_eq!(
         state.prompt.completions.model_picker.items.len(),
@@ -324,7 +327,7 @@ fn refresh_model_hints_matches_gemini_model() {
         model_option("gemini-3.1-pro", "Gemini 3.1 Pro"),
     ];
 
-    state.prompt.buffer = "/model gemini".to_owned();
+    state.prompt.buffer = "/model gemini".to_owned().into();
     super::refresh_model_hints(&mut state);
     assert_eq!(state.prompt.completions.model_picker.items.len(), 1);
     assert_eq!(
@@ -332,7 +335,7 @@ fn refresh_model_hints_matches_gemini_model() {
         "gemini-3.1-pro"
     );
 
-    state.prompt.buffer = "/model 3.1 pro".to_owned();
+    state.prompt.buffer = "/model 3.1 pro".to_owned().into();
     super::refresh_model_hints(&mut state);
     assert_eq!(state.prompt.completions.model_picker.items.len(), 1);
     assert_eq!(
@@ -354,7 +357,8 @@ fn apply_selected_completion_auto_sets_bare_model_buffer() {
     state.prompt.completions.model_picker.selected = Some(0);
     super::apply_selected_completion(&mut state);
     assert_eq!(
-        state.prompt.buffer, "/model",
+        state.prompt.buffer,
+        "/model".into(),
         "selecting Auto must set buffer to bare /model"
     );
     assert_eq!(state.prompt.cursor, "/model".len());
@@ -443,8 +447,8 @@ impl ChatProvider for RecordingChatProvider {
 
     fn set_model_with_options(
         &self,
-        model_id: crate::domain::string_newtypes::ModelId,
-        reasoning_effort: Option<crate::domain::thinking_mode::ReasoningEffort>,
+        model_id: augur_tui::domain::string_newtypes::ModelId,
+        reasoning_effort: Option<augur_tui::domain::thinking_mode::ReasoningEffort>,
     ) {
         self.set_model_options_calls.lock().unwrap().push((
             model_id.to_string(),
@@ -467,34 +471,35 @@ impl ChatProvider for RecordingChatProvider {
 #[tokio::test]
 async fn handle_submit_with_at_token_calls_submit_with_attachments() {
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "@src/main.rs explain this".to_owned();
+    state.prompt.buffer = "@src/main.rs explain this".to_owned().into();
 
     let should_quit = super::handle_submit(&mut state, &handles).await;
     assert!(
@@ -529,34 +534,35 @@ async fn handle_submit_with_at_token_calls_submit_with_attachments() {
 #[tokio::test]
 async fn handle_submit_without_at_tokens_calls_plain_submit() {
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "explain this without any attachment".to_owned();
+    state.prompt.buffer = "explain this without any attachment".to_owned().into();
 
     let should_quit = super::handle_submit(&mut state, &handles).await;
     assert!(
@@ -579,31 +585,32 @@ async fn handle_submit_without_at_tokens_calls_plain_submit() {
 /// visible) and the user must see a confirmation that a new session was started.
 #[tokio::test]
 async fn handle_submit_new_session_clears_output_and_starts_fresh() {
-    use crate::domain::string_newtypes::OutputText;
-    use crate::domain::tui_state::{AskPanelState, InputFocus};
+    use augur_tui::domain::string_newtypes::OutputText;
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -612,13 +619,13 @@ async fn handle_submit_new_session_clears_output_and_starts_fresh() {
     state
         .output
         .lines
-        .push(crate::domain::tui_state::OutputLine::plain(
+        .push(augur_tui::domain::tui_state::OutputLine::plain(
             OutputText::new("old conversation"),
         ));
-    state.status.token_totals.tokens_in = crate::domain::TokenCount::of(123);
+    state.status.token_totals.tokens_in = augur_tui::domain::newtypes::TokenCount::of(123);
     state.interaction.panel.ask_panel = Some(AskPanelState::default());
     state.interaction.panel.input_focus = InputFocus::Ask;
-    state.prompt.buffer = "/new-session".to_owned();
+    state.prompt.buffer = "/new-session".to_owned().into();
 
     let should_quit = super::handle_submit(&mut state, &handles).await;
 
@@ -643,7 +650,7 @@ async fn handle_submit_new_session_clears_output_and_starts_fresh() {
     );
     assert_eq!(
         state.status.token_totals.tokens_in,
-        crate::domain::TokenCount::of(0),
+        augur_tui::domain::newtypes::TokenCount::of(0),
         "/new-session must clear displayed token totals"
     );
     assert!(
@@ -662,7 +669,7 @@ async fn handle_submit_new_session_clears_output_and_starts_fresh() {
 /// When ask_panel is Some, calling toggle_ask_focus must change input_focus to Ask.
 #[test]
 fn toggle_ask_focus_main_to_ask_when_panel_open() {
-    use crate::domain::tui_state::{AskPanelState, InputFocus};
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus};
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.interaction.panel.ask_panel = Some(AskPanelState::default());
     state.interaction.panel.input_focus = InputFocus::Main;
@@ -675,7 +682,7 @@ fn toggle_ask_focus_main_to_ask_when_panel_open() {
 /// When focus is Ask, toggle_ask_focus must return focus to Main.
 #[test]
 fn toggle_ask_focus_ask_to_main_when_panel_open() {
-    use crate::domain::tui_state::{AskPanelState, InputFocus};
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus};
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.interaction.panel.ask_panel = Some(AskPanelState::default());
     state.interaction.panel.input_focus = InputFocus::Ask;
@@ -688,77 +695,12 @@ fn toggle_ask_focus_ask_to_main_when_panel_open() {
 /// When ask_panel is None, input_focus must remain Main regardless of the call.
 #[test]
 fn toggle_ask_focus_noop_when_panel_closed() {
-    use crate::domain::tui_state::InputFocus;
+    use augur_tui::domain::tui_state::InputFocus;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     assert!(state.interaction.panel.ask_panel.is_none());
     state.interaction.panel.input_focus = InputFocus::Main;
     super::toggle_ask_focus(&mut state);
     assert_eq!(state.interaction.panel.input_focus, InputFocus::Main);
-}
-
-/// Verifies that dispatch_plan_esc transitions from Plan to Chat mode when
-/// no completions are open and the agent is not thinking.
-///
-/// Pressing Esc in Plan mode with idle state must set mode to Chat.
-#[test]
-fn dispatch_plan_esc_transitions_to_chat() {
-    use crate::domain::plan_tree::PlanTree;
-    use crate::domain::tui_state::{ConversationMode, PlanModeState};
-    let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.interaction.mode = ConversationMode::Plan(PlanModeState {
-        tree: PlanTree::new("test", "test", "test"),
-        running: false,
-        tree_scroll: crate::domain::newtypes::ScrollOffset::of(0),
-    });
-    super::dispatch_plan_esc(&mut state);
-    assert!(
-        matches!(state.interaction.mode, ConversationMode::Chat),
-        "must transition to Chat mode on Esc"
-    );
-}
-
-/// Verifies that dispatch_plan_esc is a no-op when completions are open.
-///
-/// When any completion list is populated, Esc must close completions first,
-/// not exit plan mode - the caller handles the two-press pattern.
-#[test]
-fn dispatch_plan_esc_noop_when_completions_open() {
-    use crate::domain::plan_tree::PlanTree;
-    use crate::domain::tui_state::{ConversationMode, PlanModeState};
-    let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.interaction.mode = ConversationMode::Plan(PlanModeState {
-        tree: PlanTree::new("test", "test", "test"),
-        running: false,
-        tree_scroll: crate::domain::newtypes::ScrollOffset::of(0),
-    });
-    state.prompt.completions.commands = vec![command_def("ask", "/ask", "open ask panel")];
-    super::dispatch_plan_esc(&mut state);
-    assert!(
-        matches!(state.interaction.mode, ConversationMode::Plan(_)),
-        "must remain in Plan mode when completions are open"
-    );
-}
-
-/// Verifies that dispatch_plan_esc is a no-op when the agent is thinking.
-///
-/// When agent is actively thinking, Esc in plan mode must not exit to Chat -
-/// it should be handled by the normal CancelThinking flow instead.
-#[test]
-fn dispatch_plan_esc_noop_when_thinking() {
-    use crate::domain::plan_tree::PlanTree;
-    use crate::domain::tui_state::{ConversationMode, PlanModeState};
-    let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.interaction.mode = ConversationMode::Plan(PlanModeState {
-        tree: PlanTree::new("test", "test", "test"),
-        running: false,
-        tree_scroll: crate::domain::newtypes::ScrollOffset::of(0),
-    });
-    state.agent.thinking.is_active = true;
-    super::dispatch_plan_esc(&mut state);
-    assert!(
-        matches!(state.interaction.mode, ConversationMode::Plan(_)),
-        "must remain in Plan mode when agent is thinking"
-    );
 }
 
 /// Verifies that Esc with ask focus active closes the secondary view and switches to Main.
@@ -769,31 +711,32 @@ fn dispatch_plan_esc_noop_when_thinking() {
 /// on next open.
 #[tokio::test]
 async fn esc_with_ask_focus_switches_to_main_focus() {
-    use crate::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -830,31 +773,32 @@ async fn esc_with_ask_focus_switches_to_main_focus() {
 /// The ask panel state is preserved so the conversation persists.
 #[tokio::test]
 async fn esc_with_main_focus_closes_ask_panel() {
-    use crate::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -862,7 +806,7 @@ async fn esc_with_main_focus_closes_ask_panel() {
     state.interaction.panel.ask_panel = Some(AskPanelState::default());
     state.interaction.panel.secondary_view = Some(SecondaryView::Ask);
     state.interaction.panel.input_focus = InputFocus::Main;
-    state.agent.thinking.is_active = false;
+    state.agent.thinking.is_active = augur_domain::IsActive(false);
     let key = KeyEvent {
         code: KeyCode::Esc,
         modifiers: KeyModifiers::NONE,
@@ -886,31 +830,32 @@ async fn esc_with_main_focus_closes_ask_panel() {
 /// switch input_focus to Ask.
 #[tokio::test]
 async fn shift_tab_opens_ask_panel_and_sets_ask_focus() {
-    use crate::domain::tui_state::InputFocus;
+    use augur_tui::domain::tui_state::InputFocus;
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -941,31 +886,32 @@ async fn shift_tab_opens_ask_panel_and_sets_ask_focus() {
 /// secondary view (`secondary_view = None`) and reset focus to Main.
 #[tokio::test]
 async fn shift_tab_noop_when_panel_already_open() {
-    use crate::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -1000,31 +946,32 @@ async fn shift_tab_noop_when_panel_already_open() {
 /// With ask_panel open and focus on Main, Tab must switch focus to Ask.
 #[tokio::test]
 async fn tab_toggles_focus_when_panel_open() {
-    use crate::domain::tui_state::{AskPanelState, InputFocus};
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus};
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -1053,33 +1000,34 @@ async fn tab_toggles_focus_when_panel_open() {
 /// submit call.
 #[tokio::test]
 async fn tab_with_visible_file_picker_completes_inline_without_submitting() {
-    use crate::domain::tui_state::{AskPanelState, InputFocus};
-    use crate::domain::types::FileCompletion;
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus};
+    use augur_tui::domain::types::FileCompletion;
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -1087,7 +1035,7 @@ async fn tab_with_visible_file_picker_completes_inline_without_submitting() {
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.interaction.panel.ask_panel = Some(AskPanelState::default());
     state.interaction.panel.input_focus = InputFocus::Main;
-    state.prompt.buffer = "inspect @sr now".to_owned();
+    state.prompt.buffer = "inspect @sr now".to_owned().into();
     state.prompt.cursor = "inspect @sr".len();
     state.prompt.completions.files = vec![FileCompletion {
         path: FilePath::new("src/main.rs"),
@@ -1107,7 +1055,7 @@ async fn tab_with_visible_file_picker_completes_inline_without_submitting() {
         matches!(should_quit, std::ops::ControlFlow::Continue(())),
         "Tab autocomplete must not quit"
     );
-    assert_eq!(state.prompt.buffer, "inspect @src/main.rs now");
+    assert_eq!(state.prompt.buffer, "inspect @src/main.rs now".into());
     assert_eq!(state.prompt.cursor, "inspect @src/main.rs".len());
     assert_eq!(
         state.interaction.panel.input_focus,
@@ -1128,31 +1076,32 @@ async fn tab_with_visible_file_picker_completes_inline_without_submitting() {
 /// create an `ask_panel`, and set `input_focus = Ask`.
 #[tokio::test]
 async fn secondary_view_toggle_shifttab_opens_ask_when_closed() {
-    use crate::domain::tui_state::{InputFocus, SecondaryView};
+    use augur_tui::domain::tui_state::{InputFocus, SecondaryView};
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -1183,31 +1132,32 @@ async fn secondary_view_toggle_shifttab_opens_ask_when_closed() {
 /// reset `input_focus = Main`. The ask panel state is preserved.
 #[tokio::test]
 async fn secondary_view_toggle_shifttab_closes_when_ask_open() {
-    use crate::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -1234,31 +1184,32 @@ async fn secondary_view_toggle_shifttab_closes_when_ask_open() {
 /// When no secondary view is active, Ctrl+T must set `secondary_view = Some(AgentFeed)`.
 #[tokio::test]
 async fn secondary_view_toggle_ctrl_t_opens_agent_feed_when_closed() {
-    use crate::domain::tui_state::SecondaryView;
+    use augur_tui::domain::tui_state::SecondaryView;
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -1284,31 +1235,32 @@ async fn secondary_view_toggle_ctrl_t_opens_agent_feed_when_closed() {
 /// initialize the ask panel if needed, and set `input_focus = Ask`.
 #[tokio::test]
 async fn secondary_view_toggle_shiftab_switches_to_ask_when_agent_feed_open() {
-    use crate::domain::tui_state::{InputFocus, SecondaryView};
+    use augur_tui::domain::tui_state::{InputFocus, SecondaryView};
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -1343,31 +1295,32 @@ async fn secondary_view_toggle_shiftab_switches_to_ask_when_agent_feed_open() {
 /// must set `secondary_view` to `None`.
 #[tokio::test]
 async fn close_secondary_panel_key_closes_panel() {
-    use crate::domain::tui_state::SecondaryView;
+    use augur_tui::domain::tui_state::SecondaryView;
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -1396,31 +1349,32 @@ async fn close_secondary_panel_key_closes_panel() {
 /// `secondary_view` is `None` AND `input_focus` is `Main`.
 #[tokio::test]
 async fn ctrl_w_closes_ask_panel_and_resets_input_focus() {
-    use crate::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -1449,9 +1403,9 @@ async fn ctrl_w_closes_ask_panel_and_resets_input_focus() {
 /// Verifies that agent-feed selection moves right when multiple feeds are present.
 #[test]
 fn select_next_agent_feed_advances_selection() {
-    use crate::domain::string_newtypes::ToolCallId;
-    use crate::domain::tui_state::{AgentFeedState, AgentFeedTranscript, SecondaryView};
-    use crate::domain::types::FeedId;
+    use augur_tui::domain::string_newtypes::ToolCallId;
+    use augur_tui::domain::tui_state::{AgentFeedState, AgentFeedTranscript, SecondaryView};
+    use augur_tui::domain::types::FeedId;
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.interaction.panel.secondary_view = Some(SecondaryView::AgentFeed);
@@ -1476,9 +1430,9 @@ fn select_next_agent_feed_advances_selection() {
 /// Verifies that agent-feed selection moves left when multiple feeds are present.
 #[test]
 fn select_prev_agent_feed_moves_back() {
-    use crate::domain::string_newtypes::ToolCallId;
-    use crate::domain::tui_state::{AgentFeedState, AgentFeedTranscript, SecondaryView};
-    use crate::domain::types::FeedId;
+    use augur_tui::domain::string_newtypes::ToolCallId;
+    use augur_tui::domain::tui_state::{AgentFeedState, AgentFeedTranscript, SecondaryView};
+    use augur_tui::domain::types::FeedId;
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     state.interaction.panel.secondary_view = Some(SecondaryView::AgentFeed);
@@ -1542,7 +1496,11 @@ impl ChatProvider for RecordingBgAgentProvider {
         self.output_tx.subscribe()
     }
 
-    fn run_background_agent(&self, agent: crate::domain::AgentName, prompt: PromptText) {
+    fn run_background_agent(
+        &self,
+        agent: augur_tui::domain::string_newtypes::AgentName,
+        prompt: PromptText,
+    ) {
         self.calls
             .lock()
             .unwrap()
@@ -1560,34 +1518,35 @@ impl ChatProvider for RecordingBgAgentProvider {
 #[tokio::test]
 async fn handle_submit_run_background_agent_calls_provider() {
     let provider = RecordingBgAgentProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "/agent copilot go".to_owned();
+    state.prompt.buffer = "/agent copilot go".to_owned().into();
 
     let should_quit = super::handle_submit(&mut state, &handles).await;
     assert!(
@@ -1612,61 +1571,64 @@ async fn handle_submit_run_background_agent_calls_provider() {
 /// lines into the ask session, and a later reopen does not restore again.
 #[tokio::test]
 async fn first_ask_panel_open_restores_filtered_main_snapshot_once() {
-    use crate::domain::newtypes::TimestampMs;
-    use crate::domain::string_newtypes::OutputText;
-    use crate::domain::types::Role;
+    use augur_tui::domain::newtypes::TimestampMs;
+    use augur_tui::domain::string_newtypes::OutputText;
+    use augur_tui::domain::types::Role;
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
 
     state.push_user_input_line(OutputText::new("> user question"), TimestampMs::of(1));
-    let mut assistant = crate::domain::tui_state::OutputLine::plain("assistant reply");
+    let mut assistant = augur_tui::domain::tui_state::OutputLine::plain("assistant reply");
     assistant.header.timestamp = Some(TimestampMs::of(2));
     state.output.lines.push(assistant);
-    let mut system = crate::domain::tui_state::OutputLine::plain("[system] system note");
+    let mut system = augur_tui::domain::tui_state::OutputLine::plain("[system] system note");
     system.header.timestamp = Some(TimestampMs::of(3));
     state.output.lines.push(system);
     state.push_output_newline();
     state
         .output
         .lines
-        .push(crate::domain::tui_state::OutputLine::tool_call(
+        .push(augur_tui::domain::tui_state::OutputLine::tool_call(
             "tool output",
         ));
     state
         .output
         .lines
-        .push(crate::domain::tui_state::OutputLine::error("error output"));
+        .push(augur_tui::domain::tui_state::OutputLine::error(
+            "error output",
+        ));
     state
         .output
         .lines
-        .push(crate::domain::tui_state::OutputLine::self_feedback(
+        .push(augur_tui::domain::tui_state::OutputLine::self_feedback(
             "self feedback",
         ));
 
@@ -1694,7 +1656,7 @@ async fn first_ask_panel_open_restores_filtered_main_snapshot_once() {
     assert_eq!(initial_snapshot[2].content.as_str(), "[system] system note");
 
     let _ = super::dispatch_chat_key(&mut state, shift_tab(), &handles).await;
-    let mut late_line = crate::domain::tui_state::OutputLine::plain("late main reply");
+    let mut late_line = augur_tui::domain::tui_state::OutputLine::plain("late main reply");
     late_line.header.timestamp = Some(TimestampMs::of(4));
     state.output.lines.push(late_line);
     let _ = super::dispatch_chat_key(&mut state, shift_tab(), &handles).await;
@@ -1718,33 +1680,34 @@ async fn first_ask_panel_open_restores_filtered_main_snapshot_once() {
 /// prompt into ask output, sets thinking, and does not submit to the main agent.
 #[tokio::test]
 async fn enter_with_ask_focus_submits_only_to_ask_panel() {
-    use crate::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
-    use crate::domain::types::Role;
+    use augur_tui::domain::tui_state::{AskPanelState, InputFocus, SecondaryView};
+    use augur_tui::domain::types::Role;
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
@@ -1752,7 +1715,7 @@ async fn enter_with_ask_focus_submits_only_to_ask_panel() {
     state.interaction.panel.ask_panel = Some(AskPanelState::default());
     state.interaction.panel.secondary_view = Some(SecondaryView::Ask);
     state.interaction.panel.input_focus = InputFocus::Ask;
-    state.prompt.buffer = "ask side question".to_owned();
+    state.prompt.buffer = "ask side question".to_owned().into();
     state.prompt.cursor = state.prompt.buffer.len();
 
     let enter = KeyEvent {
@@ -1794,207 +1757,6 @@ async fn enter_with_ask_focus_submits_only_to_ask_panel() {
     );
 }
 
-fn make_guided_plan_command_handle() -> (
-    crate::actors::guided_plan::GuidedPlanHandle,
-    tokio::sync::mpsc::Receiver<crate::actors::guided_plan::commands::GuidedPlanCmd>,
-) {
-    let (cmd_tx, cmd_rx) = tokio::sync::mpsc::channel(4);
-    let (event_tx, _) =
-        tokio::sync::broadcast::channel::<crate::domain::guided_plan::GuidedPlanEvent>(4);
-    (
-        crate::actors::guided_plan::GuidedPlanHandle { cmd_tx, event_tx },
-        cmd_rx,
-    )
-}
-
-/// Verifies that F10 in guided-plan mode routes to `force_advance()`.
-#[tokio::test]
-async fn guided_plan_f10_routes_to_force_advance() {
-    use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
-
-    let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
-    let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let (guided_plan, mut cmd_rx) = make_guided_plan_command_handle();
-    let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
-    let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
-        agent: &provider,
-        session: &session,
-        persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
-            file_scanner: &scanner,
-            guided_plan: &guided_plan,
-            ask: &ask_handle,
-            logger: &logger_handle,
-        },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
-            catalog_manager,
-        },
-    };
-    let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "still typed".to_owned();
-
-    let quit = super::dispatch_guided_plan_key(
-        &mut state,
-        KeyEvent {
-            code: KeyCode::F(10),
-            modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        },
-        &handles,
-    )
-    .await;
-
-    assert!(
-        matches!(quit, std::ops::ControlFlow::Continue(())),
-        "F10 must not quit the TUI"
-    );
-    match cmd_rx.recv().await {
-        Some(crate::actors::guided_plan::commands::GuidedPlanCmd::ForceAdvance) => {}
-        other => panic!("expected ForceAdvance command, got {other:?}"),
-    }
-    assert!(
-        provider.take_calls().is_empty(),
-        "F10 must not fall through to main chat submit"
-    );
-}
-
-/// Verifies that Enter with an empty guided-plan buffer routes to `confirm_phase()`.
-#[tokio::test]
-async fn guided_plan_enter_with_empty_buffer_confirms_phase() {
-    use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
-
-    let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
-    let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let (guided_plan, mut cmd_rx) = make_guided_plan_command_handle();
-    let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
-    let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
-        agent: &provider,
-        session: &session,
-        persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
-            file_scanner: &scanner,
-            guided_plan: &guided_plan,
-            ask: &ask_handle,
-            logger: &logger_handle,
-        },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
-            catalog_manager,
-        },
-    };
-    let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-
-    let quit = super::dispatch_guided_plan_key(
-        &mut state,
-        KeyEvent {
-            code: KeyCode::Enter,
-            modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        },
-        &handles,
-    )
-    .await;
-
-    assert!(
-        matches!(quit, std::ops::ControlFlow::Continue(())),
-        "empty guided-plan Enter must not quit the TUI"
-    );
-    match cmd_rx.recv().await {
-        Some(crate::actors::guided_plan::commands::GuidedPlanCmd::ConfirmPhase) => {}
-        other => panic!("expected ConfirmPhase command, got {other:?}"),
-    }
-    assert!(
-        provider.take_calls().is_empty(),
-        "empty guided-plan Enter must not submit to the main agent"
-    );
-}
-
-/// Verifies that Enter with a non-empty guided-plan buffer submits normal chat
-/// text instead of confirming the phase.
-#[tokio::test]
-async fn guided_plan_enter_with_text_submits_normal_chat() {
-    use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
-
-    let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
-    let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let (guided_plan, mut cmd_rx) = make_guided_plan_command_handle();
-    let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
-    let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
-        agent: &provider,
-        session: &session,
-        persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
-            file_scanner: &scanner,
-            guided_plan: &guided_plan,
-            ask: &ask_handle,
-            logger: &logger_handle,
-        },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
-            catalog_manager,
-        },
-    };
-    let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "guided follow-up".to_owned();
-    state.prompt.cursor = state.prompt.buffer.len();
-
-    let quit = super::dispatch_guided_plan_key(
-        &mut state,
-        KeyEvent {
-            code: KeyCode::Enter,
-            modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        },
-        &handles,
-    )
-    .await;
-
-    assert!(
-        matches!(quit, std::ops::ControlFlow::Continue(())),
-        "non-empty guided-plan Enter must not quit the TUI"
-    );
-    assert!(
-        matches!(
-            cmd_rx.try_recv(),
-            Err(tokio::sync::mpsc::error::TryRecvError::Empty)
-        ),
-        "non-empty guided-plan Enter must not send a guided-plan command"
-    );
-    let calls = provider.take_calls();
-    assert_eq!(calls.len(), 1, "must submit exactly one main-agent turn");
-    match &calls[0] {
-        ProviderCall::Submit { prompt } => assert_eq!(prompt.as_str(), "guided follow-up"),
-        other => panic!("expected plain Submit call, got {other:?}"),
-    }
-}
-
-// --- Thinking mode picker integration tests ----------------------------------
-
 /// Verifies that dispatching Down while the thinking mode picker is open does
 /// NOT clear `pending_model_id`.
 ///
@@ -2007,41 +1769,42 @@ async fn dispatch_key_down_does_not_clear_thinking_mode_pending_model() {
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     // Simulate the state after a model was confirmed: buffer cleared, pending_model_id set.
-    state.prompt.buffer = String::new();
+    state.prompt.buffer = String::new().into();
     state
         .prompt
         .completions
         .model_picker
         .thinking_mode
-        .pending_model_id = Some(crate::domain::string_newtypes::ModelId::new("gpt-5"));
+        .pending_model_id = Some(augur_tui::domain::string_newtypes::ModelId::new("gpt-5"));
     state.prompt.completions.model_picker.thinking_mode.selected = Some(0);
 
     let down = KeyEvent {
@@ -2075,41 +1838,42 @@ async fn dispatch_key_enter_confirms_thinking_mode_and_calls_set_model() {
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
 
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     // Simulate: model confirmed, thinking mode picker showing index 1 (High).
-    state.prompt.buffer = String::new();
+    state.prompt.buffer = String::new().into();
     state
         .prompt
         .completions
         .model_picker
         .thinking_mode
-        .pending_model_id = Some(crate::domain::string_newtypes::ModelId::new("my-model"));
+        .pending_model_id = Some(augur_tui::domain::string_newtypes::ModelId::new("my-model"));
     // index 1 in ReasoningEffort::options() is High
     state.prompt.completions.model_picker.thinking_mode.selected = Some(1);
 
@@ -2157,33 +1921,34 @@ async fn tab_with_command_completions_applies_selected_command_and_closes_menu()
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "/qu".to_owned();
+    state.prompt.buffer = "/qu".to_owned().into();
     state.prompt.completions.commands = vec![command_def("quit", "/quit", "Quit the TUI")];
     state.prompt.completions.command_selected = Some(0);
 
@@ -2196,7 +1961,8 @@ async fn tab_with_command_completions_applies_selected_command_and_closes_menu()
     let _ = super::dispatch_chat_key(&mut state, key, &handles).await;
 
     assert_eq!(
-        state.prompt.buffer, "/quit",
+        state.prompt.buffer,
+        "/quit".into(),
         "Tab must apply the selected command into the buffer"
     );
     assert!(
@@ -2212,33 +1978,34 @@ async fn tab_with_command_completions_defaults_to_first_when_none_selected() {
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "/qu".to_owned();
+    state.prompt.buffer = "/qu".to_owned().into();
     state.prompt.completions.commands = vec![
         command_def("quit", "/quit", "Quit the TUI"),
         command_def("query", "/query <q>", "Query"),
@@ -2254,7 +2021,8 @@ async fn tab_with_command_completions_defaults_to_first_when_none_selected() {
     let _ = super::dispatch_chat_key(&mut state, key, &handles).await;
 
     assert_eq!(
-        state.prompt.buffer, "/quit",
+        state.prompt.buffer,
+        "/quit".into(),
         "Tab must apply the first command when none is selected"
     );
     assert!(state.prompt.completions.commands.is_empty());
@@ -2266,33 +2034,34 @@ async fn tab_with_no_completions_does_not_modify_buffer() {
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 
     let provider = RecordingChatProvider::new();
-    let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+    let (_, session) = augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
     let dir = tempfile::tempdir().expect("tempdir");
-    let persistence = crate::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
-    let (_scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-    let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+    let persistence =
+        augur_core::persistence::handle::PersistenceHandle::new(dir.path().to_owned());
+    let (_scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+    let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
     let (ask_handle, _ask_dir) = fake_ask::make_ask_handle().await;
-    let (_logger_join, logger_handle) = crate::tests::helpers::fake_logger::fake_logger_handle();
+    let (_logger_join, logger_handle) = augur_core::helpers::fake_logger::fake_logger_handle();
     let (_catalog_manager_join, catalog_manager) =
-        crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-    let handles = crate::actors::tui::tui_actor::TuiHandles {
+        augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+    let handles = augur_tui::actors::tui::tui_actor::TuiHandles {
         agent: &provider,
         session: &session,
         persistence: &persistence,
-        tools: crate::actors::tui::tui_actor::TuiToolHandles {
-            command: &crate::actors::command::command_actor::build(&[]),
+        tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
+            command: &augur_core::actors::command::command_actor::build(&[]),
             file_scanner: &scanner,
-            guided_plan: &guided_plan,
+            agent_feed_tx: &agent_feed_tx,
             ask: &ask_handle,
             logger: &logger_handle,
         },
-        work: crate::actors::tui::tui_actor::TuiWorkHandles {
-            orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+        work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+            orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
             catalog_manager,
         },
     };
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "some text".to_owned();
+    state.prompt.buffer = "some text".to_owned().into();
     // No completions open
 
     let key = KeyEvent {
@@ -2304,7 +2073,8 @@ async fn tab_with_no_completions_does_not_modify_buffer() {
     let _ = super::dispatch_chat_key(&mut state, key, &handles).await;
 
     assert_eq!(
-        state.prompt.buffer, "some text",
+        state.prompt.buffer,
+        "some text".into(),
         "Tab with no completions must not modify the buffer"
     );
 }
@@ -2313,9 +2083,9 @@ async fn tab_with_no_completions_does_not_modify_buffer() {
 /// the prefix ends with '/', using synchronous directory scan.
 #[tokio::test]
 async fn refresh_file_hints_immediately_expands_directory_on_slash_prefix() {
-    let (join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
+    let (join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
-    state.prompt.buffer = "@src/".to_owned();
+    state.prompt.buffer = "@src/".to_owned().into();
 
     // No sleep - sync scan for slash-ending prefix must populate completions immediately
     super::refresh_file_hints(&mut state, &scanner);

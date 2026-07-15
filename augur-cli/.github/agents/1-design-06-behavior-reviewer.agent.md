@@ -20,7 +20,7 @@ Emit `fail` with a structured gap report when any criterion is not met.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 - `0-global-behavioral-specification` - GWT structure rules, completeness criteria, and validation checklist
 
 ## Inputs
@@ -35,6 +35,8 @@ Invoke at start:
 - **On Fail:** Emit `fail` with a structured gap report: uncovered features, missing or malformed scenarios, consistency violations, and non-testable behaviors
 
 ## Step-by-Step Behavior
+
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
 
 1. **Load inputs:** Load the behavior specification, feature specification, and requirements document.
 

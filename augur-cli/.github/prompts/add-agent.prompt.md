@@ -53,14 +53,14 @@ Include:
 - Give the agent only the tools it truly needs.
 - Reuse existing skills for rules and reasoning instead of copying those rules
   into the agent body.
-- Agents must **explicitly name and invoke** the skills they depend on. Do not
+- Agents must **explicitly name and read** the skills they depend on. Do not
   rely on path-based or implicit instruction loading as the primary source of
   agent rules.
 - Write guidance that works when callers launch the agent as a background
   task. Do not treat inline primary-context execution as an equal default.
-- The `## Skills` section must say which skills the agent invokes and under what
+- The `## Skills` section must say which skills the agent reads and under what
   conditions.
-- In `## Step-by-Step Behavior`, include an explicit invoke step for those
+- In `## Step-by-Step Behavior`, include an explicit read step for those
   skills instead of assuming they are already in context.
 - Only orchestrator agents may define multi-agent execution order, retries,
   checkpoints, or downstream routing. Non-orchestrator agents must keep
@@ -107,7 +107,7 @@ Before finishing, verify:
 4. Run `.github/skills/0-external-customization-analyzer/run.sh .github/agents/<slug>.agent.md`
    and address any structural findings before finishing.
 5. Verify the workflow is self-contained from a fresh context.
-6. Verify the agent explicitly invokes every skill it depends on and does not
+6. Verify the agent explicitly reads every skill it depends on and does not
    rely on implicit instruction loading.
 7. Verify companion routing/planning surfaces were checked and updated when
    needed: `.github/skills/0-global-plan-implementation/SKILL.md` Valid Agent

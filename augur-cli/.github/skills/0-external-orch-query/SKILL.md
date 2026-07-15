@@ -5,21 +5,20 @@ description: >
   signals, advancing phases, and querying session status.
 ---
 
-# run.sh
+# orch-query
+
+## When to use
+
+Use this skill at every phase transition of a multi-phase orchestrated pipeline.
+Start a session before the first phase, record outcomes and advance after each
+phase, record signals from executors, resolve pending decisions, and stop or
+complete the session when finished.
 
 ## Purpose
 
 CLI for starting orchestration sessions, recording phase outcomes and signals,
-advancing phases, and querying session status.
-
-## Development Build
-
-Only needed when modifying the tool source in this directory.
-
-```bash
-cd .github/skills/0-external-orch-query
-cargo build --release
-```
+advancing phases, and querying session status. Manages a SQLite database at a
+configurable path that persists all session state across tool invocations.
 
 ## Run
 
@@ -27,21 +26,90 @@ cargo build --release
 .github/skills/0-external-orch-query/run.sh <subcommand> [options]
 ```
 
-## Usage
+## Arguments
 
-Subcommands:
+### Global Options
 
-- `start-session --plan-id <id> --phase <phase>` - Start a new orchestration session for a plan
-- `status [--session-id <id>]` - Print session status (defaults to the active session)
-- `advance-phase --session-id <id> --completed-phase <p> --next-phase <p> --outcome <pass|fail|skipped> [--notes <txt>]` - Record a phase outcome and advance
-- `record-signal --session-id <id> --signal-kind <kind> --source <source> [--detail <txt>]` - Persist an orchestration signal
-- `resolve-decision --decision-id <id> --resolution <txt>` - Mark a pending decision as resolved
-- `stop-session --session-id <id> --reason <txt>` - Stop the session with an explicit reason
-- `complete-session --session-id <id>` - Mark the session as completed (all phases passed)
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--db <DB>` | Path to the SQLite database file | `state/orchestrator-state.db` |
+| `-h, --help` | Print help | |
 
-**Database location**: `state/orchestrator-state.db` under the repo root (default; override with `--db <path>`). Missing parent directories are created automatically before the database is opened.
+### Subcommands
 
-**Schema**: defined in `orchestrator-state.db.schema` at the repo root.
+**`start-session`** - Start a new orchestration session for a plan
+
+| Option | Description | Required |
+|--------|-------------|----------|
+| `--plan-id <PLAN_ID>` | Plan identifier to orchestrate (e.g. "0165") | Yes |
+| `--phase <PHASE>` | Name of the starting phase | Yes |
+| `-h, --help` | Print help | |
+
+**`status`** - Print the full status of a session (defaults to the active session)
+
+| Option | Description | Required |
+|--------|-------------|----------|
+| `--session-id <SESSION_ID>` | Session id to query; omit to query the current active session | No |
+| `-h, --help` | Print help | |
+
+**`advance-phase`** - Record the outcome of the current phase and advance to the next
+
+| Option | Description | Required |
+|--------|-------------|----------|
+| `--session-id <SESSION_ID>` | Session to advance | Yes |
+| `--completed-phase <COMPLETED_PHASE>` | Name of the phase that has just completed | Yes |
+| `--next-phase <NEXT_PHASE>` | Name of the phase to advance to | Yes |
+| `--outcome <OUTCOME>` | Outcome of the completed phase: `pass`, `fail`, or `skipped` | Yes |
+| `--notes <NOTES>` | Optional notes from the completing agent | No |
+| `-h, --help` | Print help | |
+
+**`record-signal`** - Record an orchestration signal for a session
+
+| Option | Description | Required |
+|--------|-------------|----------|
+| `--session-id <SESSION_ID>` | Session this signal belongs to | Yes |
+| `--signal-kind <SIGNAL_KIND>` | Signal kind: `proceed`, `stop`, `fail`, or `decision-required` | Yes |
+| `--source <SOURCE>` | Agent or phase that emitted the signal | Yes |
+| `--phase <PHASE>` | Name of the phase that raised this signal | Yes |
+| `--detail <DETAIL>` | Optional detail text (required question text for `decision-required`) | No |
+| `-h, --help` | Print help | |
+
+**`resolve-decision`** - Resolve a pending decision point
+
+| Option | Description | Required |
+|--------|-------------|----------|
+| `--decision-id <DECISION_ID>` | Row id of the decision point to resolve | Yes |
+| `--resolution <RESOLUTION>` | Human-provided resolution text | Yes |
+| `-h, --help` | Print help | |
+
+**`stop-session`** - Stop an active session with an explicit reason
+
+| Option | Description | Required |
+|--------|-------------|----------|
+| `--session-id <SESSION_ID>` | Session to stop | Yes |
+| `--reason <REASON>` | Human-readable reason for stopping | Yes |
+| `-h, --help` | Print help | |
+
+**`complete-session`** - Mark a session as completed (all phases passed)
+
+| Option | Description | Required |
+|--------|-------------|----------|
+| `--session-id <SESSION_ID>` | Session to mark as completed | Yes |
+| `-h, --help` | Print help | |
+
+## Output
+
+The tool prints human-readable status and confirmation text to stdout. Error
+messages are printed to stderr.
+
+**Exit codes:**
+- `0` - Success
+- Non-zero - Error (invalid arguments, database errors, missing session, etc.)
+
+**Database**: SQLite database at the path specified by `--db` (default:
+`state/orchestrator-state.db` under the repository root). Missing parent
+directories are created automatically before the database is opened. The
+database file is created on first use if it does not exist.
 
 ## Examples
 
@@ -66,8 +134,9 @@ Subcommands:
 .github/skills/0-external-orch-query/run.sh record-signal \
   --session-id 1 \
   --signal-kind fail \
-  --source code-rust-implementer \
-  --detail "Tests failed after refactor; unable to resolve"
+  --source "code-rust-implementer" \
+  --phase "implement-core" \
+  --detail "Tests failed; unable to resolve"
 
 # Resolve a pending decision
 .github/skills/0-external-orch-query/run.sh resolve-decision \
@@ -78,8 +147,12 @@ Subcommands:
 .github/skills/0-external-orch-query/run.sh stop-session \
   --session-id 1 \
   --reason "Critical compiler error; phase halted pending investigation"
+
+# Complete the session
+.github/skills/0-external-orch-query/run.sh complete-session \
+  --session-id 1
 ```
 
 ## Key Files
 
-- `run.sh` - Canonical wrapper for orch query
+- `.github/skills/0-external-orch-query/run.sh` - Canonical wrapper for orch-query

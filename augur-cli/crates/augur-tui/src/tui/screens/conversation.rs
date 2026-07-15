@@ -1,9 +1,7 @@
 //! Conversation screen: assembles the full conversation layout and dispatches
-//! to mode-specific sub-layouts (chat, query, plan, guided plan).
+//! to mode-specific sub-layouts (chat, query).
 
-mod guided_plan_panel;
 mod layout_zones;
-mod plan_layout;
 mod query_input;
 
 use crate::domain::tui_display_state::{
@@ -24,9 +22,6 @@ use ratatui::Frame;
 use ratatui::layout::Rect;
 
 use layout_zones::{conv_area_above, split_layout};
-use plan_layout::{
-    GuidedPlanLayoutContext, PlanLayoutContext, render_guided_plan_layout, render_plan_layout,
-};
 use query_input::render_query_input;
 pub use query_input::{build_inline_choice_lines, split_question_lines};
 
@@ -43,8 +38,6 @@ struct QueryLayoutContext<'a> {
 /// mode-specific layout:
 /// - `Chat` → `render_chat_layout`
 /// - `Query(qs)` → `render_query_layout`
-/// - `Plan(ps)` → `render_plan_layout`
-/// - `GuidedPlan(gs)` → `render_guided_plan_layout`
 ///
 /// Called by the shell dispatcher when `AppScreen::Conversation` is active.
 pub(crate) fn render_conversation(frame: &mut Frame, state: &TuiDisplayState, area: Rect) {
@@ -62,12 +55,6 @@ pub(crate) fn render_conversation(frame: &mut Frame, state: &TuiDisplayState, ar
                 .area(main_area)
                 .build(),
         ),
-        DisplayConversationMode::Plan(ps) => {
-            render_plan_layout(frame, PlanLayoutContext::new(state, ps, main_area))
-        }
-        DisplayConversationMode::GuidedPlan(gs) => {
-            render_guided_plan_layout(frame, GuidedPlanLayoutContext::new(state, gs, main_area))
-        }
     }
 }
 
@@ -79,9 +66,7 @@ pub(crate) fn render_conversation(frame: &mut Frame, state: &TuiDisplayState, ar
 /// # Parameters
 ///
 /// - `conv_area` - layout descriptor forwarded to [`render_conversation_container`].
-///   Use [`ConversationArea::full`] when the area already spans the full terminal
-///   (chat/query modes), or [`ConversationArea::plan`] with the full terminal width
-///   when the area is a sub-rect (plan mode).
+///   Use [`ConversationArea::full`] when the area already spans the full terminal.
 fn render_chat_layout(frame: &mut Frame, state: &TuiDisplayState, conv_area: ConversationArea) {
     let area = conv_area.area;
     let hint_count = active_hint_count(state);
@@ -121,8 +106,6 @@ fn render_chat_layout(frame: &mut Frame, state: &TuiDisplayState, conv_area: Con
 /// instead of `render_conversation_container`, so the secondary container is not
 /// rendered regardless of `state.interaction.panel.secondary_view`.
 ///
-/// Used as a fallback by `render_plan_layout` and `render_guided_plan_layout` when
-/// the three-pane layout would make the secondary pane narrower than 10 columns.
 fn render_chat_layout_primary_only(frame: &mut Frame, state: &TuiDisplayState, area: Rect) {
     let hint_count = active_hint_count(state);
     let layout = compute_layout(

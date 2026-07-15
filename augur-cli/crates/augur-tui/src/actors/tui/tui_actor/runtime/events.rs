@@ -1,24 +1,17 @@
 //! Event-selection and event-application helpers for the TUI runtime loop.
 
-use super::super::guided_plan::{
-    apply_guided_plan_actions, handle_guided_plan_event, supervisor_event_to_feed,
-};
 use super::super::{CHARS_PER_TICK, EventOutcome, TuiHandles, TuiStreams};
-use super::maybe_finish_guided_plan_compaction;
 use super::terminal::handle_terminal_event;
 use crate::actors::tui::assistant::output_buf::{drain_char_buf, handle_agent_output};
 use crate::actors::tui::assistant::picker::handle_picker_event;
-use crate::actors::tui::assistant::plan_view::{
-    handle_query_request, handle_supervisor_event, recv_supervisor,
-};
+use crate::actors::tui::assistant::query_flow::handle_query_request;
 use crate::domain::tui_input::{apply_agent_feed_output, apply_agent_output, apply_ask_output};
 use crate::domain::tui_state::AppState;
 use augur_core::domain::deterministic_orchestrator::{
     DeterministicOrchestratorEvent, NormalizedSignal,
 };
 use augur_domain::domain::string_newtypes::OutputText;
-use augur_domain::domain::string_newtypes::ToolCallId;
-use augur_domain::domain::types::{AgentFeedOutput, AgentOutput, FeedEntry, FeedId};
+use augur_domain::domain::types::{AgentFeedOutput, AgentOutput, FeedEntry};
 use futures_util::StreamExt;
 use std::ops::ControlFlow;
 
@@ -43,12 +36,6 @@ pub(super) async fn select_next_event(
         query_req = streams.channels.query_rx.recv() => {
             handle_query_event(state, query_req)
         }
-        supervisor_ev = recv_supervisor(streams.channels.background.supervisor_rx) => {
-            handle_supervisor_update(state, supervisor_ev)
-        }
-        plan_ev = streams.channels.guided_plan_rx.recv() => {
-            handle_guided_plan_update(state, plan_ev, handles)
-        }
         _ = streams.ticker.tick(), if can_tick => {
             handle_tick(state, streams.char_buf)
         }
@@ -59,7 +46,7 @@ pub(super) async fn select_next_event(
             handle_agent_feed_event(state, feed_ev, handles.tools.logger)
         }
         orch_ev = streams.channels.background.orchestrator_event_rx.recv() => {
-            handle_orchestrator_event(state, orch_ev, handles.tools.logger)
+            handle_orchestrator_event(state, orch_ev, handles.tools.logger, Some(handles.persistence))
         }
         _ = streams.snapshot.ticker.tick() => {
             handle_snapshot_tick(state, streams.snapshot.token_tracker).await
@@ -119,8 +106,6 @@ fn handle_agent_output_event(
     agent_out: Result<AgentOutput, tokio::sync::broadcast::error::RecvError>,
     event_ctx: AgentOutputEventContext<'_, '_, '_>,
 ) -> EventOutcome {
-    let is_compaction_done =
-        matches!(&agent_out, Ok(AgentOutput::CompactionComplete { .. })).then_some(());
     let quit = if matches!(
         state.interaction.screen,
         crate::domain::tui_state::AppScreen::SessionSelector(_)
@@ -132,7 +117,6 @@ fn handle_agent_output_event(
     } else {
         handle_agent_output(state, agent_out, event_ctx.char_buf)
     };
-    maybe_finish_guided_plan_compaction(state, is_compaction_done, event_ctx.handles);
     picker_outcome(quit)
 }
 
@@ -153,48 +137,6 @@ fn handle_query_event(
     query_req: Option<augur_domain::tools::builtin::query_user::QueryUserRequest>,
 ) -> EventOutcome {
     handle_query_request(state, query_req);
-    EventOutcome::Redraw
-}
-
-fn handle_supervisor_update(
-    state: &mut AppState,
-    supervisor_ev: Option<
-        Result<
-            augur_domain::domain::types::SupervisorEvent,
-            tokio::sync::broadcast::error::RecvError,
-        >,
-    >,
-) -> EventOutcome {
-    let Some(Ok(event)) = supervisor_ev else {
-        return EventOutcome::NoOp;
-    };
-    let feed_output = supervisor_event_to_feed(&event);
-    handle_supervisor_event(state, event);
-    if let Some(output) = feed_output {
-        apply_agent_feed_output(
-            state,
-            FeedEntry {
-                feed_id: FeedId::Agent(ToolCallId::from("supervisor")),
-                output,
-            },
-        );
-    }
-    EventOutcome::Redraw
-}
-
-fn handle_guided_plan_update(
-    state: &mut AppState,
-    plan_ev: Result<
-        augur_domain::domain::guided_plan::GuidedPlanEvent,
-        tokio::sync::broadcast::error::RecvError,
-    >,
-    handles: &TuiHandles<'_>,
-) -> EventOutcome {
-    let Ok(event) = plan_ev else {
-        return EventOutcome::NoOp;
-    };
-    apply_guided_plan_actions(state, &event, handles);
-    handle_guided_plan_event(state, event);
     EventOutcome::Redraw
 }
 
@@ -309,26 +251,82 @@ fn format_control_log_line(output: &AgentFeedOutput) -> Option<String> {
     }
 }
 
-/// Formats a `DeterministicOrchestratorEvent` as a system message and pushes it to TUI state.
+/// Flush accumulated pipeline messages to the session record on disk.
+///
+/// Called when the pipeline completes (or halts) to ensure that all
+/// `queue_user_command` calls for orchestrator events are persisted.
+/// Without this flush, pipeline system messages exist only in the in-memory
+/// queue and are lost when the application exits.
+fn flush_pipeline_messages(
+    persistence: &augur_domain::persistence::handle::PersistenceHandle,
+    endpoint: &augur_domain::domain::string_newtypes::EndpointName,
+) {
+    let p = persistence.clone();
+    let ep = endpoint.clone();
+    tokio::spawn(async move {
+        // save_turn merges queued_commands into the session record and writes
+        // to disk. Passing an empty `messages` vec means only the queued
+        // pipeline messages (and any previously queued commands) are saved.
+        p.save_turn(ep, vec![]).await;
+    });
+}
+
+/// Extract the currently active endpoint name from `AppState`.
+///
+/// Falls back to a placeholder if the endpoint is not yet set (should not
+/// happen in practice once the event loop is running).
+fn active_endpoint_name(state: &AppState) -> augur_domain::domain::string_newtypes::EndpointName {
+    state.agent.endpoint_name.clone()
+}
+/// Formats a `DeterministicOrchestratorEvent` as a system message, pushes it to the
+/// TUI output pane, logs it to the JSONL session log, and persists it to the session
+/// record so that it survives session restores.
 ///
 /// Inputs:
 /// - `state`: mutable TUI application state.
 /// - `recv_result`: result from a `broadcast::Receiver::recv()` call.
 /// - `logger`: logger handle for writing the event to the session JSONL log.
+/// - `persistence`: persistence handle for writing the event to the session record.
 ///
 /// Returns `NoOp` on lagged or closed channel errors; `Redraw` on success.
 fn handle_orchestrator_event(
     state: &mut AppState,
     recv_result: Result<DeterministicOrchestratorEvent, tokio::sync::broadcast::error::RecvError>,
     logger: &augur_core::actors::LoggerHandle,
+    persistence: Option<&augur_domain::persistence::handle::PersistenceHandle>,
 ) -> EventOutcome {
     let Ok(event) = recv_result else {
         return EventOutcome::NoOp;
     };
     tracing::info!(event = ?event, "tui.runtime.orchestrator_event");
+    let is_terminal = matches!(
+        event,
+        DeterministicOrchestratorEvent::Completed | DeterministicOrchestratorEvent::Halted { .. }
+    );
     let message = format_orchestrator_event(&event);
     state.push_system_message(message.as_str());
-    logger.log_line(OutputText::from("system"), OutputText::from(message));
+    logger.log_line(
+        OutputText::from("system"),
+        OutputText::from(message.as_str()),
+    );
+    if let Some(p) = persistence {
+        p.queue_user_command(augur_domain::persistence::types::MessageRecord {
+            message_type: augur_domain::persistence::types::MessageType::System,
+            message: augur_domain::domain::types::Message {
+                role: augur_domain::domain::types::Role::System,
+                content: OutputText::from(message.clone()),
+                timestamp: augur_domain::domain::newtypes::TimestampMs::now(),
+                tool_call_id: None,
+                tool_calls: None,
+            },
+        });
+        if is_terminal {
+            // Flush all accumulated pipeline messages to disk when the pipeline
+            // finishes or halts. Without this, pipeline system messages live only
+            // in the in-memory queued_commands and are lost on exit.
+            flush_pipeline_messages(p, &active_endpoint_name(state));
+        }
+    }
     EventOutcome::Redraw
 }
 
@@ -507,7 +505,7 @@ mod tests {
         let logger = logger_handle();
         let event = Ok(DeterministicOrchestratorEvent::Completed);
 
-        let outcome = handle_orchestrator_event(&mut state, event, &logger);
+        let outcome = handle_orchestrator_event(&mut state, event, &logger, None);
 
         assert!(matches!(outcome, EventOutcome::Redraw));
         assert!(
@@ -525,7 +523,7 @@ mod tests {
             step_id: WorkflowStepId::from("implement-behavior"),
         });
 
-        let outcome = handle_orchestrator_event(&mut state, event, &logger);
+        let outcome = handle_orchestrator_event(&mut state, event, &logger, None);
 
         assert!(matches!(outcome, EventOutcome::Redraw));
         assert!(

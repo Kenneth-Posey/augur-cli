@@ -2,8 +2,6 @@ use augur_domain::config::types::{
     AgentConfig, AppConfig, CopilotConfig, EndpointConfig, EndpointCredentials, PersistenceConfig,
     Provider,
 };
-use augur_domain::domain::newtypes::IsRunning;
-use augur_domain::domain::plan_tree::{PlanTree, PlanTreeId};
 use augur_tui::actors::tui::assistant::status_bar::format_model_display;
 use augur_tui::domain::newtypes::{
     ChoiceIndex, Count, NumericNewtype, ScrollOffset, Temperature, TimestampMs, TokenCount,
@@ -15,7 +13,7 @@ use augur_tui::domain::string_newtypes::{
 use augur_tui::domain::tui_display_state::{DisplayConversationMode, TuiDisplayState};
 use augur_tui::domain::tui_input::apply_agent_output;
 use augur_tui::domain::tui_state::{
-    AppScreen, AppState, LineHeader, OutputLine, OutputSelection, PlanModeState, SelectionPoint,
+    AppScreen, AppState, LineHeader, OutputLine, OutputSelection, SelectionPoint,
 };
 use augur_tui::domain::types::AgentOutput;
 use augur_tui::tui::render::{
@@ -128,18 +126,6 @@ fn status_state_for_repo(repo: &Path, displayed_branch: &str) -> AppState {
     state.status.cwd = repo.display().to_string().into();
     state.status.git_branch = Some(displayed_branch.into());
     state
-}
-
-fn make_plan_mode_state() -> PlanModeState {
-    PlanModeState {
-        tree: PlanTree::new(
-            PlanTreeId::new("render-test-plan"),
-            "Render Test Plan",
-            "test goal",
-        ),
-        running: IsRunning::no(),
-        tree_scroll: ScrollOffset::of(0),
-    }
 }
 
 ///
@@ -1069,15 +1055,6 @@ fn controls_row_hint_ask_open_shows_esc_close_ask() {
     assert_eq!(hint.description, "close ask");
 }
 
-/// Verifies that controls_row_hint returns esc/close-plan when in plan mode and ask is closed.
-#[test]
-fn controls_row_hint_plan_mode_shows_esc_close_plan() {
-    use augur_tui::tui::render::controls_row_hint;
-    let hint = controls_row_hint(None, &DisplayConversationMode::Plan(make_plan_mode_state()));
-    assert_eq!(hint.key, "esc");
-    assert_eq!(hint.description, "close plan");
-}
-
 /// Verifies that controls_row_hint returns shift+tab/open-ask by default.
 #[test]
 fn controls_row_hint_default_shows_shift_tab_open_ask() {
@@ -1085,19 +1062,6 @@ fn controls_row_hint_default_shows_shift_tab_open_ask() {
     let hint = controls_row_hint(None, &DisplayConversationMode::Chat);
     assert_eq!(hint.key, "shift+tab");
     assert_eq!(hint.description, "open ask");
-}
-
-/// Verifies that ask-panel-open takes priority over plan-mode in controls_row_hint.
-#[test]
-fn controls_row_hint_ask_takes_priority_over_plan() {
-    use augur_tui::domain::tui_state::SecondaryView;
-    use augur_tui::tui::render::controls_row_hint;
-    let hint = controls_row_hint(
-        Some(&SecondaryView::Ask),
-        &DisplayConversationMode::Plan(make_plan_mode_state()),
-    );
-    assert_eq!(hint.key, "ctrl+w");
-    assert_eq!(hint.description, "close ask");
 }
 
 /// Verifies that render does not panic when the ask panel is open alongside chat mode.

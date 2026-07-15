@@ -90,6 +90,7 @@ fn into_picker_session(
                 .created_at(summary.identity.created_at)
                 .last_updated_at(summary.identity.last_updated_at)
                 .endpoint_name(summary.identity.endpoint_name)
+                .maybe_title(summary.identity.title)
                 .build(),
         )
         .message_count(summary.message_count)

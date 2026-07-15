@@ -19,11 +19,11 @@ scratch, expand scope beyond the listed failures, or run git commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-behavioral-specification` - GWT structure rules and completeness criteria for behavior artifacts
 2. `1-design-feature-decomposition` - feature specification structure and completeness criteria
 3. `0-global-critical-rules` - safety, workflow, and definition of done constraints
-4. `0-global-line-count-check` - design artifact size limits; invoke when an artifact is near or over the size limit
+4. `0-global-line-count-check` - design artifact size limits; read when an artifact is near or over the size limit
 
 ## Inputs
 
@@ -46,10 +46,9 @@ Invoke at start:
 1. Read the reviewer failure notes. Identify the exact checklist items and the
    required correction for each failure. Do not invent additional corrections.
 2. Read the failing artifact in full.
-3. Invoke `0-global-critical-rules`. Then invoke the skill relevant to the
+3. Read `0-global-critical-rules`. Then read the skill relevant to the
    artifact type: `0-global-behavioral-specification` for `behaviors.md`,
-   `1-design-feature-decomposition` for `features.md`. Invoke
-   `0-global-line-count-check` if the artifact is near or over the size limit.
+   `1-design-feature-decomposition` for `features.md`. Read `0-global-line-count-check` if the artifact is near or over the size limit.
 4. For each listed failure only, apply the minimal correction that directly
    resolves that failure. Do not restructure unaffected sections, rewrite
    passing items, or add unrequested content.

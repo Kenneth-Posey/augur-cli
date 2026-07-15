@@ -1,9 +1,9 @@
-use crate::config::types::{
+use augur_domain::config::types::{
     AgentConfig, AppConfig, CopilotConfig, CopilotSdkSettings, EndpointConfig, EndpointCredentials,
     PersistenceConfig, Provider,
 };
-use crate::domain::newtypes::{NumericNewtype, Temperature, TokenCount};
-use crate::domain::string_newtypes::{
+use augur_tui::domain::newtypes::{NumericNewtype, Temperature, TokenCount};
+use augur_tui::domain::string_newtypes::{
     EndpointName, EndpointUrl, FilePath, ModelName, OutputText, StringNewtype,
 };
 use std::path::Path;
@@ -26,8 +26,8 @@ fn empty_config() -> AppConfig {
             log_dir: FilePath::new("./logs"),
             sessions_dir: None,
         },
-            program_settings: Default::default(),
-            user_settings: Default::default(),
+        program_settings: Default::default(),
+        user_settings: Default::default(),
     }
 }
 

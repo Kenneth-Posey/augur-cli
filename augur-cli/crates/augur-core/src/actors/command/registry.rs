@@ -93,14 +93,13 @@ static BUILTIN_COMMAND_ROWS: LazyLock<Vec<CommandDef>> = LazyLock::new(|| {
             .description("Exit the application")
             .build(),
         CommandDef::builder()
+            .name("session-title")
+            .usage("/session-title <text>")
+            .description("Set a custom session title displayed at the top of the conversation")
+            .build(),CommandDef::builder()
             .name("run-pipeline")
             .usage("/run-pipeline [--resume] [--slug <slug>] [<context>]")
             .description("Start the deterministic orchestrator pipeline; --resume skips already-completed steps")
-            .build(),
-        CommandDef::builder()
-            .name("run-plan")
-            .usage("/run-plan <path>")
-            .description("Load and execute a guided plan from a file")
             .build(),
         CommandDef::builder()
             .name("stop")
@@ -138,7 +137,7 @@ impl CommandRegistry {
     ///
     /// The built-in command set is: `/ask`, `/agent <name> <prompt>`, `/commit`,
     /// `/clear`, `/compact`, `/exit`, `/help`, `/model <id>`, `/new-session`, `/ping`,
-    /// `/push`, `/quit`, `/run-pipeline`, `/run-plan <path>`, `/stop`,
+    /// `/push`, `/quit`, `/run-pipeline`, `/stop`,
     /// `/switch <name>`, `/tools`.
     pub fn with_builtins(tools: &[ToolDefinition]) -> Self {
         CommandRegistry {
@@ -274,8 +273,8 @@ fn execute_parameterized(text: &str) -> Option<CommandOutcome> {
         parse_generate_catalog_outcome,
         parse_model_outcome,
         parse_agent_outcome,
-        parse_run_plan_outcome,
         parse_switch_outcome,
+        parse_session_title_outcome,
     ]
     .into_iter()
     .find_map(|handler| handler(text))
@@ -310,10 +309,6 @@ fn parse_model_outcome(text: &str) -> Option<CommandOutcome> {
 
 fn parse_agent_outcome(text: &str) -> Option<CommandOutcome> {
     text.starts_with("/agent").then(|| parse_agent(text))
-}
-
-fn parse_run_plan_outcome(text: &str) -> Option<CommandOutcome> {
-    text.starts_with("/run-plan").then(|| parse_run_plan(text))
 }
 
 fn parse_switch_outcome(text: &str) -> Option<CommandOutcome> {
@@ -402,21 +397,6 @@ fn parse_agent(text: &str) -> CommandOutcome {
     }
 }
 
-/// Parse a `/run-plan <path>` command.
-///
-/// Returns `CommandOutcome::RunPlan(path)` when the text has the `/run-plan ` prefix
-/// and a non-empty path following it. Returns `CommandOutcome::UnknownCommand` for
-/// bare `/run-plan` or `/run-plan ` with no path.
-/// Consumers: `CommandRegistry::execute`.
-fn parse_run_plan(text: &str) -> CommandOutcome {
-    let path = text.strip_prefix("/run-plan ").unwrap_or("").trim();
-    if path.is_empty() {
-        CommandOutcome::UnknownCommand
-    } else {
-        CommandOutcome::RunPlan(FilePath::from(path))
-    }
-}
-
 /// Parse a `/generate-catalog [--provider <name>]` command.
 ///
 /// Returns `CommandOutcome::GenerateCatalog { provider }` where provider is:
@@ -425,6 +405,19 @@ fn parse_run_plan(text: &str) -> CommandOutcome {
 /// - Returns `UnknownCommand` if the command is malformed
 ///
 /// Consumers: `CommandRegistry::execute`.
+/// Parse a `/session-title <text>` command.
+///
+/// Returns `CommandOutcome::SetSessionTitle(text)` when the text has the
+/// `/session-title ` prefix and non-empty text following it.
+/// Returns `None` for bare `/session-title` or `/session-title ` with no text.
+/// Consumers: `execute_parameterized`.
+fn parse_session_title_outcome(text: &str) -> Option<CommandOutcome> {
+    let rest = text.strip_prefix("/session-title ")?.trim();
+    if rest.is_empty() {
+        return None;
+    }
+    Some(CommandOutcome::SetSessionTitle(OutputText::new(rest)))
+}
 fn parse_generate_catalog(text: &str) -> CommandOutcome {
     let rest = text.strip_prefix("/generate-catalog").unwrap_or("").trim();
 

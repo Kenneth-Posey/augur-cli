@@ -204,8 +204,8 @@ fn domain_types_public_api_uses_phase_one_newtypes() {
     let command_outcome_html =
         rustdoc_support::rustdoc_html("augur_domain/domain/types/enum.CommandOutcome.html");
     assert!(
-        command_outcome_html.contains("struct.FilePath.html"),
-        "expected CommandOutcome rustdoc to reference FilePath",
+        command_outcome_html.contains("struct.OutputText.html"),
+        "expected CommandOutcome rustdoc to reference OutputText",
     );
     assert!(
         command_outcome_html.contains("struct.AgentName.html"),

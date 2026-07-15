@@ -16,7 +16,7 @@ commands; if history is needed, require it as input.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-tdd-workflow` - Red-phase completion criteria and done definition
 2. `3-implement-test-suite-completion` - language-neutral Stage 3 test-suite
    validation rules
@@ -106,7 +106,7 @@ Emit one of two signals:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-tdd-workflow` and `3-implement-test-suite-completion`. Read
+1. Read `0-global-tdd-workflow` and `3-implement-test-suite-completion`. Read
    `../local/language-companions.md` for the testing companion and
    `../local/directories.md` for layout rules.
 2. Locate the test strategy plan and extract the coverage matrix and named test

@@ -15,7 +15,7 @@ Produce a Test Strategy Plan traceable to behaviors across unit, integration, pr
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `2-plan-test-planning` - test strategy framework, coverage classification, scenario-to-test mapping, pass conditions, and test composition rules
 2. Read [`../local/language-companions.md`](../local/language-companions.md) - look up the `2-plan-test-planning` companion key for language-specific test tooling, naming conventions, and test type implementation details
 
@@ -34,7 +34,9 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. **Extract Test Scenarios from Behaviors:** Invoke `2-plan-test-planning` and the language companion from `language-companions.md`. For each Given/When/Then spec in `plans/<feature-slug>/design/behaviors.md`, map Given = setup, When = action, and Then = assertion. Cross-reference each scenario against the behavior plan's state machines and transitions to target specific (state, event, guard) rows. Produce scenario triplets.
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. **Extract Test Scenarios from Behaviors:** Read `2-plan-test-planning` and the language companion from `language-companions.md`. For each Given/When/Then spec in `plans/<feature-slug>/design/behaviors.md`, map Given = setup, When = action, and Then = assertion. Cross-reference each scenario against the behavior plan's state machines and transitions to target specific (state, event, guard) rows. Produce scenario triplets.
 
 2. **Classify Test Scenarios into Test Types:**
    - **Unit:** Single function, all dependencies mocked

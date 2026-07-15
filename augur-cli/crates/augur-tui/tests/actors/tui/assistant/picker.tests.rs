@@ -1,18 +1,18 @@
-use crate::domain::newtypes::{Count, NumericNewtype, TimestampMs};
-use crate::domain::string_newtypes::{
+use augur_domain::persistence::{store, types::SessionRecord};
+use augur_tui::domain::newtypes::{Count, NumericNewtype, TimestampMs};
+use augur_tui::domain::string_newtypes::{
     EndpointName, OutputText, SdkSessionId, SessionId, StringNewtype,
 };
-use crate::domain::traits::ChatProvider;
-use crate::domain::tui_input::PickerKeyAction;
-use crate::domain::tui_state::{
+use augur_tui::domain::traits::ChatProvider;
+use augur_tui::domain::tui_input::PickerKeyAction;
+use augur_tui::domain::tui_state::{
     AppScreen, AppState, ConversationMode, PickerSessionIdentity, PickerSessionSummary, PickerState,
 };
-use crate::domain::types::{AgentOutput, Message, MessageRecord, MessageType};
-use crate::persistence::{store, types::SessionRecord};
+use augur_tui::domain::types::{AgentOutput, Message, MessageRecord, MessageType};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
-use crate::tests::helpers::fake_ask;
+use augur_core::helpers::fake_ask;
 
 fn picker_summary(id: SessionId, endpoint: &str, preview: &str) -> PickerSessionSummary {
     PickerSessionSummary::builder()
@@ -22,6 +22,7 @@ fn picker_summary(id: SessionId, endpoint: &str, preview: &str) -> PickerSession
                 .created_at(TimestampMs::new(1_000))
                 .last_updated_at(TimestampMs::new(2_000))
                 .endpoint_name(EndpointName::new(endpoint))
+                .maybe_title(None)
                 .build(),
         )
         .message_count(Count::new(2))
@@ -40,7 +41,7 @@ fn output_text(state: &AppState) -> String {
 }
 
 async fn wait_for_endpoint(
-    session: &crate::actors::session::handle::SessionHandle,
+    session: &augur_core::actors::session::handle::SessionHandle,
     expected: &str,
 ) {
     tokio::time::timeout(Duration::from_secs(1), async {
@@ -98,7 +99,7 @@ impl RecordingChatProvider {
 impl ChatProvider for RecordingChatProvider {
     fn submit(
         &self,
-        _prompt: crate::domain::string_newtypes::PromptText,
+        _prompt: augur_tui::domain::string_newtypes::PromptText,
         _endpoint: Option<EndpointName>,
     ) {
     }
@@ -121,16 +122,15 @@ impl ChatProvider for RecordingChatProvider {
 }
 
 struct PickerTestRigCoreHandles {
-    session: crate::actors::session::handle::SessionHandle,
-    persistence: crate::persistence::handle::PersistenceHandle,
+    session: augur_core::actors::session::handle::SessionHandle,
+    persistence: augur_core::persistence::handle::PersistenceHandle,
 }
 
 struct PickerTestRigToolHandles {
-    scanner: crate::actors::FileScannerHandle,
-    guided_plan: crate::actors::guided_plan::GuidedPlanHandle,
-    ask_handle: crate::actors::ask::AskHandle,
-    command: crate::actors::command::handle::CommandHandle,
-    logger: crate::actors::LoggerHandle,
+    scanner: augur_core::actors::FileScannerHandle,
+    ask_handle: augur_core::actors::ask::AskHandle,
+    command: augur_core::actors::command::handle::CommandHandle,
+    logger: augur_core::actors::LoggerHandle,
 }
 
 struct PickerTestRigResources {
@@ -144,21 +144,23 @@ struct PickerTestRig {
     provider: RecordingChatProvider,
     core: PickerTestRigCoreHandles,
     tools: PickerTestRigToolHandles,
+    _agent_feed_tx: tokio::sync::mpsc::Sender<augur_domain::domain::types::FeedEntry>,
     _resources: PickerTestRigResources,
 }
 
 impl PickerTestRig {
     async fn new() -> Self {
         let provider = RecordingChatProvider::new();
-        let (_, session) = crate::actors::session::session_actor::spawn(EndpointName::new("ep"));
+        let (_, session) =
+            augur_core::actors::session::session_actor::spawn(EndpointName::new("ep"));
         let sessions_dir = tempfile::tempdir().expect("tempdir");
         let persistence =
-            crate::persistence::handle::PersistenceHandle::new(sessions_dir.path().to_owned());
-        let (scanner_join, scanner) = crate::actors::file_scanner::file_scanner_actor::spawn();
-        let guided_plan = crate::actors::guided_plan::guided_plan_actor::spawn();
+            augur_core::persistence::handle::PersistenceHandle::new(sessions_dir.path().to_owned());
+        let (scanner_join, scanner) = augur_core::actors::file_scanner::file_scanner_actor::spawn();
+        let (agent_feed_tx, _agent_feed_rx) = tokio::sync::mpsc::channel(8);
         let (ask_handle, ask_dir) = fake_ask::make_ask_handle().await;
-        let command = crate::actors::command::command_actor::build(&[]);
-        let (logger_join, logger) = crate::tests::helpers::fake_logger::fake_logger_handle();
+        let command = augur_core::actors::command::command_actor::build(&[]);
+        let (logger_join, logger) = augur_core::helpers::fake_logger::fake_logger_handle();
         Self {
             provider,
             core: PickerTestRigCoreHandles {
@@ -167,11 +169,11 @@ impl PickerTestRig {
             },
             tools: PickerTestRigToolHandles {
                 scanner,
-                guided_plan,
                 ask_handle,
                 command,
                 logger,
             },
+            _agent_feed_tx: agent_feed_tx,
             _resources: PickerTestRigResources {
                 _sessions_dir: sessions_dir,
                 _scanner_join: scanner_join,
@@ -181,22 +183,22 @@ impl PickerTestRig {
         }
     }
 
-    fn handles(&self) -> crate::actors::tui::tui_actor::TuiHandles<'_> {
+    fn handles(&self) -> augur_tui::actors::tui::tui_actor::TuiHandles<'_> {
         let (_catalog_manager_join, catalog_manager) =
-            crate::tests::helpers::fake_catalog_manager::fake_catalog_manager_handle();
-        crate::actors::tui::tui_actor::TuiHandles {
+            augur_core::helpers::fake_catalog_manager::fake_catalog_manager_handle();
+        augur_tui::actors::tui::tui_actor::TuiHandles {
             agent: &self.provider,
             session: &self.core.session,
             persistence: &self.core.persistence,
-            tools: crate::actors::tui::tui_actor::TuiToolHandles {
+            tools: augur_tui::actors::tui::tui_actor::TuiToolHandles {
                 command: &self.tools.command,
                 file_scanner: &self.tools.scanner,
-                guided_plan: &self.tools.guided_plan,
+                agent_feed_tx: &self._agent_feed_tx,
                 ask: &self.tools.ask_handle,
                 logger: &self.tools.logger,
             },
-            work: crate::actors::tui::tui_actor::TuiWorkHandles {
-                orchestrator: crate::tests::helpers::fake_orchestrator::fake_orchestrator_handle(),
+            work: augur_tui::actors::tui::tui_actor::TuiWorkHandles {
+                orchestrator: augur_core::helpers::fake_orchestrator::fake_orchestrator_handle(),
                 catalog_manager,
             },
         }
@@ -381,12 +383,32 @@ async fn dispatch_picker_action_select_down_moves_highlight_to_next_row() {
 async fn dispatch_picker_action_delete_removes_selected_row_and_file() {
     let _guard = picker_test_lock().await;
     let rig = PickerTestRig::new().await;
-    let mut first = SessionRecord::new(EndpointName::new("ep-a"));
+    let mut first = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep-a"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     first.state.messages = vec![MessageRecord {
         message_type: MessageType::User,
         message: Message::user("first"),
     }];
-    let mut second = SessionRecord::new(EndpointName::new("ep-b"));
+    let mut second = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test2"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("ep-b"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     second.state.messages = vec![MessageRecord {
         message_type: MessageType::User,
         message: Message::user("second"),
@@ -452,7 +474,17 @@ async fn dispatch_picker_action_confirm_restores_selected_session() {
     let _guard = picker_test_lock().await;
     let rig = PickerTestRig::new().await;
     let sdk_session_id = SdkSessionId::new("sdk-session-42");
-    let mut record = SessionRecord::new(EndpointName::new("restored-ep"));
+    let mut record = SessionRecord {
+        meta: augur_domain::persistence::types::SessionMeta {
+            id: augur_domain::domain::string_newtypes::SessionId::new("test"),
+            created_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            last_updated_at: augur_domain::domain::newtypes::TimestampMs::of(0),
+            endpoint_name: EndpointName::new("restored-ep"),
+            flags: augur_domain::persistence::types::SessionMetaFlags::default(),
+            title: None,
+        },
+        state: augur_domain::persistence::types::SessionState::default(),
+    };
     record.meta.flags.sdk_session_id = Some(sdk_session_id.clone());
     record.state.messages = vec![
         MessageRecord {

@@ -18,7 +18,7 @@ against the function signature plan and dependency graph.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `2-plan-behavior-planning` - GWT-to-state-machine mapping, decision trees, actor patterns, behavior contracts, and conflict resolution
 2. Read [`../local/language-companions.md`](../local/language-companions.md) - look up the language-specific `2-plan-behavior-planning` companion - for language-specific state representation, transition encoding, and type-safe pattern guidance
 
@@ -38,9 +38,11 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. **Invoke skills:** Apply `2-plan-behavior-planning`. Then read
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. **Read skills:** Read and apply `2-plan-behavior-planning`. Then read
    `../local/language-companions.md`, find the
-   `2-plan-behavior-planning` companion, and invoke it.
+   `2-plan-behavior-planning` companion, and read it.
 
 2. **Index GWT scenarios:** Collect all scenarios from `behaviors.md`. Assign each a stable ID (`S-001`, `S-002`, …). Group by subject noun (the entity the scenario acts on).
 

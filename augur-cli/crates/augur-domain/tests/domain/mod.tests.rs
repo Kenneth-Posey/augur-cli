@@ -36,10 +36,6 @@ mod feeds_tests;
 mod lsp_tests;
 #[path = "newtypes.tests.rs"]
 mod newtypes_tests;
-#[path = "plan_state.tests.rs"]
-mod plan_state_tests;
-#[path = "plan_tree.tests.rs"]
-mod plan_tree_tests;
 #[path = "reply_events.tests.rs"]
 mod reply_events_tests;
 #[path = "scheduler.tests.rs"]

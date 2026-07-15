@@ -1,4 +1,28 @@
 provider: openai
+instruction_files:
+  - .github/PROMPT.md
+  - .github/MAIN_PROMPT.md
+  - .github/copilot-instructions.md
+  - .github/AGENTS.md
+  - .github/routing.md
+  - .github/local/identity.md
+  - .github/local/directories.md
+  - .github/local/rules.md
+  - .github/local/language-companions.md
+  - .github/instructions/critical-rules.instructions.md
+  - .github/instructions/rust.instructions.md
+background_instruction_files:
+  - .github/PROMPT.md
+  - .github/TASK_PROMPT.md
+  - .github/copilot-instructions.md
+  - .github/AGENTS.md
+  - .github/routing.md
+  - .github/local/identity.md
+  - .github/local/directories.md
+  - .github/local/rules.md
+  - .github/local/language-companions.md
+  - .github/instructions/critical-rules.instructions.md
+  - .github/instructions/rust.instructions.md
 models:
   - id: gpt-4o
     display_name: gpt-4o

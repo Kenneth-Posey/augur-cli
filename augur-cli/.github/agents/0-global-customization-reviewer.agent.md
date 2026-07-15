@@ -21,7 +21,7 @@ or run git commands.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-tdd-workflow` - for minimal-change discipline and definition of done as
    the baseline review standard.
 
@@ -49,7 +49,7 @@ For each artifact, findings ordered by severity:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-tdd-workflow` skill.
+1. Read `0-global-tdd-workflow` skill.
 2. Determine the governing `add-*` prompt for each artifact from its path:
    - `.github/agents/*.agent.md` → `.github/prompts/add-agent.prompt.md`
    - `.github/skills/**` → `.github/prompts/add-skill.prompt.md`
@@ -83,8 +83,8 @@ For each artifact, findings ordered by severity:
    - Workflow is self-contained from a fresh context.
    - Type-specific checks:
      - **Agents**: trigger description is concrete enough for correct runtime
-       selection; tool list is least-privilege; all invoked skills are named
-       explicitly in `## Skills` and invoked in `## Step-by-Step Behavior`;
+       selection; tool list is least-privilege; all read skills are named
+       explicitly in `## Skills` and read in `## Step-by-Step Behavior`;
        outputs and handoff are stated.
      - **Skills**: scope is task-focused; directory name and `name` frontmatter
        match; no duplicated skill.

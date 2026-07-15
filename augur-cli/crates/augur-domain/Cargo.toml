@@ -1,6 +1,6 @@
 [package]
 name = "augur-domain"
-version = "7.0.0"
+version = "8.0.0"
 edition = "2024"
 autotests = false
 
@@ -41,10 +41,5 @@ name = "tools_tests"
 path = "tests/tools/mod.tests.rs"
 
 [[test]]
-name = "plan_store_tests"
-path = "tests/plan_store/mod.tests.rs"
-
-[[test]]
 name = "domain_integration_tests"
 path = "tests/domain_tests.tests.rs"
-

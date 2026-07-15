@@ -18,7 +18,7 @@ and hard-stop conditions. Do not add independent workflow logic here.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-orchestration-pipeline` - Stage 3 sequencing, agent firing
    contract, failure routing, and hard-stop conditions
 
@@ -42,7 +42,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-orchestration-pipeline`.
+1. Read `0-global-orchestration-pipeline`.
 2. Follow **Stage 3: Implement** from that skill exactly:
    - Step 3.1 - Domain Implementation: launch `implement-domain-builder`, then
      `implement-domain-reviewer`

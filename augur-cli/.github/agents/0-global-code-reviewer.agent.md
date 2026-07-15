@@ -17,7 +17,7 @@ rules.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-tdd-workflow` - for repo-wide workflow, minimal-change discipline, and definition of done.
 2. Read [`.github/local/language-companions.md`](../local/language-companions.md)
    and load the language-specific `4-review-type-validation` companion for
@@ -56,8 +56,8 @@ Verdict: `pass` / `fail`.
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-tdd-workflow` and the language-specific
-   `4-review-type-validation` companion. Also invoke:
+1. Read `0-global-tdd-workflow` and the language-specific
+   `4-review-type-validation` companion. Also read:
    - `0-global-plan-implementation` when a plan phase or root is provided.
    - `0-global-interface-design` when actor files, handles, wiring, or actor
      tests are in scope.

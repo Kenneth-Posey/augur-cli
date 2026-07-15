@@ -18,8 +18,7 @@ fn llm_discovery_is_no_longer_a_core_actor_module() {
             .exists()
     );
     assert!(
-        root
-            .join("crates/augur-core/src/config/endpoint_catalog_discovery.rs")
+        root.join("crates/augur-core/src/config/endpoint_catalog_discovery.rs")
             .exists()
     );
 }

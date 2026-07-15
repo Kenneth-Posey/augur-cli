@@ -13,3 +13,6 @@ pub(super) fn spawn_run(
 ) -> tokio::task::JoinHandle<()> {
     super::tui_actor::spawn_runtime_task(args, shutdown_tx, feed_rx)
 }
+#[cfg(test)]
+#[path = "../../../tests/actors/tui/tui_actor_ops.tests.rs"]
+mod tests;

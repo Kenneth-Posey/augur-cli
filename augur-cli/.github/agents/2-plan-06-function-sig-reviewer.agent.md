@@ -15,7 +15,7 @@ Reviews function signature plans for semantic correctness and can act as a pipel
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. Read [`.github/local/language-companions.md`](../local/language-companions.md) - look up the language-specific `2-plan-function-sig-planning` companion - for function signature validation criteria and type consistency rules
 
 ## Inputs
@@ -33,6 +33,8 @@ Invoke at start:
 - **Decision Summary:** `"pass"` or `"fail"` with summary
 
 ## Step-by-Step Behavior
+
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
 
 1. **Check Type Definitions:** Verify every parameter, return, and error type is defined. Flag forward references.
 

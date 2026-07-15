@@ -1,10 +1,10 @@
 use super::*;
 
-/// Advance to the next unexecuted parallel-group member or transition the group to the next step on completion.
+/// Dispatch all parallel group members simultaneously or process a completed member.
 ///
-/// Looks up the owning group step, finds the first member without an execution
-/// record, and either starts it or resolves the group's pass transition when
-/// all members are done.
+/// On first entry (no pending members set), dispatches all members in parallel.
+/// On subsequent entries (member completion), checks if all members are done
+/// and resolves the group transition.
 pub(super) async fn advance_parallel_group_or_next_member(
     state: &mut DeterministicOrchestratorRunState,
     ports: &RuntimePorts,
@@ -21,21 +21,35 @@ pub(super) async fn advance_parallel_group_or_next_member(
         return;
     };
 
-    let next_member = group_step.execution.members.iter().find(|m| {
-        !state
-            .run_state
-            .prior_steps
-            .iter()
-            .any(|r| r.step_id == m.id)
-    });
-
-    if let Some(next_member) = next_member {
-        state.run_state.current_step_id = Some(next_member.id.clone());
-        Box::pin(super::start_current_step(state, ports)).await;
+    // If we haven't started dispatching parallel members yet, dispatch all at once
+    if state.pending_parallel_members.is_empty() {
+        dispatch_all_parallel_members(state, ports, &group_step).await;
         return;
     }
 
-    match resolve_pass_transition(&group_step, &NormalizedSignal::Advance) {
+    // Remove this member from the pending set
+    state.pending_parallel_members.retain(|id| id != &member_step.id);
+
+    // If there are still pending members, wait for them
+    if !state.pending_parallel_members.is_empty() {
+        return;
+    }
+
+    // All members completed - resolve the group transition
+    let group_member_results = latest_parallel_group_member_results(state);
+    let all_passed = group_member_results
+        .map(|results| results.iter().all(|r| r.signal == NormalizedSignal::Advance))
+        .unwrap_or(false);
+
+    let transition_signal = if all_passed {
+        NormalizedSignal::Advance
+    } else {
+        NormalizedSignal::Hold
+    };
+
+    state.active_parallel_group_id = None;
+
+    match resolve_pass_transition(&group_step, &transition_signal) {
         PassTransitionResolution::AdvanceTo(next_step_id) => {
             super::transition_to_declared_step_target(
                 state,
@@ -56,6 +70,52 @@ pub(super) async fn advance_parallel_group_or_next_member(
             state.run_state.current_step_id = None;
         }
     }
+}
+
+/// Dispatches all executable members of a parallel group simultaneously.
+async fn dispatch_all_parallel_members(
+    state: &mut DeterministicOrchestratorRunState,
+    ports: &RuntimePorts,
+    group_step: &WorkflowStep,
+) {
+    state.active_parallel_group_id = Some(group_step.id.clone());
+
+    // Collect all executable members
+    let executable_members: Vec<&WorkflowStep> = group_step
+        .execution
+        .members
+        .iter()
+        .filter(|m| m.kind.is_executable().0)
+        .collect();
+
+    // Track their IDs
+    state.pending_parallel_members = executable_members
+        .iter()
+        .map(|m| m.id.clone())
+        .collect();
+
+    // Create a placeholder group record
+    ensure_group_placeholder_record(state, &group_step.id);
+
+    // Dispatch all members simultaneously
+    for member in &executable_members {
+        state.artifact_store.pre_create_output_dirs(member);
+        dispatch_request(
+            ports,
+            state.artifact_store.clone(),
+            build_worker_dispatch_request(member, state.progress.feature_context.clone()),
+            &state.agent_instructions,
+        )
+        .await;
+    }
+}
+
+/// Returns true when the given step_id is part of a pending parallel group.
+pub(super) fn is_pending_parallel_member(
+    state: &DeterministicOrchestratorRunState,
+    step_id: &WorkflowStepId,
+) -> bool {
+    state.pending_parallel_members.iter().any(|id| id == step_id)
 }
 
 fn ensure_group_placeholder_record(

@@ -1,5 +1,7 @@
 //! Prompt submission helpers for TUI key dispatch.
 
+pub(crate) use super::completion::clear_all_completions;
+use super::panel::open_ask_in_secondary;
 use crate::actors::tui::tui_actor::TuiHandles;
 use crate::domain::tui_state::{
     AppState, ConversationMode, PendingResponseMeta, current_timestamp_ms,
@@ -12,13 +14,11 @@ use augur_core::config::provider_catalog::default_provider_catalog_dir;
 use augur_core::domain::deterministic_orchestrator_ops::derive_feature_slug;
 use augur_domain::domain::newtypes::{NumericNewtype, ScrollOffset, SupportsAuto};
 use augur_domain::domain::string_newtypes::{
-    FeatureContext, FeatureSlug, FilePath, ModelId, OutputText, PromptText, StringNewtype,
+    FeatureContext, FeatureSlug, FilePath, ModelId, OutputText, PromptText, StatusLabel,
+    StringNewtype,
 };
 use augur_domain::domain::thinking_mode::ReasoningEffort;
 use augur_domain::domain::types::CommandOutcome;
-
-pub(crate) use super::completion::clear_all_completions;
-use super::panel::open_ask_in_secondary;
 use std::ops::ControlFlow;
 
 struct CommandSubmission {
@@ -132,6 +132,21 @@ fn submit_prompt_text(state: &mut AppState, handles: &TuiHandles<'_>, text: Prom
     if is_empty {
         return;
     }
+    // Capture the first user-entered prompt as the session title, trimmed to
+    // 100 characters. Persist via the persistence handle so the title survives
+    // session save/restore.
+    if state.interaction.session_title.is_none() {
+        let is_file_only = clean_text.as_str().starts_with("[FILE:")
+            || clean_text.as_str().trim().is_empty();
+        let title = if is_file_only {
+            OutputText::new("<<no prompt>>")
+        } else {
+            let truncated: String = clean_text.as_str().chars().take(100).collect();
+            OutputText::new(truncated)
+        };
+        state.interaction.session_title = Some(title.clone());
+        handles.persistence.set_title(Some(title));
+    }
     let previous_offset = state.output.scroll_offset.get();
     let had_selection = state.output.selection.is_some();
     state.output.scroll_offset.set(ScrollOffset::of(0));
@@ -169,38 +184,6 @@ fn submit_prompt_text(state: &mut AppState, handles: &TuiHandles<'_>, text: Prom
             .agent
             .submit_with_attachments(clean_text, Some(ep), attachments);
     }
-}
-
-fn run_guided_plan(
-    state: &mut AppState,
-    handles: &TuiHandles<'_>,
-    path: augur_domain::domain::string_newtypes::FilePath,
-) {
-    match augur_core::actors::guided_plan::loader::load_guided_plan(std::path::Path::new(
-        path.as_str(),
-    )) {
-        Ok(config) => {
-            let ui_state = crate::domain::tui_state::GuidedPlanUiState::from_config(&config);
-            state.interaction.mode = ConversationMode::GuidedPlan(ui_state);
-            handles.tools.guided_plan.start(config, path.clone());
-            push_system_line(state, format!("[system] guided plan started: {}", path));
-        }
-        Err(e) => {
-            state.push_error_line(format!("[error] /run-plan: {e}"));
-            state.push_output_newline();
-        }
-    }
-}
-
-fn start_pending_agent_response(state: &mut AppState, status_label: &str) {
-    state.agent.thinking.is_active = true.into();
-    state.agent.thinking.label = status_label.into();
-    state.agent.pending_response = Some(
-        PendingResponseMeta::builder()
-            .ts(current_timestamp_ms())
-            .model(state.status.model_display.clone())
-            .build(),
-    );
 }
 
 fn push_system_line(state: &mut AppState, message: impl Into<OutputText>) {
@@ -391,10 +374,6 @@ const SELECTION_OUTCOME_CASES: &[OutcomeKindCase] = &[
         label: "SelectAutoModel",
     },
     OutcomeKindCase {
-        predicate: is_run_plan,
-        label: "RunPlan",
-    },
-    OutcomeKindCase {
         predicate: is_new_session,
         label: "NewSession",
     },
@@ -457,10 +436,6 @@ fn is_select_auto_model(outcome: &CommandOutcome) -> bool {
     matches!(outcome, CommandOutcome::SelectAutoModel)
 }
 
-fn is_run_plan(outcome: &CommandOutcome) -> bool {
-    matches!(outcome, CommandOutcome::RunPlan(_))
-}
-
 fn is_new_session(outcome: &CommandOutcome) -> bool {
     matches!(outcome, CommandOutcome::NewSession)
 }
@@ -474,6 +449,7 @@ fn command_outcome_kind_workflow(outcome: &CommandOutcome) -> &'static str {
         CommandOutcome::RunBackgroundAgent { .. } => "RunBackgroundAgent",
         CommandOutcome::StartPipeline { .. } => "StartPipeline",
         CommandOutcome::GenerateCatalog { .. } => "GenerateCatalog",
+        CommandOutcome::SetSessionTitle(_) => "SetSessionTitle",
         CommandOutcome::Quit
         | CommandOutcome::SwitchEndpoint(_)
         | CommandOutcome::SystemMessage(_)
@@ -485,7 +461,6 @@ fn command_outcome_kind_workflow(outcome: &CommandOutcome) -> &'static str {
         | CommandOutcome::PushBranch
         | CommandOutcome::SelectModel(_)
         | CommandOutcome::SelectAutoModel
-        | CommandOutcome::RunPlan(_)
         | CommandOutcome::NewSession
         | CommandOutcome::OpenAskPanel => unreachable!("covered by command_outcome_kind helpers"),
     }
@@ -670,10 +645,38 @@ fn handle_state_change_session(
     outcome: &CommandOutcome,
 ) -> Option<bool> {
     match outcome {
-        CommandOutcome::RunPlan(path) => Some(handle_run_plan(state, handles, path.clone())),
         CommandOutcome::NewSession => Some(handle_new_session(state, handles)),
+        CommandOutcome::SetSessionTitle(title) => {
+            handle_set_session_title(state, handles, title.clone());
+            Some(false)
+        }
         _ => None,
     }
+}
+
+/// Handle `/session-title <text>` by updating the session title in memory and
+/// persisting to disk. No agent feed events are emitted, so the agent feed
+/// panel (task panel) is not opened by this command.
+fn handle_set_session_title(state: &mut AppState, handles: &TuiHandles<'_>, title: OutputText) {
+    // Truncate to 100 chars for display consistency.
+    let truncated: String = title.as_str().chars().take(100).collect();
+    let truncated_output = OutputText::new(truncated);
+    let truncated_display = truncated_output.as_str().to_owned();
+
+    // Update in-memory state synchronously.
+    state.push_system_message(OutputText::new(format!(
+        "[system] session title set to: {truncated_display}"
+    )));
+    state.push_output_newline();
+    state.interaction.session_title = Some(truncated_output.clone());
+
+    // Persist the title to disk synchronously (in-memory cache) and
+    // fire-and-forget the async write so the title survives session save/restore.
+    handles.persistence.set_title(Some(truncated_output.clone()));
+    let persistence = handles.persistence.clone();
+    tokio::spawn(async move {
+        persistence.persist_title(truncated_output).await;
+    });
 }
 
 async fn handle_state_change_async_outcome(
@@ -772,26 +775,6 @@ fn handle_select_auto_model(state: &mut AppState, handles: &TuiHandles<'_>) -> b
         None::<&ModelId>, // auto = no model override
         None::<&ReasoningEffort>,
     );
-    false
-}
-
-fn handle_run_plan(
-    state: &mut AppState,
-    handles: &TuiHandles<'_>,
-    path: augur_domain::domain::string_newtypes::FilePath,
-) -> bool {
-    run_guided_plan(state, handles, path);
-    false
-}
-
-fn handle_new_session(state: &mut AppState, handles: &TuiHandles<'_>) -> bool {
-    let active_endpoint = handles.session.active_endpoint();
-    state.agent.endpoint_name = active_endpoint.clone();
-    handles.persistence.reset_to_new_session();
-    handles.agent.replace_session(None);
-    tracing::info!(endpoint = %active_endpoint, "tui.new_session.reset_provider_session");
-    state.reset_for_new_session();
-    push_system_line(state, "[system] new session started");
     false
 }
 
@@ -999,6 +982,29 @@ pub(crate) fn handle_thinking_mode_confirm(state: &mut AppState, handles: &TuiHa
         model_for_save.as_ref(),
         Some(&effort),
     );
+}
+
+/// Set the pending response metadata on the agent status, marking the start of
+/// an agent response in the TUI output.
+fn start_pending_agent_response(state: &mut AppState, status_label: &str) {
+    state.agent.thinking.is_active = true.into();
+    state.agent.thinking.label = StatusLabel::new(status_label);
+    state.agent.pending_response = Some(
+        PendingResponseMeta::builder()
+            .ts(current_timestamp_ms())
+            .model(state.status.model_display.clone())
+            .build(),
+    );
+}
+
+/// Handle `/clear` or `/new-session` command: reset session state through the
+/// persistence handle, which performs provider-aware OpenRouter session reset routing.
+fn handle_new_session(state: &mut AppState, handles: &TuiHandles<'_>) -> bool {
+    let _active_endpoint = handles.session.active_endpoint();
+    handles.persistence.reset_to_new_session();
+    state.reset_for_new_session();
+    push_system_line(state, "[system] new session started");
+    false
 }
 
 #[cfg(test)]

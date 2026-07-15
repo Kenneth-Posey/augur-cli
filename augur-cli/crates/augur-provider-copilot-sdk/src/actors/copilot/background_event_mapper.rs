@@ -182,7 +182,7 @@ fn map_agent_message_text(event: &SessionEventData) -> Option<String> {
 fn map_core_agent_message_text(event: &SessionEventData) -> Option<String> {
     match event {
         SessionEventData::UserMessage(d) => Some(format!("\u{2192} {}", d.content)),
-        SessionEventData::AssistantTurnStart(_) => Some("[Assistant thinking...]".to_string()),
+        SessionEventData::AssistantTurnStart(_) => None,
         SessionEventData::AssistantIntent(d) => Some(format_intent(&d.intent)),
         SessionEventData::AssistantMessage(d) => Some(d.content.clone()),
         SessionEventData::AssistantMessageDelta(d) => Some(d.delta_content.clone()),

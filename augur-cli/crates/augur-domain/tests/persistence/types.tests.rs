@@ -1,11 +1,10 @@
 use augur_domain::domain::{
     Count, EndpointName, IsPredicate, LlmTokenCounts, LlmUsage, Message, MessageType,
-    NumericNewtype, OutputText, PromptText, SessionId, StrategyNodeName, StringNewtype,
-    Temperature, TimestampMs, TokenCount, ToolName,
+    NumericNewtype, OutputText, SessionId, StringNewtype, Temperature, TimestampMs, TokenCount,
+    ToolName,
 };
 use augur_domain::persistence::types::{
-    MessageRecord, NodeMeta, SessionMeta, SessionMetaFlags, SessionRecord, SessionState,
-    StrategyNode, StrategyNodeKind, StrategyTree, summarize,
+    MessageRecord, SessionMeta, SessionMetaFlags, SessionRecord, SessionState, summarize,
 };
 
 fn make_record(endpoint: &str) -> SessionRecord {
@@ -19,128 +18,10 @@ fn make_record(endpoint: &str) -> SessionRecord {
                 sdk_session_id: None,
                 ask_session: IsPredicate::from(false),
             },
+            title: None,
         },
         state: SessionState::default(),
     }
-}
-
-#[test]
-fn node_meta_new_sets_fields_and_timestamps() {
-    let before = TimestampMs::now();
-    let meta = NodeMeta::new("step1", "first step");
-    let after = TimestampMs::now();
-    assert_eq!(meta.name.as_str(), "step1");
-    assert_eq!(meta.description.as_str(), "first step");
-    assert!(meta.created_at >= before && meta.created_at <= after);
-    assert!(meta.last_updated_at >= before && meta.last_updated_at <= after);
-    assert!(meta.finished_at.is_none());
-}
-
-#[test]
-fn strategy_tree_leaf_round_trips() {
-    let mut nodes = std::collections::HashMap::new();
-    nodes.insert(
-        StrategyNodeName::new("leaf1"),
-        StrategyNode {
-            meta: NodeMeta::new("leaf1", "leaf node"),
-            kind: StrategyNodeKind::Leaf(PromptText::new("final prompt text")),
-        },
-    );
-    let tree = StrategyTree { nodes };
-    let json = serde_json::to_string(&tree).expect("serialize");
-    let back: StrategyTree = serde_json::from_str(&json).expect("deserialize");
-    assert_eq!(back.nodes.len(), 1);
-    assert!(back.nodes.contains_key(&StrategyNodeName::new("leaf1")));
-}
-
-#[test]
-fn strategy_tree_branch_round_trips() {
-    let mut children = std::collections::HashMap::new();
-    children.insert(
-        StrategyNodeName::new("child"),
-        StrategyNode {
-            meta: NodeMeta::new("child", "child node"),
-            kind: StrategyNodeKind::Leaf(PromptText::new("terminal")),
-        },
-    );
-    let mut nodes = std::collections::HashMap::new();
-    nodes.insert(
-        StrategyNodeName::new("parent"),
-        StrategyNode {
-            meta: NodeMeta::new("parent", "parent node"),
-            kind: StrategyNodeKind::Branch(children),
-        },
-    );
-    let tree = StrategyTree { nodes };
-    let json = serde_json::to_string(&tree).expect("serialize");
-    let back: StrategyTree = serde_json::from_str(&json).expect("deserialize");
-    match &back.nodes[&StrategyNodeName::new("parent")].kind {
-        StrategyNodeKind::Branch(c) => assert!(c.contains_key(&StrategyNodeName::new("child"))),
-        _ => panic!("expected Branch"),
-    }
-}
-
-#[test]
-fn strategy_tree_root_keys_use_strategy_node_name_newtype() {
-    let tree: StrategyTree = serde_json::from_value(serde_json::json!({
-        "nodes": {
-            "branch-a": {
-                "meta": {
-                    "name": "branch-a",
-                    "description": "first branch",
-                    "created_at": 1,
-                    "last_updated_at": 1,
-                    "finished_at": null
-                },
-                "kind": { "Leaf": "prompt text" }
-            }
-        }
-    }))
-    .expect("strategy tree JSON must deserialize");
-
-    let key = tree.nodes.keys().next().expect("root key must exist");
-    let key_type = std::any::type_name_of_val(key);
-    assert!(key_type.contains("StrategyNodeName"));
-}
-
-#[test]
-fn strategy_tree_branch_keys_use_strategy_node_name_newtype() {
-    let tree: StrategyTree = serde_json::from_value(serde_json::json!({
-        "nodes": {
-            "branch-a": {
-                "meta": {
-                    "name": "branch-a",
-                    "description": "first branch",
-                    "created_at": 1,
-                    "last_updated_at": 1,
-                    "finished_at": null
-                },
-                "kind": {
-                    "Branch": {
-                        "child-b": {
-                            "meta": {
-                                "name": "child-b",
-                                "description": "second branch",
-                                "created_at": 1,
-                                "last_updated_at": 1,
-                                "finished_at": null
-                            },
-                            "kind": { "Leaf": "prompt text" }
-                        }
-                    }
-                }
-            }
-        }
-    }))
-    .expect("strategy tree JSON must deserialize");
-
-    let branch = tree.nodes.values().next().expect("branch node must exist");
-    let StrategyNodeKind::Branch(children) = &branch.kind else {
-        panic!("expected branch node");
-    };
-    let child_key = children.keys().next().expect("child key must exist");
-    let child_key_type = std::any::type_name_of_val(child_key);
-    assert!(child_key_type.contains("StrategyNodeName"));
 }
 
 #[test]
@@ -177,7 +58,6 @@ fn session_record_new_has_empty_state_and_uuid() {
     assert!(!record.meta.id.as_str().is_empty());
     assert_eq!(record.meta.endpoint_name.as_str(), "test-endpoint");
     assert!(record.state.messages.is_empty());
-    assert!(record.state.current_strategy.is_none());
 }
 
 #[test]
@@ -200,7 +80,7 @@ fn session_record_round_trips() {
 fn summarize_empty_messages_returns_empty_preview() {
     let record = make_record("ep");
     let summary = summarize(&record);
-    assert_eq!(summary.preview.as_str(), "");
+    assert_eq!(summary.preview.as_str(), "<<no prompt>>");
     assert_eq!(summary.message_count, Count::new(0));
 }
 

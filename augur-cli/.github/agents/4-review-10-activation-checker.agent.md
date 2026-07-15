@@ -16,7 +16,7 @@ verification for Stage 4, is read-only, and emits only `pass` or `fail`.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `4-review-activation-validation` - activation contract: wiring proof, legacy bypass proof,
    runtime assertion evidence, and activation-state pass/fail criteria
 2. `4-review-activation-tools` - deterministic evidence collection and signal-mapping rules
@@ -41,7 +41,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `4-review-activation-validation` and `4-review-activation-tools`.
+1. Read `4-review-activation-validation` and `4-review-activation-tools`.
 2. Read `../local/language-companions.md` for any language-specific test and assertion
    conventions that apply to the requested scope.
 3. Inspect the implementation and tests for deterministic wiring evidence, legacy-bypass

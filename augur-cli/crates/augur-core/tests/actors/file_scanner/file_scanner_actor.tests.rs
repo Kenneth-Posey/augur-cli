@@ -1,4 +1,5 @@
 use augur_core::actors::file_scanner::file_scanner_actor::scan_directory;
+use augur_domain::domain::StringNewtype;
 use augur_domain::domain::string_newtypes::FilePath;
 
 #[test]

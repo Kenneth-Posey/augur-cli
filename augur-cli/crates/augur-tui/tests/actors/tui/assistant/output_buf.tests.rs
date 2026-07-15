@@ -1,10 +1,10 @@
-use crate::domain::newtypes::{Count, NumericNewtype};
-use crate::domain::string_newtypes::{EndpointName, ModelLabel, OutputText, StringNewtype};
-use crate::domain::tui_state::{AppScreen, AppState};
+use augur_tui::domain::newtypes::{Count, NumericNewtype};
+use augur_tui::domain::string_newtypes::{EndpointName, ModelLabel, OutputText, StringNewtype};
+use augur_tui::domain::tui_state::{AppScreen, AppState};
 
-fn model_option(id: &str, display_name: &str) -> crate::domain::types::ModelOption {
-    crate::domain::types::ModelOption::builder()
-        .id(crate::domain::string_newtypes::ModelId::new(id))
+fn model_option(id: &str, display_name: &str) -> augur_tui::domain::types::ModelOption {
+    augur_tui::domain::types::ModelOption::builder()
+        .id(augur_tui::domain::string_newtypes::ModelId::new(id))
         .display_name(ModelLabel::new(display_name))
         .build()
 }
@@ -34,7 +34,7 @@ fn drain_char_buf_moves_n_chars_and_leaves_remainder() {
 /// available in the channel, confirming state may have changed and a render is needed.
 #[tokio::test]
 async fn drain_channel_to_buf_returns_true_when_events_present() {
-    use crate::domain::types::AgentOutput;
+    use augur_tui::domain::types::AgentOutput;
     use tokio::sync::broadcast;
     let (tx, mut rx) = broadcast::channel::<AgentOutput>(16);
     tx.send(AgentOutput::Token(OutputText::new("hello")))
@@ -58,7 +58,7 @@ async fn drain_channel_to_buf_returns_true_when_events_present() {
 /// messages, indicating no state change and allowing the render to be skipped.
 #[test]
 fn drain_channel_to_buf_returns_false_when_empty() {
-    use crate::domain::types::AgentOutput;
+    use augur_tui::domain::types::AgentOutput;
     use tokio::sync::broadcast;
     let (_tx, mut rx) = broadcast::channel::<AgentOutput>(16);
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
@@ -78,10 +78,10 @@ fn drain_channel_to_buf_returns_false_when_empty() {
 /// the next keypress.
 #[tokio::test]
 async fn handle_agent_output_models_available_refreshes_open_picker() {
-    use crate::domain::types::AgentOutput;
+    use augur_tui::domain::types::AgentOutput;
     let mut state = AppState::new(EndpointName::new("ep"), AppScreen::Conversation);
     // Simulate user has already typed "/model " - picker is open but empty
-    state.prompt.buffer = "/model ".to_owned();
+    state.prompt.buffer = "/model ".to_owned().into();
     assert!(
         state.prompt.completions.model_picker.items.is_empty(),
         "picker must start empty before models arrive"

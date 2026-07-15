@@ -15,7 +15,7 @@ Write plan files to `plans/` only. Do not modify `src/` or `tests/`.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-plan-implementation` - for plan structure, quality gate, and valid agent names.
 2. `2-plan-architecture-planning` - for module placement, dependency direction, and architectural layers.
 3. `2-plan-integration-planning` - for component interactions across module boundaries in multi-phase plans.
@@ -52,7 +52,9 @@ Plan follows the full format from the `0-global-plan-implementation` skill.
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-plan-implementation`, `2-plan-architecture-planning`, and `2-plan-integration-planning`.
+0. Do not make any modifications to source files or implementation code paths. Only read the feature request and produce the required documents.
+
+1. Read `0-global-plan-implementation`, `2-plan-architecture-planning`, and `2-plan-integration-planning`.
 2. Make an explicit architecture clarity decision using the `0-global-plan-implementation`
    gate:
    - if placement, ownership, dependency direction, and layer fit are all

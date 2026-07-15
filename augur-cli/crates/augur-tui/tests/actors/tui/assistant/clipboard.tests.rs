@@ -1,5 +1,7 @@
-use crate::domain::string_newtypes::{EndpointName, StringNewtype};
-use crate::domain::tui_state::{AppScreen, AppState, OutputLine, OutputSelection, SelectionPoint};
+use augur_tui::domain::string_newtypes::{EndpointName, StringNewtype};
+use augur_tui::domain::tui_state::{
+    AppScreen, AppState, OutputLine, OutputSelection, SelectionPoint,
+};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 use ratatui::layout::Rect;
 

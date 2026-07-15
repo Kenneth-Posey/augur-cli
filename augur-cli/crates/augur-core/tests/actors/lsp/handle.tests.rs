@@ -10,5 +10,7 @@ fn lsp_handle_exposes_client_request_surface() {
     assert!(source.contains("pub struct LspHandle"));
     assert!(source.contains("impl LspClient for LspHandle"));
     assert!(source.contains("async fn request("));
-    assert!(source.contains("pub async fn send(&self, request: LspRequest) -> Result<(), LspError>"));
+    assert!(
+        source.contains("pub async fn send(&self, request: LspRequest) -> Result<(), LspError>")
+    );
 }

@@ -18,7 +18,7 @@ when every critical criterion passes and `fail` when revisions are required.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-typestate` - lifecycle and state-transition assessment guidance
 2. `3-implement-domain-implementation` - language-neutral Stage 3 domain
    validation criteria
@@ -48,7 +48,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke `0-global-typestate` and `3-implement-domain-implementation`. Read
+1. Read `0-global-typestate` and `3-implement-domain-implementation`. Read
    `../local/language-companions.md` for the language companion and
    `../local/directories.md` for layout rules.
 2. Build a validation checklist from the domain specification.

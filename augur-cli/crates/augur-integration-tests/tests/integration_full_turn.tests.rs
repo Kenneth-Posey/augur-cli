@@ -55,7 +55,6 @@ fn output_kind(output: &AgentOutput) -> &'static str {
         AgentOutput::Interrupted => "interrupted",
         AgentOutput::ToolCallStarted { .. } => "tool_call_started",
         AgentOutput::TurnComplete => "turn_complete",
-        AgentOutput::PlanNodeUpdate { .. } => "plan_node_update",
         AgentOutput::UsageUpdate { .. } => "usage_update",
         AgentOutput::ToolCallCompleted { .. } => "tool_call_completed",
         AgentOutput::SystemMessage(_) => "system_message",
@@ -222,7 +221,6 @@ async fn full_turn_no_tools() {
             AgentOutput::Interrupted => panic!("unexpected Interrupted"),
             AgentOutput::ToolCallStarted { .. } => {}
             AgentOutput::TurnComplete
-            | AgentOutput::PlanNodeUpdate { .. }
             | AgentOutput::UsageUpdate { .. }
             | AgentOutput::ToolCallCompleted { .. }
             | AgentOutput::SystemMessage(_)
@@ -365,7 +363,6 @@ async fn full_turn_one_tool_call() {
             AgentOutput::Interrupted => panic!("unexpected Interrupted"),
             AgentOutput::ToolCallStarted { .. } => {}
             AgentOutput::TurnComplete
-            | AgentOutput::PlanNodeUpdate { .. }
             | AgentOutput::UsageUpdate { .. }
             | AgentOutput::ToolCallCompleted { .. }
             | AgentOutput::SystemMessage(_)

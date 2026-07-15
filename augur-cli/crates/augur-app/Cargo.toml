@@ -1,6 +1,6 @@
 [package]
 name = "augur-app"
-version = "7.0.0"
+version = "8.0.0"
 edition = "2024"
 autotests = false
 
@@ -41,3 +41,6 @@ path = "tests/provider.tests.rs"
 [[test]]
 name = "wiring_tests"
 path = "tests/wiring.tests.rs"
+[[test]]
+name = "wiring_infrastructure_tests"
+path = "tests/wiring/infrastructure.tests.rs"

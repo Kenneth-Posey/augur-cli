@@ -20,7 +20,7 @@ paths.
 
 ## Skills
 
-Invoke at start:
+Read at start:
 1. `0-global-orchestration-pipeline` - stage sequencing, agent firing contract,
    failure routing, and hard-stop conditions for Stage 2 (Plan)
 
@@ -38,7 +38,7 @@ Invoke at start:
 
 ## Step-by-Step Behavior
 
-1. Invoke the `0-global-orchestration-pipeline` skill.
+1. Read the `0-global-orchestration-pipeline` skill.
 2. Follow **Stage 2: Plan** from the skill exactly:
    - Step 2.1 - Domain Planning: launch `plan-domain-designer`, then
      `plan-domain-reviewer`
